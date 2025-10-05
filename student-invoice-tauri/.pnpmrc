@@ -1,0 +1,5 @@
+# pnpm configuration to reduce warnings
+# Suppress npm environment variable warnings
+
+# Note: Most pnpm config options that could reduce these warnings
+# are also deprecated. The warnings will disappear with future updates.
