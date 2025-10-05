@@ -13,9 +13,9 @@
                 "windows":  [
                                 {
                                     "title":  "Student Invoice",
-                                    "width":  1200,
+                                    "width":  1600,
                                     "height":  1024,
-                                    "minWidth":  1150,
+                                    "minWidth":  1400,
                                     "minHeight":  950,
                                     "resizable":  true,
                                     "maximizable":  true,

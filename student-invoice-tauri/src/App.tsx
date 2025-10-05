@@ -282,20 +282,18 @@ function App() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
-          <div className="h-full grid grid-cols-3 gap-6 p-6">
-            {/* Main Invoice Card - Takes up 2 columns */}
-            <div className="col-span-2 flex flex-col">
-              <Card className="flex-1 flex flex-col">
-                <CardHeader className="flex-shrink-0">
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
-                    Invoice Generator
-                  </CardTitle>
+          <div className="h-full flex gap-6 p-6">
+            {/* Left Sidebar - Controls */}
+            <div className="w-80 flex flex-col space-y-6">
+              {/* Invoice Generator Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Invoice Generator</CardTitle>
                   <CardDescription>
-                    Generate professional invoices for music lessons with automatic term calculations
+                    Generate professional invoices for music lessons
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto space-y-6">
+                <CardContent className="space-y-4">
                   {/* Template Selection */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium leading-none">
@@ -319,168 +317,189 @@ function App() {
                   </div>
 
                   {/* Template Actions */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <Button variant="outline" className="flex items-center gap-2" disabled={!currentTemplate} onClick={handleEditTemplate}>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button variant="outline" size="sm" disabled={!currentTemplate} onClick={handleEditTemplate}>
                       <Edit className="h-4 w-4" />
-                      Edit
                     </Button>
-                    <Button variant="outline" className="flex items-center gap-2" onClick={handleNewTemplate}>
+                    <Button variant="outline" size="sm" onClick={handleNewTemplate}>
                       <Plus className="h-4 w-4" />
-                      New
                     </Button>
-                    <Button variant="destructive" className="flex items-center gap-2" disabled={!currentTemplate} onClick={handleDeleteTemplate}>
+                    <Button variant="destructive" size="sm" disabled={!currentTemplate} onClick={handleDeleteTemplate}>
                       <Trash2 className="h-4 w-4" />
-                      Delete
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
 
-                  {/* Current Template Info */}
-                  {currentTemplate && (
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="text-sm font-medium mb-2">Current Template</h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Student:</span>
-                          <span className="ml-2">{currentTemplate.students}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Instrument:</span>
-                          <span className="ml-2 capitalize">{currentTemplate.instrument}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Cost:</span>
-                          <span className="ml-2">£{currentTemplate.cost}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Day:</span>
-                          <span className="ml-2">{currentTemplate.day}</span>
-                        </div>
+              {/* Current Template Info */}
+              {currentTemplate && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Template Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Student:</span>
+                        <p className="font-medium">{currentTemplate.students}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Instrument:</span>
+                        <p className="font-medium capitalize">{currentTemplate.instrument}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Cost:</span>
+                        <p className="font-medium">£{currentTemplate.cost}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Day:</span>
+                        <p className="font-medium">{currentTemplate.day}</p>
                       </div>
                     </div>
-                  )}
 
-                  {/* Generated Invoice Preview */}
-                  {currentInvoice && (
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="text-sm font-medium mb-3">Invoice Preview</h4>
-                      <div className="space-y-3">
-                        <div>
-                          <span className="text-sm text-muted-foreground">Subject:</span>
-                          <p className="text-sm mt-1 font-medium">{currentInvoice.subject}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground">Total: £{currentInvoice.totalCost.toFixed(2)} ({currentInvoice.lessonCount} lessons)</span>
-                        </div>
-                        <div>
-                          <span className="text-sm text-muted-foreground">Body Preview:</span>
-                          <pre className="text-xs mt-1 bg-background p-2 rounded border overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
-                            {currentInvoice.body}
-                          </pre>
+                    {currentInvoice && (
+                      <div className="border-t pt-3 mt-3">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="ml-2 font-semibold">£{currentInvoice.totalCost.toFixed(2)}</span>
+                          <span className="text-muted-foreground ml-1">({currentInvoice.lessonCount} lessons)</span>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
-                  {/* Email Actions */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium">Email Actions</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        className="flex items-center gap-2"
-                        disabled={!currentTemplate || !gmailConnected}
-                        onClick={handleCreateDraft}
-                      >
-                        <Send className="h-4 w-4" />
-                        Draft Email
-                      </Button>
-                      <Button variant="secondary" className="flex items-center gap-2" disabled={!gmailConnected || templates.length === 0} onClick={handleCreateAllDrafts}>
-                        <Users className="h-4 w-4" />
-                        Draft All
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                        disabled={!currentTemplate || !currentInvoice}
-                         onClick={() => handleCopyToClipboard(currentInvoice?.subject || '', 'subject')}
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copy Subject
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                        disabled={!currentTemplate || !currentInvoice}
-                         onClick={() => handleCopyToClipboard(currentInvoice?.body || '', 'body')}
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copy Body
-                      </Button>
-                    </div>
+              {/* Email Actions */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Email Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button
+                      className="w-full"
+                      disabled={!currentTemplate || !gmailConnected}
+                      onClick={handleCreateDraft}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Draft Email
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      className="w-full" 
+                      disabled={!gmailConnected || templates.length === 0} 
+                      onClick={handleCreateAllDrafts}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Draft All
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!currentTemplate || !currentInvoice}
+                      onClick={() => handleCopyToClipboard(currentInvoice?.subject || '', 'subject')}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Subject
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!currentTemplate || !currentInvoice}
+                      onClick={() => handleCopyToClipboard(currentInvoice?.body || '', 'body')}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Body
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Status Panel - Takes up 1 column */}
-            <div className="flex flex-col space-y-6">
-              {/* Status Card */}
-              <Card className="flex-shrink-0">
-                <CardHeader>
-                  <CardTitle>Status</CardTitle>
-                  <CardDescription>Current application status</CardDescription>
+            {/* Center - Email Body Preview */}
+            <div className="flex-1 flex flex-col">
+              <Card className="flex flex-col">
+                <CardHeader className="flex-shrink-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    Email Preview
+                  </CardTitle>
+                  {currentInvoice && (
+                    <CardDescription className="truncate">
+                      {currentInvoice.subject}
+                    </CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Templates</span>
-                      <span className="text-sm text-muted-foreground">{templates.length} loaded</span>
+                  {currentInvoice ? (
+                    <pre className="text-sm bg-background p-4 rounded border overflow-auto whitespace-pre-wrap max-h-[500px] min-h-[200px]">
+                      {currentInvoice.body}
+                    </pre>
+                  ) : (
+                    <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <Mail className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                        <p className="text-base font-medium mb-2">No Preview Available</p>
+                        <p className="text-sm">Select a template to preview the invoice</p>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Gmail Status</span>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Sidebar - Status & Settings */}
+            <div className="w-72 flex flex-col space-y-6">
+              {/* Status Card */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Templates</span>
+                      <span className="font-medium">{templates.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Gmail</span>
                       <div className="flex items-center gap-1">
                         {gmailConnected ? (
                           <>
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-sm text-green-600">Connected</span>
+                            <span className="text-green-600 font-medium">Connected</span>
                           </>
                         ) : (
                           <>
                             <XCircle className="h-4 w-4 text-red-500" />
-                            <span className="text-sm text-muted-foreground">Not connected</span>
+                            <span className="text-muted-foreground">Disconnected</span>
                           </>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Current Term</span>
-                      <span className="text-sm text-muted-foreground">{getTermDisplay()}</span>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Term:</span>
+                      <p className="font-medium text-xs mt-1">{getTermDisplay()}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Gmail & Settings Card */}
-              <Card className="flex-shrink-0">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5" />
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
                     Gmail & Settings
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    {gmailConnected ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span>Gmail Connected</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span>Gmail Not Connected</span>
-                      </>
-                    )}
-                  </div>
                   {!gmailConnected ? (
                     <Button onClick={connectGmail} className="w-full">
                       Connect Gmail
@@ -509,15 +528,15 @@ function App() {
                     ) : (
                       <Download className="h-4 w-4 mr-2" />
                     )}
-                    {checkingForUpdates ? "Checking..." : "Check for Updates"}
+                    {checkingForUpdates ? "Checking..." : "Check Updates"}
                   </Button>
                 </CardContent>
               </Card>
 
-              {/* Spacer to push content to top */}
+              {/* Spacer */}
               <div className="flex-1"></div>
             </div>
-      </div>
+          </div>
         </main>
 
         {/* Template Form Dialog */}
