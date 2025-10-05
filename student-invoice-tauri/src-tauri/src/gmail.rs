@@ -44,6 +44,7 @@ pub struct GmailMessage {
     pub thread_id: String,
 }
 
+#[derive(Debug)]
 pub struct GmailClient {
     client: Client,
     config: GmailConfig,
@@ -57,7 +58,7 @@ impl GmailClient {
         }
     }
 
-    pub async fn get_auth_url(&self) -> Result<(String, String), Box<dyn std::error::Error>> {
+    pub async fn get_auth_url(&self) -> Result<(String, String), anyhow::Error> {
         let client = oauth2::basic::BasicClient::new(
             ClientId::new(self.config.client_id.clone()),
             Some(ClientSecret::new(self.config.client_secret.clone())),
@@ -68,7 +69,7 @@ impl GmailClient {
 
         let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-        let (auth_url, csrf_token) = client
+        let (auth_url, _csrf_token) = client
             .authorize_url(CsrfToken::new_random)
             .add_scope(Scope::new("https://www.googleapis.com/auth/gmail.compose".to_string()))
             .add_scope(Scope::new("https://www.googleapis.com/auth/gmail.send".to_string()))
@@ -83,7 +84,7 @@ impl GmailClient {
         &self,
         code: String,
         pkce_verifier: String,
-    ) -> Result<TokenData, Box<dyn std::error::Error>> {
+    ) -> Result<TokenData, anyhow::Error> {
         let client = oauth2::basic::BasicClient::new(
             ClientId::new(self.config.client_id.clone()),
             Some(ClientSecret::new(self.config.client_secret.clone())),
@@ -114,7 +115,7 @@ impl GmailClient {
         token: &TokenData,
         subject: String,
         body: String,
-    ) -> Result<GmailDraft, Box<dyn std::error::Error>> {
+    ) -> Result<GmailDraft, anyhow::Error> {
         // Get a valid token (refresh if needed)
         let current_token = self.get_valid_token(token).await?;
 
@@ -137,14 +138,14 @@ impl GmailClient {
 
         if !response.status().is_success() {
             let error_text = response.text().await?;
-            return Err(format!("Gmail API error: {}", error_text).into());
+            return Err(anyhow::anyhow!("Gmail API error: {}", error_text));
         }
 
         let draft: GmailDraft = response.json().await?;
         Ok(draft)
     }
 
-    async fn refresh_access_token(&self, refresh_token: &str) -> Result<TokenData, Box<dyn std::error::Error>> {
+    async fn refresh_access_token(&self, refresh_token: &str) -> Result<TokenData, anyhow::Error> {
         let params = [
             ("grant_type", "refresh_token"),
             ("refresh_token", refresh_token),
@@ -159,13 +160,13 @@ impl GmailClient {
             .await?;
 
         if !response.status().is_success() {
-            return Err("Failed to refresh token".into());
+            return Err(anyhow::anyhow!("Failed to refresh token"));
         }
 
         let token_response: serde_json::Value = response.json().await?;
         let access_token = token_response["access_token"]
             .as_str()
-            .ok_or("No access token in refresh response")?
+            .ok_or_else(|| anyhow::anyhow!("No access token in refresh response"))?
             .to_string();
 
         let expires_in = token_response["expires_in"]
@@ -179,12 +180,12 @@ impl GmailClient {
         })
     }
 
-    async fn get_valid_token(&self, token: &TokenData) -> Result<TokenData, Box<dyn std::error::Error>> {
+    async fn get_valid_token(&self, token: &TokenData) -> Result<TokenData, anyhow::Error> {
         if Utc::now() > token.expires_at {
             if let Some(refresh_token) = &token.refresh_token {
                 self.refresh_access_token(refresh_token).await
             } else {
-                Err("Token expired and no refresh token available".into())
+                Err(anyhow::anyhow!("Token expired and no refresh token available"))
             }
         } else {
             Ok(token.clone())

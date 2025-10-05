@@ -5,16 +5,16 @@ import { ThemeToggle } from "./components/theme-toggle";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
-import { Input } from "./components/ui/input";
-import { Label } from "./components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./components/ui/dialog";
 import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose } from "./components/ui/toast";
 import { TemplateForm } from "./components/template-form";
 import { SettingsDialog } from "./components/settings-dialog";
-import { Mail, Edit, Plus, Send, Copy, Users, CheckCircle, XCircle, Trash2, Settings, Loader2 } from "lucide-react";
+import { Mail, Edit, Plus, Send, Copy, Users, CheckCircle, XCircle, Trash2, Settings, Loader2, Download } from "lucide-react";
 import { useAppStore } from "./stores/app-store";
 import { useToast } from "./hooks/use-toast";
 import { InvoiceTemplate } from "./types";
+import { listen } from '@tauri-apps/api/event';
+import { getVersion } from '@tauri-apps/api/app';
 
 function App() {
   const { toast, toasts } = useToast();
@@ -28,22 +28,28 @@ function App() {
     showGmailAuthDialog,
     connectGmail,
     disconnectGmail,
-    exchangeGmailCode,
     hideGmailAuthDialog,
     createCurrentInvoiceDraft,
     setCurrentTemplate,
     addTemplate,
     updateTemplate,
     deleteTemplate,
-    generateCurrentInvoice
+    updateGmailStatus,
+    generateCurrentInvoice,
+    checkForUpdates,
+    installUpdate
   } = useAppStore();
 
   const [isLoading, setIsLoading] = useState(true);
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<InvoiceTemplate | null>(null);
-  const [gmailAuthCode, setGmailAuthCode] = useState("");
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [checkingForUpdates, setCheckingForUpdates] = useState(false);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{available: boolean, version?: string, body?: string} | null>(null);
+  const [appVersion, setAppVersion] = useState<string>('1.0.0');
 
   // Loading screen effect
   useEffect(() => {
@@ -52,6 +58,39 @@ function App() {
     }, 800); // Show loading for 800ms
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for OAuth success events
+  useEffect(() => {
+    const unlisten = listen('oauth_success', () => {
+      console.log('OAuth authentication successful!');
+      // Update Gmail status and close dialog
+      updateGmailStatus();
+      hideGmailAuthDialog();
+      toast({
+        title: "Success",
+        description: "Gmail connected successfully!",
+      });
+    });
+
+    return () => {
+      unlisten.then(f => f());
+    };
+  }, []);
+
+  // Get app version
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const version = await getVersion();
+        setAppVersion(version);
+      } catch (error) {
+        console.error('Failed to get app version:', error);
+        // Keep default version if getVersion fails
+      }
+    };
+
+    fetchVersion();
   }, []);
 
 
@@ -128,35 +167,59 @@ function App() {
     }
   };
 
+  const handleCheckForUpdates = async () => {
+    setCheckingForUpdates(true);
+    try {
+      const result = await checkForUpdates();
+      setUpdateInfo(result);
+      setUpdateDialogOpen(true);
+
+      if (!result.available) {
+        toast({
+          title: "Up to date",
+          description: "You're running the latest version!",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to check for updates. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingForUpdates(false);
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    setInstallingUpdate(true);
+    try {
+      await installUpdate();
+      toast({
+        title: "Update installed",
+        description: "The app will restart to apply the update.",
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Update installation error:', errorMessage);
+      
+      toast({
+        title: "Update failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setInstallingUpdate(false);
+      setUpdateDialogOpen(false);
+    }
+  };
+
   const handleNewTemplate = () => {
     setEditingTemplate(null);
     setTemplateFormOpen(true);
   };
 
-  // Show auth code dialog when Gmail auth dialog should be shown
-  useEffect(() => {
-    if (showGmailAuthDialog) {
-      setGmailAuthCode("");
-    }
-  }, [showGmailAuthDialog]);
 
-  const handleGmailCodeSubmit = async () => {
-    try {
-      await exchangeGmailCode(gmailAuthCode);
-      setGmailAuthCode("");
-      hideGmailAuthDialog();
-      toast({
-        title: "Success",
-        description: "Gmail connected successfully!",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to connect Gmail. Please check your authorization code.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleEditTemplate = () => {
     if (currentTemplate) {
@@ -211,7 +274,7 @@ function App() {
               <span className="font-bold text-lg">Student Invoice</span>
             </div>
             <div className="ml-auto flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">v1.0.0</span>
+              <span className="text-sm text-muted-foreground">v{appVersion}</span>
               <ThemeToggle />
             </div>
           </div>
@@ -435,6 +498,19 @@ function App() {
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleCheckForUpdates}
+                    disabled={checkingForUpdates}
+                  >
+                    {checkingForUpdates ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    {checkingForUpdates ? "Checking..." : "Check for Updates"}
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -460,35 +536,28 @@ function App() {
             <DialogHeader>
               <DialogTitle>Connect Gmail Account</DialogTitle>
               <DialogDescription>
-                Gmail authentication URL has been copied to clipboard. To complete setup:
+                Complete Gmail authentication in your browser. The app will automatically handle the rest.
 
-                1. Open a new incognito/private browser window
-                2. Paste the URL from clipboard (or console) and go there
-                3. Sign in to Google and grant Gmail permissions
-                4. You'll be redirected to a blank/error page
-                5. Copy the 'code=' parameter from the browser URL bar
-                6. Paste the code below
+                1. Sign in to your Google account if prompted
+                2. Grant the requested Gmail permissions
+                3. The authentication will complete automatically
+
+                You can close this dialog - authentication happens in the background.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="auth-code">Authorization Code</Label>
-                <Input
-                  id="auth-code"
-                  value={gmailAuthCode}
-                  onChange={(e) => setGmailAuthCode(e.target.value)}
-                  placeholder="Paste your authorization code here"
-                />
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
-              <div className="flex justify-end gap-2">
+              <p className="text-center text-sm text-muted-foreground">
+                Waiting for authentication to complete...
+              </p>
+              <div className="flex justify-end">
                 <Button
                   variant="outline"
                   onClick={() => hideGmailAuthDialog()}
                 >
-                  Cancel
-                </Button>
-                <Button onClick={handleGmailCodeSubmit}>
-                  Connect
+                  Close
                 </Button>
               </div>
             </div>
@@ -521,6 +590,48 @@ function App() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Update Dialog */}
+        <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Software Update</DialogTitle>
+              <DialogDescription>
+                {updateInfo?.available ? (
+                  `A new version (${updateInfo.version}) is available!`
+                ) : (
+                  "You are running the latest version."
+                )}
+              </DialogDescription>
+              {updateInfo?.available && updateInfo.body && (
+                <div className="mt-2 p-3 bg-muted rounded-md">
+                  <p className="text-sm">{updateInfo.body}</p>
+                </div>
+              )}
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
+                {updateInfo?.available ? "Not now" : "Close"}
+              </Button>
+              {updateInfo?.available && (
+                <Button
+                  onClick={handleInstallUpdate}
+                  disabled={installingUpdate}
+                >
+                  {installingUpdate ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Installing...
+                    </>
+                  ) : (
+                    "Install Update"
+                  )}
+                </Button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         </div>
         <ToastViewport>
           {toasts.map(({ id, title, description, action, ...props }) => (

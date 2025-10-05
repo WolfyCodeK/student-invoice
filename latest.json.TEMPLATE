@@ -1,0 +1,12 @@
+{
+  "version": "2.7.0",
+  "notes": "Student Invoice 2.7.0",
+  "pub_date": "2025-10-05T21:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "PUT_SIGNATURE_FROM_SIG_FILE_HERE",
+      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v2.7.0/student-invoice-tauri_2.7.0_x64_en-US.msi"
+    }
+  }
+}
+

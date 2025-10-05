@@ -1,6 +1,6 @@
 [package]
 name = "student-invoice-tauri"
-version = "0.1.0"
+version = "3.4.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -20,6 +20,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
@@ -41,4 +42,12 @@ thiserror = "2.0"
 
 # Environment variables
 dotenvy = "0.15"
+
+# Lazy static for global state
+lazy_static = "1.4"
+
+# URL encoding/decoding
+urlencoding = "2.1"
+
+
 

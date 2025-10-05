@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { InvoiceTemplate, AppSettings, TermData } from '../types'
 import { generateInvoice, generateAllInvoices, InvoiceData } from '../utils/invoice-generator'
 import { invoke } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 interface AppState {
   // Templates
@@ -39,6 +40,10 @@ interface AppState {
   createGmailDraft: (subject: string, body: string) => Promise<any>
   createCurrentInvoiceDraft: () => Promise<any>
   checkGmailAuthStatus: () => Promise<any>
+
+  // Updates
+  checkForUpdates: () => Promise<{available: boolean, version?: string, body?: string}>
+  installUpdate: () => Promise<void>
 
   // UI State
   isLoading: boolean
@@ -135,26 +140,21 @@ export const useAppStore = create<AppState>()(
             throw new Error('Gmail client ID and secret must be configured in settings')
           }
 
-          const result = await invoke('get_gmail_auth_url', {
+          console.log('Starting OAuth server and generating auth URL...')
+          const authUrl = await invoke('start_oauth_server', {
             clientId: currentSettings.gmailClientId,
             clientSecret: currentSettings.gmailClientSecret
-          }) as [string, string]
+          }) as string
 
-          set({
-            gmailAuthUrl: result[0],
-            pkceVerifier: result[1] // Store PKCE verifier for code exchange
-          })
+          console.log('Opening browser for Gmail authentication...')
+          // Open browser automatically
+          openUrl(authUrl)
 
-          // Copy URL to clipboard and show dialog
-          try {
-            await navigator.clipboard.writeText(result[0])
-          } catch (error) {
-            console.warn('Could not copy to clipboard:', error)
-          }
-
+          // Show a simple waiting dialog
           set({ showGmailAuthDialog: true })
+
         } catch (error) {
-          console.error('Failed to get Gmail auth URL:', error)
+          console.error('Failed to start OAuth server:', error)
           throw error
         }
       },
@@ -244,6 +244,26 @@ export const useAppStore = create<AppState>()(
 
       checkGmailAuthStatus: async () => {
         return await invoke('check_gmail_auth_status')
+      },
+
+      // Updates
+      checkForUpdates: async () => {
+        try {
+          const result = await invoke<string>('check_for_updates')
+          return JSON.parse(result)
+        } catch (error) {
+          console.error('Failed to check for updates:', error)
+          throw error
+        }
+      },
+
+      installUpdate: async () => {
+        try {
+          await invoke('install_update')
+        } catch (error) {
+          console.error('Failed to install update:', error)
+          throw error
+        }
       },
 
       // Templates
