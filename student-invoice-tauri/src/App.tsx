@@ -95,32 +95,6 @@ function App() {
   }, []);
 
 
-  // Add some sample templates on first load
-  useEffect(() => {
-    if (templates.length === 0) {
-      addTemplate({
-        recipient: "John Doe",
-        cost: 25,
-        instrument: "piano",
-        day: "Monday",
-        students: "Emma Doe"
-      });
-      addTemplate({
-        recipient: "Jane Smith",
-        cost: 30,
-        instrument: "guitar",
-        day: "Wednesday",
-        students: "Michael Smith"
-      });
-      addTemplate({
-        recipient: "Bob Johnson",
-        cost: 28,
-        instrument: "vocal",
-        day: "Tuesday",
-        students: "Sarah Johnson"
-      });
-    }
-  }, [templates.length, addTemplate]);
 
   // Generate invoice when template or term changes
   useEffect(() => {
