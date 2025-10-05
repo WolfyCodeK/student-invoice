@@ -1,0 +1,11 @@
+{
+  "version": "3.4.0",
+  "notes": "Student Invoice 3.4.0",
+  "pub_date": "2025-10-06T00:11:33Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUTWF6dXBMRzlBaWhvQVZTVlZqaHBFSVRKc1FNRTN5Q1piNGdRYWRwZUc1cEx6SjYvSDd6MGRJMzIwZG9za0VPMFZ0eXAvMHEyM3QyOHVPeHF1R1o0aUszRWdJSmhrZmc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzU5NzA1ODkzCWZpbGU6c3R1ZGVudC1pbnZvaWNlLXRhdXJpXzMuNC4wX3g2NF9lbi1VUy5tc2kKTU84Tk1tZFd3eWZIVnJBZXVKRDZFWjBCRS9YSStpSHJKUjI2aHdqYkdzU0RxbVRVdjVLVnZZQzFpOTZPZVhuLzNRc2FRdE1oVlgxSDQ0b3hSZ0twQ0E9PQo=",
+      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v3.4.0/student-invoice-tauri_3.4.0_x64_en-US.msi"
+    }
+  }
+}

@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            args: '--target x86_64-pc-windows-msvc'
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.args }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Generate latest.json for auto-updater
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          # Get the version from tag (remove 'v' prefix)
+          VERSION="${{ github.ref_name }}"
+          VERSION=$(echo $VERSION | sed 's/^v//')
+
+          # Create latest.json for auto-updater
+          cat > latest.json << EOF
+          {
+            "version": "$VERSION",
+            "notes": "Student Invoice $VERSION",
+            "pub_date": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+            "platforms": {
+              "windows-x86_64": {
+                "signature": "",
+                "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/${{ github.ref_name }}/student-invoice-tauri_${{ github.ref_name }}_x64_en-US.msi"
+              }
+            }
+          }
+          EOF
+
+          # Debug: Show the generated latest.json
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Build application
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+          tauriScript: pnpm tauri
+
+      - name: List built files
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Listing built files:"
+          ls -la ./src-tauri/target/${{ matrix.args }}/release/bundle/
+          echo "MSI files:"
+          ls -la ./src-tauri/target/${{ matrix.args }}/release/bundle/msi/ || echo "No MSI files found"
+          echo "NSIS files:"
+          ls -la ./src-tauri/target/${{ matrix.args }}/release/bundle/nsis/ || echo "No NSIS files found"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Student Invoice ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ./src-tauri/target/${{ matrix.args }}/release/bundle/msi/student-invoice-tauri_${{ github.ref_name }}*_x64_en-US.msi
+            ./src-tauri/target/${{ matrix.args }}/release/bundle/nsis/student-invoice-tauri_${{ github.ref_name }}*_x64-setup.exe
+            ./latest.json
