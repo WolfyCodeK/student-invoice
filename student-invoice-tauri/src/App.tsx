@@ -30,6 +30,7 @@ function App() {
     disconnectGmail,
     hideGmailAuthDialog,
     createCurrentInvoiceDraft,
+    createAllInvoiceDrafts,
     setCurrentTemplate,
     addTemplate,
     updateTemplate,
@@ -146,6 +147,31 @@ function App() {
       toast({
         title: "Error",
         description: "Failed to create draft. Please check your Gmail connection.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateAllDrafts = async () => {
+    try {
+      const result = await createAllInvoiceDrafts();
+      if (result.failed === 0) {
+        toast({
+          title: "Success",
+          description: `Created ${result.success} email drafts successfully!`,
+        });
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `Created ${result.success} drafts, ${result.failed} failed. Check console for details.`,
+          variant: "destructive",
+        });
+        console.error("Draft creation errors:", result.errors);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create drafts. Please check your Gmail connection and ensure you have templates.",
         variant: "destructive",
       });
     }
@@ -393,7 +419,7 @@ function App() {
                         <Send className="h-4 w-4" />
                         Draft Email
                       </Button>
-                      <Button variant="secondary" className="flex items-center gap-2" disabled={!gmailConnected}>
+                      <Button variant="secondary" className="flex items-center gap-2" disabled={!gmailConnected || templates.length === 0} onClick={handleCreateAllDrafts}>
                         <Users className="h-4 w-4" />
                         Draft All
                       </Button>
