@@ -39,6 +39,7 @@ interface AppState {
   hideGmailAuthDialog: () => void
   createGmailDraft: (subject: string, body: string) => Promise<any>
   createCurrentInvoiceDraft: () => Promise<any>
+  createAllInvoiceDrafts: () => Promise<{success: number, failed: number, errors: string[]}>
   checkGmailAuthStatus: () => Promise<any>
 
   // Updates
@@ -240,6 +241,32 @@ export const useAppStore = create<AppState>()(
           return await state.createGmailDraft(state.currentInvoice.subject, state.currentInvoice.body)
         }
         throw new Error('No current invoice to send')
+      },
+
+      createAllInvoiceDrafts: async () => {
+        const state = get()
+        const invoices = state.generateAllInvoicesAction()
+
+        if (invoices.length === 0) {
+          throw new Error('No invoices to create drafts for')
+        }
+
+        let success = 0
+        let failed = 0
+        const errors: string[] = []
+
+        for (const invoice of invoices) {
+          try {
+            await state.createGmailDraft(invoice.subject, invoice.body)
+            success++
+          } catch (error) {
+            failed++
+            const recipient = invoice.subject.match(/for (.+) Lessons/)?.[1] || 'Unknown'
+            errors.push(`${recipient}: ${error instanceof Error ? error.message : String(error)}`)
+          }
+        }
+
+        return { success, failed, errors }
       },
 
       checkGmailAuthStatus: async () => {
