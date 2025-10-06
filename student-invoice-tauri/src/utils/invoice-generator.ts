@@ -45,7 +45,7 @@ function findFirstLessonDate(termStart: Date, lessonDay: string): Date {
   return currentDate
 }
 
-export function generateInvoice(template: InvoiceTemplate, termData: TermData): InvoiceData {
+export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string): InvoiceData {
   const { term, weeksCount } = termData
 
   // Calculate lesson dates
@@ -66,8 +66,24 @@ export function generateInvoice(template: InvoiceTemplate, termData: TermData): 
   const subject = `Invoice for ${template.instrument.charAt(0).toUpperCase() + template.instrument.slice(1)} Lessons ${termInfo}`
 
   // Generate body
-  const lessonCountText = weeksCount === 1 ? 'session' : 'sessions'
-  const body = `Hi ${template.recipient},
+  let body: string
+  if (customBodyTemplate) {
+    // Use custom template with variable substitution
+    body = customBodyTemplate
+      .replace(/{{recipient}}/g, template.recipient)
+      .replace(/{{students}}/g, template.students)
+      .replace(/{{instrument}}/g, template.instrument)
+      .replace(/{{termInfo}}/g, termInfo)
+      .replace(/{{weeksCount}}/g, weeksCount.toString())
+      .replace(/{{lessonCountText}}/g, weeksCount === 1 ? 'session' : 'sessions')
+      .replace(/{{dateRange}}/g, dateRange)
+      .replace(/{{cost}}/g, template.cost.toFixed(2))
+      .replace(/{{totalCost}}/g, totalCost.toFixed(2))
+      .replace(/{{isAre}}/g, weeksCount === 1 ? 'is' : 'are')
+  } else {
+    // Use default template
+    const lessonCountText = weeksCount === 1 ? 'session' : 'sessions'
+    body = `Hi ${template.recipient},
 
 Here is my invoice for ${template.students}'s ${template.instrument} lessons ${termInfo}.
 
@@ -81,6 +97,7 @@ Thank you
 
 Kind regards
 Robert`
+  }
 
   return {
     subject,
@@ -91,6 +108,23 @@ Robert`
   }
 }
 
-export function generateAllInvoices(templates: InvoiceTemplate[], termData: TermData): InvoiceData[] {
-  return templates.map(template => generateInvoice(template, termData))
+export function getDefaultTemplateString(): string {
+  return `Hi {{recipient}},
+
+Here is my invoice for {{students}}'s {{instrument}} lessons {{termInfo}}.
+
+--------
+There {{isAre}} {{weeksCount}} {{lessonCountText}} this {{termInfo}} from {{dateRange}}.
+
+{{weeksCount}} x £{{cost}} = £{{totalCost}}
+
+Thank you
+--------
+
+Kind regards
+Robert`
+}
+
+export function generateAllInvoices(templates: InvoiceTemplate[], termData: TermData, customBodyTemplate?: string): InvoiceData[] {
+  return templates.map(template => generateInvoice(template, termData, customBodyTemplate))
 }

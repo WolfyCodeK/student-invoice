@@ -35,7 +35,7 @@ export interface InvoiceData {
 
 // Settings types
 export interface AppSettings {
-  theme: 'light' | 'dark' | 'system'
+  theme: 'light' | 'dark'
   emailMode: 'clipboard' | 'gmail-draft'
   defaultTemplateId?: string
   windowPosition: {
@@ -46,6 +46,7 @@ export interface AppSettings {
   gmailClientSecret?: string
   autoSave: boolean
   showNotifications: boolean
+  customEmailBodyTemplate?: string
 }
 
 // API Response types
@@ -68,6 +69,6 @@ export interface TemplateFormData {
 
 // Utility types
 export type EmailMode = 'clipboard' | 'auto-draft'
-export type Theme = 'light' | 'dark' | 'system'
+export type Theme = 'light' | 'dark'
 export type Instrument = 'piano' | 'drum' | 'guitar' | 'vocal' | 'music' | 'singing' | 'bass guitar' | 'classical guitar'
 export type Weekday = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday'
