@@ -13,12 +13,14 @@
                 "windows":  [
                                 {
                                     "title":  "Student Invoice",
-                                    "width":  1600,
-                                    "height":  1024,
-                                    "minWidth":  1400,
-                                    "minHeight":  950,
+                                    "width":  1500,
+                                    "height":  920,
+                                    "minWidth":  700,
+                                    "minHeight":  920,
+                                    "maxWidth":  1500,
+                                    "maxHeight":  920,
                                     "resizable":  true,
-                                    "maximizable":  true,
+                                    "maximizable":  false,
                                     "center":  true,
                                     "decorations":  true,
                                     "transparent":  false

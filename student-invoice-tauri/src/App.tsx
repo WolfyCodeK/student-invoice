@@ -265,167 +265,221 @@ function App() {
   return (
     <ThemeProvider defaultTheme={settings.theme} storageKey="student-invoice-theme">
       <ToastProvider>
-        <div className="h-screen flex flex-col bg-background overflow-hidden">
-        {/* Header */}
-        <header className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center px-6">
-            <div className="flex items-center space-x-4">
-              <Mail className="h-6 w-6" />
-              <span className="font-bold text-lg">Student Invoice</span>
+        <div className="min-h-screen bg-background">
+          {/* Header */}
+          <header className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 items-center px-6 max-w-screen-2xl mx-auto w-full">
+              <div className="flex items-center space-x-4">
+                <Mail className="h-6 w-6" />
+                <span className="font-bold text-lg">Student Invoice</span>
+              </div>
+              <div className="ml-auto flex items-center space-x-4">
+                <span className="text-sm text-muted-foreground">v{appVersion}</span>
+                <ThemeToggle />
+              </div>
             </div>
-            <div className="ml-auto flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">v{appVersion}</span>
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-hidden">
-          <div className="h-full flex gap-6 p-6">
-            {/* Left Sidebar - Controls */}
-            <div className="w-80 flex flex-col space-y-6">
-              {/* Invoice Generator Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Invoice Generator</CardTitle>
-                  <CardDescription>
-                    Generate professional invoices for music lessons
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Template Selection */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none">
-                      Select Template
-                    </label>
-                    <Select
-                      value={currentTemplateId || ""}
-                      onValueChange={(value) => setCurrentTemplate(value || null)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose a student template..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.recipient} - {template.instrument} Lessons
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Template Actions */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button variant="outline" size="sm" disabled={!currentTemplate} onClick={handleEditTemplate}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleNewTemplate}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" size="sm" disabled={!currentTemplate} onClick={handleDeleteTemplate}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Current Template Info */}
-              {currentTemplate && (
+          </header>
+  
+          {/* Main Content */}
+          <main className="p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-4">
+              
+              {/* Left Panel - Controls & Status */}
+              <div className="space-y-4 flex flex-col">
+                {/* Template Selection & Actions Card (No changes here) */}
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Template Details</CardTitle>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="h-5 w-5" />
+                      Invoice Generator
+                    </CardTitle>
+                    <CardDescription>Generate professional invoices for music lessons</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Student:</span>
-                        <p className="font-medium">{currentTemplate.students}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Instrument:</span>
-                        <p className="font-medium capitalize">{currentTemplate.instrument}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Cost:</span>
-                        <p className="font-medium">£{currentTemplate.cost}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Day:</span>
-                        <p className="font-medium">{currentTemplate.day}</p>
-                      </div>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Select Template</label>
+                      <Select
+                        value={currentTemplateId || ""}
+                        onValueChange={(value) => setCurrentTemplate(value || null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a student template..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.recipient} - {template.instrument} Lessons
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    {currentInvoice && (
-                      <div className="border-t pt-3 mt-3">
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Total:</span>
-                          <span className="ml-2 font-semibold">£{currentInvoice.totalCost.toFixed(2)}</span>
-                          <span className="text-muted-foreground ml-1">({currentInvoice.lessonCount} lessons)</span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" disabled={!currentTemplate} onClick={handleEditTemplate} className="flex-1">
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleNewTemplate} className="flex-1">
+                        <Plus className="h-4 w-4 mr-1" />
+                        New
+                      </Button>
+                      <Button variant="destructive" size="sm" disabled={!currentTemplate} onClick={handleDeleteTemplate} className="flex-1">
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                    {currentTemplate && (
+                      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Student:</span>
+                            <p className="font-medium">{currentTemplate.students}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Instrument:</span>
+                            <p className="font-medium capitalize">{currentTemplate.instrument}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Cost:</span>
+                            <p className="font-medium">£{currentTemplate.cost}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Day:</span>
+                            <p className="font-medium">{currentTemplate.day}</p>
+                          </div>
                         </div>
+                        {currentInvoice && (
+                          <div className="border-t pt-2 mt-2">
+                            <div className="text-sm flex justify-between items-center">
+                              <span className="text-muted-foreground">Total:</span>
+                              <div>
+                                <span className="font-semibold">£{currentInvoice.totalCost.toFixed(2)}</span>
+                                <span className="text-muted-foreground ml-1">({currentInvoice.lessonCount} lessons)</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              )}
-
-              {/* Email Actions */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Send className="h-4 w-4" />
-                    Email Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      className="w-full"
-                      disabled={!currentTemplate || !gmailConnected}
-                      onClick={handleCreateDraft}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Draft Email
-                    </Button>
-                    <Button 
-                      variant="secondary" 
-                      className="w-full" 
-                      disabled={!gmailConnected || templates.length === 0} 
-                      onClick={handleCreateAllDrafts}
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Draft All
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!currentTemplate || !currentInvoice}
-                      onClick={() => handleCopyToClipboard(currentInvoice?.subject || '', 'subject')}
-                    >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Subject
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!currentTemplate || !currentInvoice}
-                      onClick={() => handleCopyToClipboard(currentInvoice?.body || '', 'body')}
-                    >
-                      <Copy className="h-4 w-4 mr-1" />
-                      Body
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Center - Email Body Preview */}
-            <div className="flex-1 flex flex-col">
-              <Card className="flex flex-col">
-                <CardHeader className="flex-shrink-0">
+  
+                {/* Status & Actions Card (No changes here) */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                      <Send className="h-5 w-5" />
+                      Actions & Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold">{templates.length}</div>
+                        <div className="text-xs text-muted-foreground">Templates</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-center">
+                          {gmailConnected ? (
+                            <CheckCircle className="h-6 w-6 text-green-500" />
+                          ) : (
+                            <XCircle className="h-6 w-6 text-red-500" />
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Gmail</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">{currentTerm ? `${currentTerm.weeksCount}w` : "0w"}</div>
+                        <div className="text-xs text-muted-foreground">Term</div>
+                      </div>
+                    </div>
+                    <div className="text-center text-xs text-muted-foreground bg-muted/30 rounded p-2">
+                      {getTermDisplay()}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          disabled={!currentTemplate || !gmailConnected}
+                          onClick={handleCreateDraft}
+                          className="h-9"
+                        >
+                          <Send className="h-4 w-4 mr-1" />
+                          Draft Email
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          disabled={!gmailConnected || templates.length === 0} 
+                          onClick={handleCreateAllDrafts}
+                          className="h-9"
+                        >
+                          <Users className="h-4 w-4 mr-1" />
+                          Draft All
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!currentTemplate || !currentInvoice}
+                          onClick={() => handleCopyToClipboard(currentInvoice?.subject || '', 'subject')}
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Subject
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!currentTemplate || !currentInvoice}
+                          onClick={() => handleCopyToClipboard(currentInvoice?.body || '', 'body')}
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Body
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="border-t pt-4 space-y-2">
+                      {!gmailConnected ? (
+                        <Button onClick={connectGmail} className="w-full h-9">
+                          Connect Gmail
+                        </Button>
+                      ) : (
+                        <Button onClick={disconnectGmail} variant="outline" className="w-full h-9">
+                          Disconnect Gmail
+                        </Button>
+                      )}
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSettingsDialogOpen(true)}
+                        >
+                          <Settings className="h-4 w-4 mr-1" />
+                          Settings
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCheckForUpdates}
+                          disabled={checkingForUpdates}
+                        >
+                          {checkingForUpdates ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4 mr-1" />
+                          )}
+                          Updates
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+  
+              {/* Right Panel - Email Preview -- ALL CHANGES ARE IN THIS BLOCK */}
+              {/* The wrapper div with h-fit has been REMOVED. The Card is now a direct child of the grid. */}
+              <Card className="flex flex-col"> {/* <-- CHANGED: Card is a flex column */}
+                <CardHeader className="flex-shrink-0 pb-3">
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="h-5 w-5" />
                     Email Preview
@@ -436,16 +490,20 @@ function App() {
                     </CardDescription>
                   )}
                 </CardHeader>
-                <CardContent>
+                {/* <-- CHANGED: CardContent takes up the remaining space and contains its children */}
+                <CardContent className="flex-1 p-3 overflow-y-auto"> 
                   {currentInvoice ? (
-                    <pre className="text-sm bg-background p-4 rounded border overflow-auto whitespace-pre-wrap max-h-[500px] min-h-[200px]">
+                    // The extra div wrapper is removed for simplicity.
+                    // The <pre> tag will now scroll within the CardContent.
+                    <pre className="h-full font-mono text-sm leading-relaxed bg-muted/50 p-4 rounded-lg border whitespace-pre-wrap">
                       {currentInvoice.body}
                     </pre>
                   ) : (
-                    <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
+                    // <-- CHANGED: Removed fixed height, uses flexbox to center content.
+                    <div className="h-full flex items-center justify-center text-muted-foreground">
                       <div className="text-center">
-                        <Mail className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p className="text-base font-medium mb-2">No Preview Available</p>
+                        <Mail className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                        <p className="text-lg font-medium mb-2">No Preview Available</p>
                         <p className="text-sm">Select a template to preview the invoice</p>
                       </div>
                     </div>
@@ -453,204 +511,109 @@ function App() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Right Sidebar - Status & Settings */}
-            <div className="w-72 flex flex-col space-y-6">
-              {/* Status Card */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Templates</span>
-                      <span className="font-medium">{templates.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Gmail</span>
-                      <div className="flex items-center gap-1">
-                        {gmailConnected ? (
-                          <>
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-green-600 font-medium">Connected</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="h-4 w-4 text-red-500" />
-                            <span className="text-muted-foreground">Disconnected</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Term:</span>
-                      <p className="font-medium text-xs mt-1">{getTermDisplay()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Gmail & Settings Card */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Gmail & Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {!gmailConnected ? (
-                    <Button onClick={connectGmail} className="w-full">
-                      Connect Gmail
-                    </Button>
-                  ) : (
-                    <Button onClick={disconnectGmail} variant="outline" className="w-full">
-                      Disconnect Gmail
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setSettingsDialogOpen(true)}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleCheckForUpdates}
-                    disabled={checkingForUpdates}
-                  >
-                    {checkingForUpdates ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Download className="h-4 w-4 mr-2" />
-                    )}
-                    {checkingForUpdates ? "Checking..." : "Check Updates"}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Spacer */}
-              <div className="flex-1"></div>
-            </div>
-          </div>
-        </main>
-
-        {/* Template Form Dialog */}
-        <TemplateForm
-          open={templateFormOpen}
-          onOpenChange={setTemplateFormOpen}
-          template={editingTemplate}
-          onSubmit={handleTemplateSubmit}
-        />
-
-      {/* Gmail Auth Code Dialog */}
-      <Dialog open={showGmailAuthDialog} onOpenChange={(open) => {
-        if (!open) hideGmailAuthDialog();
-      }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Connect Gmail Account</DialogTitle>
-              <DialogDescription>
-                Complete Gmail authentication in your browser. The app will automatically handle the rest.
-
-                1. Sign in to your Google account if prompted
-                2. Grant the requested Gmail permissions
-                3. The authentication will complete automatically
-
-                You can close this dialog - authentication happens in the background.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-              <p className="text-center text-sm text-muted-foreground">
-                Waiting for authentication to complete...
-              </p>
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => hideGmailAuthDialog()}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Settings Dialog */}
-        <SettingsDialog
-          open={settingsDialogOpen}
-          onOpenChange={setSettingsDialogOpen}
-        />
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Template</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete the template for{" "}
-                <strong>{currentTemplate?.recipient}</strong>? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={confirmDeleteTemplate}>
-                Delete Template
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Update Dialog */}
-        <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Software Update</DialogTitle>
-              <DialogDescription>
-                {updateInfo?.available ? (
-                  `A new version (${updateInfo.version}) is available!`
-                ) : (
-                  "You are running the latest version."
-                )}
-              </DialogDescription>
-              {updateInfo?.available && updateInfo.body && (
-                <div className="mt-2 p-3 bg-muted rounded-md">
-                  <p className="text-sm">{updateInfo.body}</p>
+          </main>
+  
+          {/* Dialogs and Toasts (No changes here) */}
+          <TemplateForm
+            open={templateFormOpen}
+            onOpenChange={setTemplateFormOpen}
+            template={editingTemplate}
+            onSubmit={handleTemplateSubmit}
+          />
+          <Dialog open={showGmailAuthDialog} onOpenChange={(open) => {
+            if (!open) hideGmailAuthDialog();
+          }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Connect Gmail Account</DialogTitle>
+                <DialogDescription>
+                  Complete Gmail authentication in your browser. The app will automatically handle the rest.
+                  1. Sign in to your Google account if prompted
+                  2. Grant the requested Gmail permissions
+                  3. The authentication will complete automatically
+                  You can close this dialog - authentication happens in the background.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-              )}
-            </DialogHeader>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
-                {updateInfo?.available ? "Not now" : "Close"}
-              </Button>
-              {updateInfo?.available && (
-                <Button
-                  onClick={handleInstallUpdate}
-                  disabled={installingUpdate}
-                >
-                  {installingUpdate ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Installing...
-                    </>
-                  ) : (
-                    "Install Update"
-                  )}
+                <p className="text-center text-sm text-muted-foreground">
+                  Waiting for authentication to complete...
+                </p>
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => hideGmailAuthDialog()}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <SettingsDialog
+            open={settingsDialogOpen}
+            onOpenChange={setSettingsDialogOpen}
+          />
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Template</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete the template for{" "}
+                  <strong>{currentTemplate?.recipient}</strong>? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                  Cancel
                 </Button>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
+                <Button variant="destructive" onClick={confirmDeleteTemplate}>
+                  Delete Template
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Software Update</DialogTitle>
+                <DialogDescription>
+                  {updateInfo?.available ? (
+                    `A new version (${updateInfo.version}) is available!`
+                  ) : (
+                    "You are running the latest version."
+                  )}
+                </DialogDescription>
+                {updateInfo?.available && updateInfo.body && (
+                  <div className="mt-2 p-3 bg-muted rounded-md">
+                    <p className="text-sm">{updateInfo.body}</p>
+                  </div>
+                )}
+              </DialogHeader>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
+                  {updateInfo?.available ? "Not now" : "Close"}
+                </Button>
+                {updateInfo?.available && (
+                  <Button
+                    onClick={handleInstallUpdate}
+                    disabled={installingUpdate}
+                  >
+                    {installingUpdate ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Installing...
+                      </>
+                    ) : (
+                      "Install Update"
+                    )}
+                  </Button>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         <ToastViewport>
           {toasts.map(({ id, title, description, action, ...props }) => (

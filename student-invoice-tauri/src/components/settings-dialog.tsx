@@ -51,28 +51,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Appearance */}
+          {/* Application */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Appearance</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="theme">Theme</Label>
-              <Select
-                value={localSettings.theme}
-                onValueChange={(value: 'light' | 'dark' | 'system') =>
-                  updateSetting('theme', value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select theme" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <h3 className="text-lg font-medium">Application</h3>
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -85,32 +66,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 checked={localSettings.showNotifications}
                 onCheckedChange={(checked) => updateSetting('showNotifications', checked)}
               />
-            </div>
-          </div>
-
-          {/* Email & Templates */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Email & Templates</h3>
-
-            <div className="space-y-2">
-              <Label htmlFor="email-mode">Email Mode</Label>
-              <Select
-                value={localSettings.emailMode}
-                onValueChange={(value: 'clipboard' | 'gmail-draft') =>
-                  updateSetting('emailMode', value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select email mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="clipboard">Copy to Clipboard</SelectItem>
-                  <SelectItem value="gmail-draft">Create Gmail Draft</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Choose how invoices are shared: copied to clipboard or created as Gmail drafts
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -136,19 +91,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <p className="text-sm text-muted-foreground">
                 Automatically select this template when the app starts
               </p>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Auto-save Templates</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically save template changes
-                </p>
-              </div>
-              <Switch
-                checked={localSettings.autoSave}
-                onCheckedChange={(checked) => updateSetting('autoSave', checked)}
-              />
             </div>
           </div>
 
