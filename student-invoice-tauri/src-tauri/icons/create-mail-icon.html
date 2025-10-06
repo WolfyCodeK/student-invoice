@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mail Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-preview { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Student Invoice Mail Icon Generator</h1>
+    <p>This will create a professional mail icon for your app.</p>
+    
+    <div class="icon-preview">
+        <h3>Icon Preview:</h3>
+        <canvas id="iconCanvas" width="512" height="512"></canvas>
+    </div>
+    
+    <button onclick="generateIcon()">Generate Icon</button>
+    <button onclick="downloadIcon()">Download as PNG</button>
+    
+    <script>
+        function generateIcon() {
+            const canvas = document.getElementById('iconCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 512, 512);
+            
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+            gradient.addColorStop(0, '#3B82F6');
+            gradient.addColorStop(1, '#1D4ED8');
+            
+            // Draw background circle
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(256, 256, 240, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw border
+            ctx.strokeStyle = '#1E40AF';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            
+            // Draw mail envelope
+            ctx.save();
+            ctx.translate(256, 256);
+            
+            // Envelope body
+            ctx.fillStyle = '#F8FAFC';
+            ctx.strokeStyle = '#64748B';
+            ctx.lineWidth = 3;
+            ctx.fillRect(-120, -80, 240, 140);
+            ctx.strokeRect(-120, -80, 240, 140);
+            
+            // Envelope flap
+            ctx.beginPath();
+            ctx.moveTo(-120, -80);
+            ctx.lineTo(0, -20);
+            ctx.lineTo(120, -80);
+            ctx.closePath();
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fill();
+            ctx.stroke();
+            
+            // Mail lines
+            ctx.strokeStyle = '#3B82F6';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            
+            ctx.beginPath();
+            ctx.moveTo(-100, -40);
+            ctx.lineTo(100, -40);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(-100, -20);
+            ctx.lineTo(80, -20);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(-100, 0);
+            ctx.lineTo(60, 0);
+            ctx.stroke();
+            
+            // Stamp
+            ctx.fillStyle = '#EF4444';
+            ctx.strokeStyle = '#DC2626';
+            ctx.lineWidth = 2;
+            ctx.fillRect(80, -60, 20, 20);
+            ctx.strokeRect(80, -60, 20, 20);
+            
+            // Stamp text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('$', 90, -50);
+            
+            ctx.restore();
+            
+            // App name
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Student Invoice', 256, 380);
+        }
+        
+        function downloadIcon() {
+            const canvas = document.getElementById('iconCanvas');
+            const link = document.createElement('a');
+            link.download = 'student-invoice-icon.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate icon on page load
+        window.onload = generateIcon;
+    </script>
+</body>
+</html>

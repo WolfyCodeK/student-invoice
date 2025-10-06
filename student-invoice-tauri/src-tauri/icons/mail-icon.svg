@@ -1,0 +1,36 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mailGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="envelopeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FAFC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E2E8F0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#mailGradient)" stroke="#1E40AF" stroke-width="8"/>
+  
+  <!-- Mail envelope -->
+  <g transform="translate(256, 256)">
+    <!-- Envelope body -->
+    <path d="M-120 -80 L120 -80 L120 60 L-120 60 Z" fill="url(#envelopeGradient)" stroke="#64748B" stroke-width="3"/>
+    
+    <!-- Envelope flap -->
+    <path d="M-120 -80 L0 -20 L120 -80" fill="#F1F5F9" stroke="#64748B" stroke-width="3"/>
+    
+    <!-- Mail lines -->
+    <line x1="-100" y1="-40" x2="100" y2="-40" stroke="#3B82F6" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-100" y1="-20" x2="80" y2="-20" stroke="#3B82F6" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-100" y1="0" x2="60" y2="0" stroke="#3B82F6" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Stamp -->
+    <rect x="80" y="-60" width="20" height="20" fill="#EF4444" stroke="#DC2626" stroke-width="2" rx="2"/>
+    <text x="90" y="-50" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="white">$</text>
+  </g>
+  
+  <!-- App name text -->
+  <text x="256" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white">Student Invoice</text>
+</svg>
