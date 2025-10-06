@@ -52,13 +52,14 @@ interface AppState {
 }
 
 const defaultSettings: AppSettings = {
-  theme: 'dark',
+  theme: 'light',
   emailMode: 'clipboard',
   windowPosition: { x: 100, y: 100 },
   gmailClientId: '',
   gmailClientSecret: '',
   autoSave: true,
-  showNotifications: true
+  showNotifications: true,
+  customEmailBodyTemplate: undefined
 }
 
 // Term calculation logic based on the original Python code
@@ -357,7 +358,7 @@ export const useAppStore = create<AppState>()(
         const termData = state.currentTerm
 
         if (template && termData) {
-          const invoice = generateInvoice(template, termData)
+          const invoice = generateInvoice(template, termData, state.settings.customEmailBodyTemplate)
           set({ currentInvoice: invoice })
         }
       },
@@ -365,7 +366,7 @@ export const useAppStore = create<AppState>()(
       generateAllInvoicesAction: () => {
         const state = get()
         if (state.currentTerm) {
-          return generateAllInvoices(state.templates, state.currentTerm)
+          return generateAllInvoices(state.templates, state.currentTerm, state.settings.customEmailBodyTemplate)
         }
         return []
       },
