@@ -4,6 +4,8 @@ A desktop application for managing student invoices with Gmail integration and a
 
 ## Quick Start
 
+>>> FROM ROOT
+
 ### Development Server
 ```batch
 dev.bat
