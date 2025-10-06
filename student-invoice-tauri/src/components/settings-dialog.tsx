@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { Alert, AlertDescription } from "./ui/alert";
-import { AlertTriangle, Info, Settings, Mail, Shield, Palette } from "lucide-react";
+import { AlertTriangle, Info, Settings, Mail, Palette } from "lucide-react";
 import { useAppStore } from "../stores/app-store";
-import { AppSettings, InvoiceTemplate, TermData } from "../types";
-import { generateInvoice, getDefaultTemplateString } from "../utils/invoice-generator";
+import { AppSettings } from "../types";
+import { getDefaultTemplateString } from "../utils/invoice-generator";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -209,7 +209,7 @@ interface EmailBodyEditorDialogProps {
   onSave: (template: string | undefined) => void;
 }
 
-function EmailBodyEditorDialog({ open, onOpenChange, template, currentTemplate, currentTerm, onSave }: EmailBodyEditorDialogProps) {
+function EmailBodyEditorDialog({ open, onOpenChange, template, onSave }: EmailBodyEditorDialogProps) {
   // Get default template with variables if no custom template exists
   const getDefaultTemplatePreview = () => {
     return getDefaultTemplateString();

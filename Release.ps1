@@ -59,7 +59,7 @@ Write-Host "Build complete! Now signing the MSI..." -ForegroundColor Green
 Write-Host "================================================" -ForegroundColor Green
 Write-Host ""
 
-$msiPath = "src-tauri\target\release\bundle\msi\student-invoice-tauri_${Version}_x64_en-US.msi"
+$msiPath = "src-tauri\target\release\bundle\msi\Student Invoice_${Version}_x64_en-US.msi"
 $sigPath = "$msiPath.sig"
 
 # Check if MSI exists
@@ -97,7 +97,7 @@ try {
   "platforms": {
     "windows-x86_64": {
       "signature": "$signature",
-      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v$Version/student-invoice-tauri_${Version}_x64_en-US.msi"
+      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v$Version/Student%20Invoice_${Version}_x64_en-US.msi"
     }
   }
 }
@@ -169,7 +169,7 @@ $ghAvailable = Get-Command gh -ErrorAction SilentlyContinue
 if ($ghAvailable) {
     Write-Host "GitHub CLI found! Creating release automatically..." -ForegroundColor Yellow
     
-    $msiFile = "student-invoice-tauri\src-tauri\target\release\bundle\msi\student-invoice-tauri_${Version}_x64_en-US.msi"
+    $msiFile = "student-invoice-tauri\src-tauri\target\release\bundle\msi\Student Invoice_${Version}_x64_en-US.msi"
     $sigFile = "$msiFile.sig"
     $latestFile = "student-invoice-tauri\latest.json"
     
@@ -208,8 +208,8 @@ if ($ghAvailable) {
     Write-Host "3. Choose tag: v$Version" -ForegroundColor White
     Write-Host "4. Title: Student Invoice v$Version" -ForegroundColor White
     Write-Host "5. Upload these files:" -ForegroundColor White
-    Write-Host "   - student-invoice-tauri\src-tauri\target\release\bundle\msi\student-invoice-tauri_${Version}_x64_en-US.msi" -ForegroundColor Gray
-    Write-Host "   - student-invoice-tauri\src-tauri\target\release\bundle\msi\student-invoice-tauri_${Version}_x64_en-US.msi.sig" -ForegroundColor Gray
+    Write-Host "   - student-invoice-tauri\src-tauri\target\release\bundle\msi\Student Invoice_${Version}_x64_en-US.msi" -ForegroundColor Gray
+    Write-Host "   - student-invoice-tauri\src-tauri\target\release\bundle\msi\Student Invoice_${Version}_x64_en-US.msi.sig" -ForegroundColor Gray
     Write-Host "   - student-invoice-tauri\latest.json" -ForegroundColor Gray
     Write-Host ""
     Write-Host "To install GitHub CLI and automate this: https://cli.github.com/" -ForegroundColor Blue
