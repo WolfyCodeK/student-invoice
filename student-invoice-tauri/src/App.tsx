@@ -54,6 +54,7 @@ function App() {
   const [installingUpdate, setInstallingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<{available: boolean, version?: string, body?: string} | null>(null);
   const [appVersion, setAppVersion] = useState<string>('1.0.0');
+  const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
 
   // Loading screen effect
   useEffect(() => {
@@ -175,6 +176,7 @@ function App() {
     try {
       const result = await checkForUpdates();
       setUpdateInfo(result);
+      setHasUpdateAvailable(result.available);
       setUpdateDialogOpen(true);
 
       if (!result.available) {
@@ -193,6 +195,22 @@ function App() {
       setCheckingForUpdates(false);
     }
   };
+
+  // Auto-check for updates on app start
+  useEffect(() => {
+    const checkUpdatesOnStart = async () => {
+      try {
+        const result = await checkForUpdates();
+        setHasUpdateAvailable(result.available);
+        // Don't show dialog automatically, just update the button state
+      } catch (error) {
+        console.error('Failed to check for updates on start:', error);
+        // Don't show error toast on startup, just log it
+      }
+    };
+
+    checkUpdatesOnStart();
+  }, [checkForUpdates]);
 
   const handleInstallUpdate = async () => {
     setInstallingUpdate(true);
@@ -474,10 +492,15 @@ function App() {
                           Settings
                         </Button>
                         <Button
-                          variant="outline"
+                          variant={hasUpdateAvailable ? "default" : "outline"}
                           size="sm"
                           onClick={handleCheckForUpdates}
                           disabled={checkingForUpdates}
+                          className={
+                            hasUpdateAvailable 
+                              ? "bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700" 
+                              : "opacity-60 hover:opacity-80"
+                          }
                         >
                           {checkingForUpdates ? (
                             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
