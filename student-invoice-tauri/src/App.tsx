@@ -341,7 +341,7 @@ function App() {
                           </div>
                           <div>
                             <span className="text-muted-foreground">Cost:</span>
-                            <p className="font-medium">£{currentTemplate.cost}</p>
+                            <p className="font-medium">£{currentTemplate.cost.toFixed(2)}</p>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Day:</span>
