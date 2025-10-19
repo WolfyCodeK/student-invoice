@@ -40,11 +40,11 @@ release.bat 1.2.0
 
 ## Features
 
-- 📧 Gmail integration for invoice emails
-- 🔄 Automatic updates
-- 🎨 Modern dark/light theme
-- 📱 Responsive design
-- 🔒 Secure OAuth2 authentication
+- Gmail integration for invoice emails
+- Automatic updates
+- Modern dark/light theme
+- Responsive design
+- Secure OAuth2 authentication
 
 ## Development
 
