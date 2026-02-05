@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { Alert, AlertDescription } from "./ui/alert";
-import { AlertTriangle, Info, Settings, Mail, Palette } from "lucide-react";
-import { useAppStore } from "../stores/app-store";
+import { AlertTriangle, Info, Settings, Mail, Palette, Calendar } from "lucide-react";
+import { useAppStore, getTermsForAcademicYear } from "../stores/app-store";
 import { AppSettings } from "../types";
 import { getDefaultTemplateString } from "../utils/invoice-generator";
+import { format } from "date-fns";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -166,6 +167,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             </div>
           </div>
 
+          {/* Term Dates */}
+          <TermDatesSection />
+
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-700">
             <Button
@@ -207,6 +211,88 @@ interface EmailBodyEditorDialogProps {
   currentTemplate?: any;
   currentTerm?: any;
   onSave: (template: string | undefined) => void;
+}
+
+function TermDatesSection() {
+  const { currentTerm } = useAppStore();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  // Determine which academic year we're in
+  // If we're in Jan-Aug, the academic year started last year; if Sep-Dec, it started this year
+  const academicYearStart = now.getMonth() >= 8 ? currentYear : currentYear - 1;
+  const terms = getTermsForAcademicYear(academicYearStart);
+
+  const seasonLabels: Record<string, string> = {
+    'autumn': 'Autumn',
+    'spring': 'Spring',
+    'summer': 'Summer',
+  };
+
+  const seasonColors: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    'autumn': { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-700', dot: 'bg-amber-500' },
+    'spring': { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-300', border: 'border-green-200 dark:border-green-700', dot: 'bg-green-500' },
+    'summer': { bg: 'bg-sky-50 dark:bg-sky-900/20', text: 'text-sky-700 dark:text-sky-300', border: 'border-sky-200 dark:border-sky-700', dot: 'bg-sky-500' },
+  };
+
+  const isCurrentTerm = (term: { half: string; season: string }) => {
+    return currentTerm?.term.half === term.half && currentTerm?.term.season === term.season;
+  };
+
+  return (
+    <div className="space-y-4 bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+          <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-indigo-800 dark:text-indigo-200">Term Dates</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Academic Year {academicYearStart}/{academicYearStart + 1}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2">
+        {terms.map((term, index) => {
+          const colors = seasonColors[term.season];
+          const isCurrent = isCurrentTerm(term);
+          return (
+            <div
+              key={index}
+              className={`flex items-center justify-between px-4 py-2.5 rounded-lg border ${
+                isCurrent
+                  ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-600 ring-2 ring-indigo-200 dark:ring-indigo-800'
+                  : `${colors.bg} ${colors.border}`
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${isCurrent ? 'bg-indigo-500 animate-pulse' : colors.dot}`} />
+                <span className={`text-sm font-medium ${isCurrent ? 'text-indigo-700 dark:text-indigo-300' : colors.text}`}>
+                  {term.half} Half {seasonLabels[term.season]}
+                </span>
+                {isCurrent && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-200 dark:bg-indigo-700 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded-full">
+                    Current
+                  </span>
+                )}
+              </div>
+              <span className={`text-sm ${isCurrent ? 'text-indigo-600 dark:text-indigo-300 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
+                {format(term.startDate, 'MMM d')} – {format(term.endDate, 'MMM d, yyyy')}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {!currentTerm && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          Currently outside of term time
+        </p>
+      )}
+    </div>
+  );
 }
 
 function EmailBodyEditorDialog({ open, onOpenChange, template, onSave }: EmailBodyEditorDialogProps) {
