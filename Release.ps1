@@ -97,7 +97,7 @@ try {
   "platforms": {
     "windows-x86_64": {
       "signature": "$signature",
-      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v$Version/Student%20Invoice_${Version}_x64_en-US.msi"
+      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v$Version/Student.Invoice_${Version}_x64_en-US.msi"
     }
   }
 }
