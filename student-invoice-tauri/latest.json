@@ -1,11 +1,11 @@
 {
-  "version": "1.0.0",
-  "notes": "Student Invoice 1.0.0",
-  "pub_date": "2025-10-06T22:37:02Z",
+  "version": "1.0.1",
+  "notes": "Student Invoice 1.0.1",
+  "pub_date": "2026-02-05T19:05:13Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUTWF6dXBMRzlBaWt2V1l5S3JHaHlMeStxNXlMMXZUZnRUdWFDK09EWkdqRHFxVWJ0M2k5RkNDM2E4a1Z0SEtCQ2J6UFlDbEVCUGR0dVNPZmlyNmIyekR4dnBGa2loeFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzU5Nzg2NjIyCWZpbGU6U3R1ZGVudCBJbnZvaWNlXzEuMC4wX3g2NF9lbi1VUy5tc2kKREg0YStHYXRoeXEzY2RxdkZ3dytqeVFwSXFKQS9GSUNYV2tkT3lXQVRGTUtlZWZObjh5MktFb2Y5dEtmTExsVWU0aC9DK3I1T2pPNTZVY3VhZndlQ2c9PQo=",
-      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v1.0.0/Student%20Invoice_1.0.0_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUTWF6dXBMRzlBaXN5bUVseWphcU1MaytmTTVOUHlpZGlJajdkOUdtbk1NTlU2cnBmRUpyaWNLNDIxMFRWUERQOE9LWmk0MmU3ZDl3OWNvWmNkYjR2U2s0Z0hzRDIzWkFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcwMzE4MzEzCWZpbGU6U3R1ZGVudCBJbnZvaWNlXzEuMC4xX3g2NF9lbi1VUy5tc2kKYzhhdWQ1OExsTFlIR2V3THord1RwZEdzaHlkMGhIUlRML2xWelNwQzVHY0Fqc3NvaTdXWFkvMklaVUlxVzRJenBoQ3VsRllRR3lqcXh1RXI3ZUdsQ0E9PQo=",
+      "url": "https://github.com/WolfyCodeK/student-invoice/releases/download/v1.0.1/Student%20Invoice_1.0.1_x64_en-US.msi"
     }
   }
 }
