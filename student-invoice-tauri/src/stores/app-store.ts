@@ -62,57 +62,30 @@ const defaultSettings: AppSettings = {
   customEmailBodyTemplate: undefined
 }
 
+// Generate terms for a given academic year (baseYear = the year autumn starts in)
+export const getTermsForAcademicYear = (baseYear: number) => [
+  { startDate: new Date(baseYear, 8, 1),      endDate: new Date(baseYear, 9, 25),      half: '1st', season: 'autumn' },  // Sep 1 - Oct 25
+  { startDate: new Date(baseYear, 10, 3),     endDate: new Date(baseYear, 11, 20),     half: '2nd', season: 'autumn' },  // Nov 3 - Dec 20
+  { startDate: new Date(baseYear + 1, 0, 5),  endDate: new Date(baseYear + 1, 1, 14),  half: '1st', season: 'spring' },  // Jan 5 - Feb 14
+  { startDate: new Date(baseYear + 1, 1, 23), endDate: new Date(baseYear + 1, 2, 28),  half: '2nd', season: 'spring' },  // Feb 23 - Mar 28
+  { startDate: new Date(baseYear + 1, 3, 13), endDate: new Date(baseYear + 1, 4, 23),  half: '1st', season: 'summer' },  // Apr 13 - May 23
+  { startDate: new Date(baseYear + 1, 5, 1),  endDate: new Date(baseYear + 1, 6, 18),  half: '2nd', season: 'summer' },  // Jun 1 - Jul 18
+]
+
 // Term calculation logic based on the original Python code
+// Checks both the current academic year (autumn starting this year) and
+// the previous academic year (for Jan-Jul when spring/summer terms apply)
 const calculateTermData = (date: Date): TermData | null => {
-  const autumnFirstHalf = {
-    startDate: new Date(date.getFullYear(), 8, 1), // September 1
-    endDate: new Date(date.getFullYear(), 9, 25),   // October 25
-    half: '1st',
-    season: 'autumn'
-  }
+  const currentYear = date.getFullYear()
 
-  const autumnSecondHalf = {
-    startDate: new Date(date.getFullYear(), 10, 3), // November 3
-    endDate: new Date(date.getFullYear(), 11, 20),  // December 20
-    half: '2nd',
-    season: 'autumn'
-  }
-
-  const springFirstHalf = {
-    startDate: new Date(date.getFullYear() + 1, 0, 5),  // January 5 (next year)
-    endDate: new Date(date.getFullYear() + 1, 1, 14),    // February 14
-    half: '1st',
-    season: 'spring'
-  }
-
-  const springSecondHalf = {
-    startDate: new Date(date.getFullYear() + 1, 1, 23), // February 23
-    endDate: new Date(date.getFullYear() + 1, 2, 28),   // March 28
-    half: '2nd',
-    season: 'spring'
-  }
-
-  const summerFirstHalf = {
-    startDate: new Date(date.getFullYear() + 1, 3, 13), // April 13
-    endDate: new Date(date.getFullYear() + 1, 4, 23),   // May 23
-    half: '1st',
-    season: 'summer'
-  }
-
-  const summerSecondHalf = {
-    startDate: new Date(date.getFullYear() + 1, 5, 1),  // June 1
-    endDate: new Date(date.getFullYear() + 1, 6, 18),   // July 18
-    half: '2nd',
-    season: 'summer'
-  }
-
-  const terms = [
-    autumnFirstHalf, autumnSecondHalf,
-    springFirstHalf, springSecondHalf,
-    summerFirstHalf, summerSecondHalf
+  // Check current academic year AND previous academic year
+  // e.g. in Feb 2026 we need to check the 2025-2026 academic year (baseYear=2025)
+  const allTerms = [
+    ...getTermsForAcademicYear(currentYear),      // Academic year starting this autumn
+    ...getTermsForAcademicYear(currentYear - 1),   // Academic year that started last autumn
   ]
 
-  for (const term of terms) {
+  for (const term of allTerms) {
     if (date >= term.startDate && date <= term.endDate) {
       const weeksCount = Math.ceil((term.endDate.getTime() - term.startDate.getTime()) / (1000 * 60 * 60 * 24 * 7))
       return {
