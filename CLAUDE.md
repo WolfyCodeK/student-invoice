@@ -29,6 +29,9 @@ the intended way to understand the codebase without re-reading all of it.
    `node scripts/docs/generate.mjs`. A Stop hook runs the docs checks before
    you finish. Use a `Docs-Skip: <doc> -- <reason>` commit trailer only when a
    doc is genuinely unaffected.
+5. **Commits belong to the owner.** Commit as the configured git user
+   (WolfyCodeK) only. Never add `Co-Authored-By` or any other AI attribution
+   to commit messages or pull request descriptions.
 
 ## Commands
 
