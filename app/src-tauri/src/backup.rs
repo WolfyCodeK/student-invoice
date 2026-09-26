@@ -229,12 +229,20 @@ fn sanitize_file_name(name: &str) -> String {
 // ---------------------------------------------------------------------------
 // Automatic backups
 
+/// Development builds keep their own folder so testing never mixes with the
+/// installed app's backups (they share the same app data directory).
+const BACKUPS_FOLDER: &str = if cfg!(debug_assertions) {
+    "backups-dev"
+} else {
+    "backups"
+};
+
 fn backups_dir(app: &AppHandle) -> AppResult<PathBuf> {
     let dir = app
         .path()
         .app_local_data_dir()
         .map_err(|e| AppError::Internal(e.to_string()))?
-        .join("backups");
+        .join(BACKUPS_FOLDER);
     fs::create_dir_all(&dir)
         .map_err(|e| AppError::Internal(format!("couldn't create the backups folder: {e}")))?;
     Ok(dir)

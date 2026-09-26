@@ -15,6 +15,24 @@ v1.1.0. Locations refer to v1.0.1 code unless stated.
   file; a network attacker (mitigated by HTTPS and update signatures).
 - **Out of scope:** a fully compromised Windows account.
 
+## Runtime verification (2026-09-26)
+
+- **Command allowlist (S5):** in the running app, the removed command `greet`
+  and the plugin commands `opener.open_url`, `dialog.open` and `updater.check`
+  are all rejected as "not allowed".
+- **Content Security Policy (S4):** tested in a debug build serving the
+  bundled assets, with a separate test identifier, through the Chrome
+  DevTools Protocol:
+  - no violations or errors on load;
+  - an injected inline `<script>`, a `fetch` to an unknown host and an
+    external image are all blocked with CSP violations;
+  - `api.emailjs.com` is allowed;
+  - `Object.prototype` is frozen;
+  - the origin is still `http://tauri.localhost`.
+- **The CSP also blocks the Tauri MCP bridge's injected helpers.** So the
+  bridge only works in `pnpm dev:mcp`, where there is no CSP, which is
+  another reason it can't be abused in a shipped build.
+
 ## Findings
 
 | Id | Sev | Finding | Status |

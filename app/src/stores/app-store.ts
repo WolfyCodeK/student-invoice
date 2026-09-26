@@ -94,11 +94,13 @@ async function currentBackupText(): Promise<string> {
 export const CURRENT_DATA_REVISION = 1
 
 export async function migrateStoredData(): Promise<void> {
-  const { settings, updateSettings } = useAppStore.getState()
+  const { settings, templates, updateSettings } = useAppStore.getState()
   const revision = settings.dataRevision ?? 0
   if (revision >= CURRENT_DATA_REVISION) return
+  // A fresh install has nothing worth backing up.
+  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate) || Boolean(settings.gmailClientId || settings.gmailClientSecret)
   // Nothing is changed unless the backup succeeded; it is retried next start.
-  await useAppStore.getState().backupNow('pre-migration')
+  if (hasUserData) await useAppStore.getState().backupNow('pre-migration')
   const updates: Partial<AppSettings> = { dataRevision: CURRENT_DATA_REVISION }
   if (revision < 1) {
     // v1.0.1 kept the Google client ID/secret in plaintext. v1.1.0 uses a

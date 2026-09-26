@@ -51,9 +51,11 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
 | `pre-import` | Before an import replaces the data |
 | `pre-restore` | Before restoring an automatic backup |
 | `pre-update` | Before installing an app update (best effort) |
-| `pre-migration` | Before stored data from an older version is upgraded |
+| `pre-migration` | Before stored data from an older version is upgraded (only if there is data to protect) |
 
 - **Retention:** the newest 10 of each reason are kept.
+- **Development builds** use a separate `backups-dev` folder, so testing
+  never mixes with the installed app's backups.
 - **Restoring:** Settings lists the backups, and **Restore** works like an
   import.
 - **Opening the folder:** **Open folder** shows the backups in File Explorer.

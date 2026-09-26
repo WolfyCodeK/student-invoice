@@ -9,7 +9,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult};
 
-const SERVICE: &str = "com.isaac.student-invoice";
+/// Development builds use their own entries, so a test sign-in never touches
+/// (or is picked up by) the installed app on the same PC.
+const SERVICE: &str = if cfg!(debug_assertions) {
+    "com.isaac.student-invoice.dev"
+} else {
+    "com.isaac.student-invoice"
+};
 const ACCOUNT_USER: &str = "google-account";
 const CLIENT_OVERRIDE_USER: &str = "google-oauth-client";
 

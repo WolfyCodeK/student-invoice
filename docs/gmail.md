@@ -75,7 +75,9 @@ in `app/src-tauri/src/google/loopback.rs`.
    - The **refresh token** goes to Windows Credential Manager, together with
      the email and the issuing client ID
      (`app/src-tauri/src/google/store.rs`). Entry `com.isaac.student-invoice`
-     / `google-account`, persistence *Local*.
+     / `google-account`, persistence *Local*. Development builds use
+     `com.isaac.student-invoice.dev` instead, so a test sign-in never touches
+     the installed app.
    - The **access token** is kept only in memory.
    - A previous account's refresh token is revoked.
    - The listener is dropped on every path, which frees the port.

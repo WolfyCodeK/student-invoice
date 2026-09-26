@@ -41,7 +41,8 @@ private key.
 ## Secrets the app holds at runtime
 
 - **Gmail refresh token:** stored in Windows Credential Manager
-  (`com.isaac.student-invoice` / `google-account`, persistence *Local*). The
+  (`com.isaac.student-invoice` / `google-account`, persistence *Local*;
+  development builds use a separate `.dev` name). The
   access token is held only in memory in the Rust process. Neither ever
   reaches the webview.
 - **Custom Google OAuth client** (optional, advanced): stored in Credential

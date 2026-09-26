@@ -151,6 +151,13 @@ describe('migrating older data', () => {
     expect(useAppStore.getState().settings.gmailClientSecret).toBe('')
   })
 
+  it('does not back up a fresh install (nothing to protect)', async () => {
+    const { useAppStore, migrateStoredData, CURRENT_DATA_REVISION } = await loadStore(null)
+    await migrateStoredData()
+    expect(backend.createAutoBackup).not.toHaveBeenCalled()
+    expect(useAppStore.getState().settings.dataRevision).toBe(CURRENT_DATA_REVISION)
+  })
+
   it('runs only once', async () => {
     const { migrateStoredData } = await loadStore()
     await migrateStoredData()

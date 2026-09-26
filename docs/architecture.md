@@ -41,8 +41,8 @@ The feedback form calls api.emailjs.com directly from the webview.
 - **When the store module loads** (bottom of `app/src/stores/app-store.ts`):
   it loads the stored state, computes the current term (which also builds the
   current invoice), and asks Rust for the Gmail status.
-- **When `App` mounts:** it upgrades data from older versions after a backup
-  (`migrateStoredData`), takes the daily automatic backup
+- **When `App` mounts:** it upgrades data from older versions, after a backup
+  if there is data to protect (`migrateStoredData`), takes the daily automatic backup
   (`ensureDailyBackup`), starts listening for update progress, and checks for
   updates.
 

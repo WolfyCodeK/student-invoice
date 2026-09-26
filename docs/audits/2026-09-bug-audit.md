@@ -92,6 +92,34 @@ main user before a later version; see the
 6. **Wording (B29/B31):** "lessons" or "sessions"? Should the subject name the
    pupil?
 
+## Runtime verification (2026-09-26, dev build driven through the Tauri MCP server)
+
+Confirmed in the running app:
+- **B33:** a cancelled edit doesn't come back, and "New" opens empty.
+- **B35:** deleting the selected template clears the preview.
+- **B6:** the preview is generated as soon as a template is created.
+- Names with `'`, `"`, `$&`, `£`-style characters and emoji are shown
+  verbatim.
+- **Invoice text:** identical to v1.0.1, including the deferred B1
+  behaviour.
+- **Backups:** the daily backup is created on start-up once there are
+  templates. Restore shows a summary, saves a `pre-restore` backup first,
+  then restores the data; the stored shape stays version 0 with the four
+  v1.0.1 keys. A backup name like `..\..\Windows\win.ini` is rejected.
+- **Updates:** the check is correctly disabled in development builds.
+- **Gmail:** `gmail_status` reports the built-in client.
+
+**Found and fixed during this pass:**
+- A fresh install saved a pointless `pre-migration` backup of empty data;
+  now only real data is backed up.
+- Development builds shared the backups folder and Credential Manager
+  entries with the installed app; they now use `backups-dev` and a `.dev`
+  credential name.
+
+Not yet exercised at runtime: Gmail sign-in and drafts (need the owner's
+Google account), the native export/import dialogs, the feedback form, and
+the updater (see the release test).
+
 ## Method
 
 1. File-by-file review of `app/src` and `app/src-tauri/src`.

@@ -62,9 +62,11 @@ v1.1.0 derives the connection state from Rust (`gmail_status`) at start-up.
 - **Upgrading (`migrateStoredData` in the store):** runs on start-up.
   - `settings.dataRevision` (absent in v1.0.1 data) records which upgrades
     have been applied; the current revision is 1.
-  - If the stored revision is older, a `pre-migration` automatic backup is
-    saved first (see [backup](backup.md)). The upgrade is applied only if that
-    backup succeeded; otherwise it is retried on the next start.
+  - If the stored revision is older and there is user data, a
+    `pre-migration` automatic backup is saved first (see [backup](backup.md)).
+    The upgrade is applied only if that backup succeeded; otherwise it is
+    retried on the next start. A fresh install has nothing to back up, so it
+    just records the current revision.
 - **Revision 1:** v1.0.1 stored the Google client ID and secret in plaintext
   in `settings`. The upgrade sets both fields to `''`. The fields are kept, so
   older versions still load the data, but someone who downgrades to v1.0.1
