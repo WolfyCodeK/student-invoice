@@ -252,6 +252,7 @@
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--cover-muted);
+  white-space: nowrap;
 }
 .term.is-now {
   background: var(--band-btn);
@@ -591,7 +592,7 @@
 @container reg (max-width: 640px) {
   .sheet {
     --wk: 32px;
-    --les: 58px;
+    --les: 70px;
     --tot: 92px;
     --fam: minmax(130px, 1fr);
   }
@@ -1409,14 +1410,6 @@ details.adv[open] summary {
 }
 
 /* ---- Small windows ---------------------------------------------------- */
-.term {
-  white-space: nowrap;
-}
-@container reg (max-width: 640px) {
-  .sheet {
-    --les: 70px;
-  }
-}
 @media (max-width: 1100px) {
   .sum {
     font-size: 18px;

@@ -1,0 +1,1313 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-26T21:59:29.690Z",
+  "title": "Design System: Student Invoice",
+  "extensions": {
+    "colorMeta": {
+      "cover": {
+        "role": "primary",
+        "displayName": "Register Blue (cover band)",
+        "canonical": "#1d3f8a",
+        "tonalRamp": [
+          "oklch(15% 0.132 263.3)",
+          "oklch(26% 0.132 263.3)",
+          "oklch(38% 0.132 263.3)",
+          "oklch(50% 0.132 263.3)",
+          "oklch(62% 0.132 263.3)",
+          "oklch(74% 0.132 263.3)",
+          "oklch(85% 0.132 263.3)",
+          "oklch(95% 0.046 263.3)"
+        ]
+      },
+      "cover-ink": {
+        "role": "neutral",
+        "displayName": "Cover Ink",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0 89.9)",
+          "oklch(26% 0 89.9)",
+          "oklch(38% 0 89.9)",
+          "oklch(50% 0 89.9)",
+          "oklch(62% 0 89.9)",
+          "oklch(74% 0 89.9)",
+          "oklch(85% 0 89.9)",
+          "oklch(95% 0 89.9)"
+        ]
+      },
+      "cover-muted": {
+        "role": "neutral",
+        "displayName": "Cover Muted",
+        "canonical": "#c9d6f2",
+        "tonalRamp": [
+          "oklch(15% 0.041 265.7)",
+          "oklch(26% 0.041 265.7)",
+          "oklch(38% 0.041 265.7)",
+          "oklch(50% 0.041 265.7)",
+          "oklch(62% 0.041 265.7)",
+          "oklch(74% 0.041 265.7)",
+          "oklch(85% 0.041 265.7)",
+          "oklch(95% 0.014 265.7)"
+        ]
+      },
+      "cover-ok": {
+        "role": "tertiary",
+        "displayName": "Cover Mint",
+        "canonical": "#8be0ae",
+        "tonalRamp": [
+          "oklch(15% 0.109 157.2)",
+          "oklch(26% 0.109 157.2)",
+          "oklch(38% 0.109 157.2)",
+          "oklch(50% 0.109 157.2)",
+          "oklch(62% 0.109 157.2)",
+          "oklch(74% 0.109 157.2)",
+          "oklch(85% 0.109 157.2)",
+          "oklch(95% 0.038 157.2)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Register Blue",
+        "canonical": "#1d3f8a",
+        "tonalRamp": [
+          "oklch(15% 0.132 263.3)",
+          "oklch(26% 0.132 263.3)",
+          "oklch(38% 0.132 263.3)",
+          "oklch(50% 0.132 263.3)",
+          "oklch(62% 0.132 263.3)",
+          "oklch(74% 0.132 263.3)",
+          "oklch(85% 0.132 263.3)",
+          "oklch(95% 0.046 263.3)"
+        ]
+      },
+      "primary-ink": {
+        "role": "neutral",
+        "displayName": "Primary Ink",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0 89.9)",
+          "oklch(26% 0 89.9)",
+          "oklch(38% 0 89.9)",
+          "oklch(50% 0 89.9)",
+          "oklch(62% 0 89.9)",
+          "oklch(74% 0 89.9)",
+          "oklch(85% 0 89.9)",
+          "oklch(95% 0 89.9)"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Pressed Register Blue",
+        "canonical": "#17336f",
+        "tonalRamp": [
+          "oklch(15% 0.11 263)",
+          "oklch(26% 0.11 263)",
+          "oklch(38% 0.11 263)",
+          "oklch(50% 0.11 263)",
+          "oklch(62% 0.11 263)",
+          "oklch(74% 0.11 263)",
+          "oklch(85% 0.11 263)",
+          "oklch(95% 0.038 263)"
+        ]
+      },
+      "head-ink": {
+        "role": "primary",
+        "displayName": "Register Blue (heading ink)",
+        "canonical": "#1d3f8a",
+        "tonalRamp": [
+          "oklch(15% 0.132 263.3)",
+          "oklch(26% 0.132 263.3)",
+          "oklch(38% 0.132 263.3)",
+          "oklch(50% 0.132 263.3)",
+          "oklch(62% 0.132 263.3)",
+          "oklch(74% 0.132 263.3)",
+          "oklch(85% 0.132 263.3)",
+          "oklch(95% 0.046 263.3)"
+        ]
+      },
+      "band-btn": {
+        "role": "neutral",
+        "displayName": "Band Button White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0 89.9)",
+          "oklch(26% 0 89.9)",
+          "oklch(38% 0 89.9)",
+          "oklch(50% 0 89.9)",
+          "oklch(62% 0 89.9)",
+          "oklch(74% 0 89.9)",
+          "oklch(85% 0 89.9)",
+          "oklch(95% 0 89.9)"
+        ]
+      },
+      "band-btn-hover": {
+        "role": "neutral",
+        "displayName": "Band Button Hover",
+        "canonical": "#e6eefa",
+        "tonalRamp": [
+          "oklch(15% 0.018 258.4)",
+          "oklch(26% 0.018 258.4)",
+          "oklch(38% 0.018 258.4)",
+          "oklch(50% 0.018 258.4)",
+          "oklch(62% 0.018 258.4)",
+          "oklch(74% 0.018 258.4)",
+          "oklch(85% 0.018 258.4)",
+          "oklch(95% 0.006 258.4)"
+        ]
+      },
+      "margin": {
+        "role": "secondary",
+        "displayName": "Margin Red",
+        "canonical": "#d0453a",
+        "tonalRamp": [
+          "oklch(15% 0.177 28.3)",
+          "oklch(26% 0.177 28.3)",
+          "oklch(38% 0.177 28.3)",
+          "oklch(50% 0.177 28.3)",
+          "oklch(62% 0.177 28.3)",
+          "oklch(74% 0.177 28.3)",
+          "oklch(85% 0.177 28.3)",
+          "oklch(95% 0.062 28.3)"
+        ]
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Page White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0 89.9)",
+          "oklch(26% 0 89.9)",
+          "oklch(38% 0 89.9)",
+          "oklch(50% 0 89.9)",
+          "oklch(62% 0 89.9)",
+          "oklch(74% 0 89.9)",
+          "oklch(85% 0 89.9)",
+          "oklch(95% 0 89.9)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Ground",
+        "canonical": "#f2f5fa",
+        "tonalRamp": [
+          "oklch(15% 0.007 260.7)",
+          "oklch(26% 0.007 260.7)",
+          "oklch(38% 0.007 260.7)",
+          "oklch(50% 0.007 260.7)",
+          "oklch(62% 0.007 260.7)",
+          "oklch(74% 0.007 260.7)",
+          "oklch(85% 0.007 260.7)",
+          "oklch(95% 0.003 260.7)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Feint Rule",
+        "canonical": "#c8d6ea",
+        "tonalRamp": [
+          "oklch(15% 0.032 257.2)",
+          "oklch(26% 0.032 257.2)",
+          "oklch(38% 0.032 257.2)",
+          "oklch(50% 0.032 257.2)",
+          "oklch(62% 0.032 257.2)",
+          "oklch(74% 0.032 257.2)",
+          "oklch(85% 0.032 257.2)",
+          "oklch(95% 0.011 257.2)"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#9db2d6",
+        "tonalRamp": [
+          "oklch(15% 0.057 261.2)",
+          "oklch(26% 0.057 261.2)",
+          "oklch(38% 0.057 261.2)",
+          "oklch(50% 0.057 261.2)",
+          "oklch(62% 0.057 261.2)",
+          "oklch(74% 0.057 261.2)",
+          "oklch(85% 0.057 261.2)",
+          "oklch(95% 0.02 261.2)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Register Ink",
+        "canonical": "#172033",
+        "tonalRamp": [
+          "oklch(15% 0.039 264.4)",
+          "oklch(26% 0.039 264.4)",
+          "oklch(38% 0.039 264.4)",
+          "oklch(50% 0.039 264.4)",
+          "oklch(62% 0.039 264.4)",
+          "oklch(74% 0.039 264.4)",
+          "oklch(85% 0.039 264.4)",
+          "oklch(95% 0.014 264.4)"
+        ]
+      },
+      "heading": {
+        "role": "neutral",
+        "displayName": "Heading Ink",
+        "canonical": "#111a2c",
+        "tonalRamp": [
+          "oklch(15% 0.038 263.3)",
+          "oklch(26% 0.038 263.3)",
+          "oklch(38% 0.038 263.3)",
+          "oklch(50% 0.038 263.3)",
+          "oklch(62% 0.038 263.3)",
+          "oklch(74% 0.038 263.3)",
+          "oklch(85% 0.038 263.3)",
+          "oklch(95% 0.013 263.3)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#53607a",
+        "tonalRamp": [
+          "oklch(15% 0.045 264)",
+          "oklch(26% 0.045 264)",
+          "oklch(38% 0.045 264)",
+          "oklch(50% 0.045 264)",
+          "oklch(62% 0.045 264)",
+          "oklch(74% 0.045 264)",
+          "oklch(85% 0.045 264)",
+          "oklch(95% 0.016 264)"
+        ]
+      },
+      "mark-soft": {
+        "role": "neutral",
+        "displayName": "Soft Mark",
+        "canonical": "#7d93c4",
+        "tonalRamp": [
+          "oklch(15% 0.078 265.6)",
+          "oklch(26% 0.078 265.6)",
+          "oklch(38% 0.078 265.6)",
+          "oklch(50% 0.078 265.6)",
+          "oklch(62% 0.078 265.6)",
+          "oklch(74% 0.078 265.6)",
+          "oklch(85% 0.078 265.6)",
+          "oklch(95% 0.027 265.6)"
+        ]
+      },
+      "mark-off": {
+        "role": "neutral",
+        "displayName": "Off Mark",
+        "canonical": "#9aa6bd",
+        "tonalRamp": [
+          "oklch(15% 0.036 263.5)",
+          "oklch(26% 0.036 263.5)",
+          "oklch(38% 0.036 263.5)",
+          "oklch(50% 0.036 263.5)",
+          "oklch(62% 0.036 263.5)",
+          "oklch(74% 0.036 263.5)",
+          "oklch(85% 0.036 263.5)",
+          "oklch(95% 0.013 263.5)"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selection Wash",
+        "canonical": "#e6eefa",
+        "tonalRamp": [
+          "oklch(15% 0.018 258.4)",
+          "oklch(26% 0.018 258.4)",
+          "oklch(38% 0.018 258.4)",
+          "oklch(50% 0.018 258.4)",
+          "oklch(62% 0.018 258.4)",
+          "oklch(74% 0.018 258.4)",
+          "oklch(85% 0.018 258.4)",
+          "oklch(95% 0.006 258.4)"
+        ]
+      },
+      "sel-line": {
+        "role": "neutral",
+        "displayName": "Selection Line",
+        "canonical": "#9db5e3",
+        "tonalRamp": [
+          "oklch(15% 0.071 263.2)",
+          "oklch(26% 0.071 263.2)",
+          "oklch(38% 0.071 263.2)",
+          "oklch(50% 0.071 263.2)",
+          "oklch(62% 0.071 263.2)",
+          "oklch(74% 0.071 263.2)",
+          "oklch(85% 0.071 263.2)",
+          "oklch(95% 0.025 263.2)"
+        ]
+      },
+      "row-hover": {
+        "role": "neutral",
+        "displayName": "Row Hover",
+        "canonical": "#f5f8fd",
+        "tonalRamp": [
+          "oklch(15% 0.007 260.7)",
+          "oklch(26% 0.007 260.7)",
+          "oklch(38% 0.007 260.7)",
+          "oklch(50% 0.007 260.7)",
+          "oklch(62% 0.007 260.7)",
+          "oklch(74% 0.007 260.7)",
+          "oklch(85% 0.007 260.7)",
+          "oklch(95% 0.003 260.7)"
+        ]
+      },
+      "totals": {
+        "role": "neutral",
+        "displayName": "Totals Tint",
+        "canonical": "#f6f8fc",
+        "tonalRamp": [
+          "oklch(15% 0.006 264.5)",
+          "oklch(26% 0.006 264.5)",
+          "oklch(38% 0.006 264.5)",
+          "oklch(50% 0.006 264.5)",
+          "oklch(62% 0.006 264.5)",
+          "oklch(74% 0.006 264.5)",
+          "oklch(85% 0.006 264.5)",
+          "oklch(95% 0.002 264.5)"
+        ]
+      },
+      "totals-sel": {
+        "role": "neutral",
+        "displayName": "Selected Totals Tint",
+        "canonical": "#d8e4f7",
+        "tonalRamp": [
+          "oklch(15% 0.029 259.6)",
+          "oklch(26% 0.029 259.6)",
+          "oklch(38% 0.029 259.6)",
+          "oklch(50% 0.029 259.6)",
+          "oklch(62% 0.029 259.6)",
+          "oklch(74% 0.029 259.6)",
+          "oklch(85% 0.029 259.6)",
+          "oklch(95% 0.01 259.6)"
+        ]
+      },
+      "sec-hover": {
+        "role": "neutral",
+        "displayName": "Secondary Hover",
+        "canonical": "#eef3fb",
+        "tonalRamp": [
+          "oklch(15% 0.012 259.8)",
+          "oklch(26% 0.012 259.8)",
+          "oklch(38% 0.012 259.8)",
+          "oklch(50% 0.012 259.8)",
+          "oklch(62% 0.012 259.8)",
+          "oklch(74% 0.012 259.8)",
+          "oklch(85% 0.012 259.8)",
+          "oklch(95% 0.004 259.8)"
+        ]
+      },
+      "field-line": {
+        "role": "neutral",
+        "displayName": "Field Line",
+        "canonical": "#8fa5cc",
+        "tonalRamp": [
+          "oklch(15% 0.062 261.8)",
+          "oklch(26% 0.062 261.8)",
+          "oklch(38% 0.062 261.8)",
+          "oklch(50% 0.062 261.8)",
+          "oklch(62% 0.062 261.8)",
+          "oklch(74% 0.062 261.8)",
+          "oklch(85% 0.062 261.8)",
+          "oklch(95% 0.022 261.8)"
+        ]
+      },
+      "holiday": {
+        "role": "tertiary",
+        "displayName": "Holiday Paper",
+        "canonical": "#f4f1ea",
+        "tonalRamp": [
+          "oklch(15% 0.01 87.5)",
+          "oklch(26% 0.01 87.5)",
+          "oklch(38% 0.01 87.5)",
+          "oklch(50% 0.01 87.5)",
+          "oklch(62% 0.01 87.5)",
+          "oklch(74% 0.01 87.5)",
+          "oklch(85% 0.01 87.5)",
+          "oklch(95% 0.003 87.5)"
+        ]
+      },
+      "holiday-hatch": {
+        "role": "tertiary",
+        "displayName": "Holiday Hatch",
+        "canonical": "#d9ceb8",
+        "tonalRamp": [
+          "oklch(15% 0.032 84.6)",
+          "oklch(26% 0.032 84.6)",
+          "oklch(38% 0.032 84.6)",
+          "oklch(50% 0.032 84.6)",
+          "oklch(62% 0.032 84.6)",
+          "oklch(74% 0.032 84.6)",
+          "oklch(85% 0.032 84.6)",
+          "oklch(95% 0.011 84.6)"
+        ]
+      },
+      "holiday-ink": {
+        "role": "tertiary",
+        "displayName": "Holiday Ink",
+        "canonical": "#6f6450",
+        "tonalRamp": [
+          "oklch(15% 0.033 82.4)",
+          "oklch(26% 0.033 82.4)",
+          "oklch(38% 0.033 82.4)",
+          "oklch(50% 0.033 82.4)",
+          "oklch(62% 0.033 82.4)",
+          "oklch(74% 0.033 82.4)",
+          "oklch(85% 0.033 82.4)",
+          "oklch(95% 0.012 82.4)"
+        ]
+      },
+      "success": {
+        "role": "status",
+        "displayName": "Success",
+        "canonical": "#1f7a47",
+        "tonalRamp": [
+          "oklch(15% 0.116 153.9)",
+          "oklch(26% 0.116 153.9)",
+          "oklch(38% 0.116 153.9)",
+          "oklch(50% 0.116 153.9)",
+          "oklch(62% 0.116 153.9)",
+          "oklch(74% 0.116 153.9)",
+          "oklch(85% 0.116 153.9)",
+          "oklch(95% 0.041 153.9)"
+        ]
+      },
+      "success-bg": {
+        "role": "status",
+        "displayName": "Success Wash",
+        "canonical": "#e8f4ed",
+        "tonalRamp": [
+          "oklch(15% 0.016 160.6)",
+          "oklch(26% 0.016 160.6)",
+          "oklch(38% 0.016 160.6)",
+          "oklch(50% 0.016 160.6)",
+          "oklch(62% 0.016 160.6)",
+          "oklch(74% 0.016 160.6)",
+          "oklch(85% 0.016 160.6)",
+          "oklch(95% 0.005 160.6)"
+        ]
+      },
+      "warning": {
+        "role": "status",
+        "displayName": "Warning",
+        "canonical": "#8a5a00",
+        "tonalRamp": [
+          "oklch(15% 0.108 73.3)",
+          "oklch(26% 0.108 73.3)",
+          "oklch(38% 0.108 73.3)",
+          "oklch(50% 0.108 73.3)",
+          "oklch(62% 0.108 73.3)",
+          "oklch(74% 0.108 73.3)",
+          "oklch(85% 0.108 73.3)",
+          "oklch(95% 0.038 73.3)"
+        ]
+      },
+      "warning-bg": {
+        "role": "status",
+        "displayName": "Warning Wash",
+        "canonical": "#fdf3e1",
+        "tonalRamp": [
+          "oklch(15% 0.026 82.4)",
+          "oklch(26% 0.026 82.4)",
+          "oklch(38% 0.026 82.4)",
+          "oklch(50% 0.026 82.4)",
+          "oklch(62% 0.026 82.4)",
+          "oklch(74% 0.026 82.4)",
+          "oklch(85% 0.026 82.4)",
+          "oklch(95% 0.009 82.4)"
+        ]
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Danger",
+        "canonical": "#b42318",
+        "tonalRamp": [
+          "oklch(15% 0.182 29.5)",
+          "oklch(26% 0.182 29.5)",
+          "oklch(38% 0.182 29.5)",
+          "oklch(50% 0.182 29.5)",
+          "oklch(62% 0.182 29.5)",
+          "oklch(74% 0.182 29.5)",
+          "oklch(85% 0.182 29.5)",
+          "oklch(95% 0.064 29.5)"
+        ]
+      },
+      "danger-bg": {
+        "role": "status",
+        "displayName": "Danger Wash",
+        "canonical": "#fceeec",
+        "tonalRamp": [
+          "oklch(15% 0.015 27.3)",
+          "oklch(26% 0.015 27.3)",
+          "oklch(38% 0.015 27.3)",
+          "oklch(50% 0.015 27.3)",
+          "oklch(62% 0.015 27.3)",
+          "oklch(74% 0.015 27.3)",
+          "oklch(85% 0.015 27.3)",
+          "oklch(95% 0.005 27.3)"
+        ]
+      },
+      "danger-line": {
+        "role": "status",
+        "displayName": "Danger Line",
+        "canonical": "#e3a199",
+        "tonalRamp": [
+          "oklch(15% 0.08 26.8)",
+          "oklch(26% 0.08 26.8)",
+          "oklch(38% 0.08 26.8)",
+          "oklch(50% 0.08 26.8)",
+          "oklch(62% 0.08 26.8)",
+          "oklch(74% 0.08 26.8)",
+          "oklch(85% 0.08 26.8)",
+          "oklch(95% 0.028 26.8)"
+        ]
+      },
+      "na-cover": {
+        "role": "secondary",
+        "displayName": "Navy and amber Navy",
+        "canonical": "#2e4c6d",
+        "tonalRamp": [
+          "oklch(15% 0.066 251.9)",
+          "oklch(26% 0.066 251.9)",
+          "oklch(38% 0.066 251.9)",
+          "oklch(50% 0.066 251.9)",
+          "oklch(62% 0.066 251.9)",
+          "oklch(74% 0.066 251.9)",
+          "oklch(85% 0.066 251.9)",
+          "oklch(95% 0.023 251.9)"
+        ]
+      },
+      "na-amber": {
+        "role": "secondary",
+        "displayName": "Navy and amber Amber",
+        "canonical": "#c98a34",
+        "tonalRamp": [
+          "oklch(15% 0.125 70.8)",
+          "oklch(26% 0.125 70.8)",
+          "oklch(38% 0.125 70.8)",
+          "oklch(50% 0.125 70.8)",
+          "oklch(62% 0.125 70.8)",
+          "oklch(74% 0.125 70.8)",
+          "oklch(85% 0.125 70.8)",
+          "oklch(95% 0.044 70.8)"
+        ]
+      },
+      "na-ground": {
+        "role": "neutral",
+        "displayName": "Navy and amber Ground",
+        "canonical": "#eff3f7",
+        "tonalRamp": [
+          "oklch(15% 0.007 247.9)",
+          "oklch(26% 0.007 247.9)",
+          "oklch(38% 0.007 247.9)",
+          "oklch(50% 0.007 247.9)",
+          "oklch(62% 0.007 247.9)",
+          "oklch(74% 0.007 247.9)",
+          "oklch(85% 0.007 247.9)",
+          "oklch(95% 0.002 247.9)"
+        ]
+      },
+      "dark-page": {
+        "role": "neutral",
+        "displayName": "Dark Page",
+        "canonical": "#10151f",
+        "tonalRamp": [
+          "oklch(15% 0.022 263.9)",
+          "oklch(26% 0.022 263.9)",
+          "oklch(38% 0.022 263.9)",
+          "oklch(50% 0.022 263.9)",
+          "oklch(62% 0.022 263.9)",
+          "oklch(74% 0.022 263.9)",
+          "oklch(85% 0.022 263.9)",
+          "oklch(95% 0.008 263.9)"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Dark Ground",
+        "canonical": "#0b0f17",
+        "tonalRamp": [
+          "oklch(15% 0.018 263.9)",
+          "oklch(26% 0.018 263.9)",
+          "oklch(38% 0.018 263.9)",
+          "oklch(50% 0.018 263.9)",
+          "oklch(62% 0.018 263.9)",
+          "oklch(74% 0.018 263.9)",
+          "oklch(85% 0.018 263.9)",
+          "oklch(95% 0.006 263.9)"
+        ]
+      },
+      "dark-cover": {
+        "role": "primary",
+        "displayName": "Dark Register Blue",
+        "canonical": "#23407f",
+        "tonalRamp": [
+          "oklch(15% 0.112 263.5)",
+          "oklch(26% 0.112 263.5)",
+          "oklch(38% 0.112 263.5)",
+          "oklch(50% 0.112 263.5)",
+          "oklch(62% 0.112 263.5)",
+          "oklch(74% 0.112 263.5)",
+          "oklch(85% 0.112 263.5)",
+          "oklch(95% 0.039 263.5)"
+        ]
+      },
+      "dark-mark": {
+        "role": "primary",
+        "displayName": "Pale Register Blue",
+        "canonical": "#9db7f0",
+        "tonalRamp": [
+          "oklch(15% 0.087 265.4)",
+          "oklch(26% 0.087 265.4)",
+          "oklch(38% 0.087 265.4)",
+          "oklch(50% 0.087 265.4)",
+          "oklch(62% 0.087 265.4)",
+          "oklch(74% 0.087 265.4)",
+          "oklch(85% 0.087 265.4)",
+          "oklch(95% 0.03 265.4)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Band heading and dialog titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Pupil's page name, Settings group, record panel and tour headings."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "The pupil's page sum; tabular."
+      },
+      "total": {
+        "displayName": "Total",
+        "purpose": "The row total in the totals block; tabular."
+      },
+      "body-large": {
+        "displayName": "Body Large",
+        "purpose": "Family names (600), fields, field labels (600), dialog and tour text."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default text, the email preview."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Register column headings, sentence case, head-ink."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Pupils and instrument lines, hints, legend."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Buttons, segmented control, navigation items."
+      },
+      "button-large": {
+        "displayName": "Band Button",
+        "purpose": "Buttons on the cover band."
+      },
+      "headline-navy-amber": {
+        "displayName": "Headline (Navy and amber)",
+        "purpose": "Headings under the Navy and amber scheme."
+      },
+      "body-navy-amber": {
+        "displayName": "Body (Navy and amber)",
+        "purpose": "Body text under the Navy and amber scheme."
+      }
+    },
+    "shadows": [
+      {
+        "name": "raise",
+        "value": "0 1px 2px rgba(16, 32, 72, 0.1)",
+        "purpose": "Primary and band buttons, the editor's small preview panel."
+      },
+      {
+        "name": "lift",
+        "value": "0 4px 14px rgba(16, 32, 72, 0.08)",
+        "purpose": "The family editor record on the ground; tooltips."
+      },
+      {
+        "name": "overlay",
+        "value": "0 22px 52px rgba(16, 32, 72, 0.3)",
+        "purpose": "Dialogs, the What's new letter, toasts, select menus, the tour card."
+      },
+      {
+        "name": "slip",
+        "value": "-6px 0 16px rgba(16, 32, 72, 0.06)",
+        "purpose": "The pupil's page, casting a shadow onto the register."
+      },
+      {
+        "name": "tour-spotlight",
+        "value": "0 0 0 3px var(--focus-on-cover), 0 0 0 200vmax var(--tour-scrim)",
+        "purpose": "Ring around the highlighted area; everything else dimmed."
+      },
+      {
+        "name": "selected-inset",
+        "value": "inset 0 0 0 1px var(--sel-line)",
+        "purpose": "Selected row, current nav item, chosen tile. Not elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state",
+        "value": "0.12s (background-color, border-color, color)",
+        "purpose": "Hover and pressed colour changes on buttons, switches, tiles."
+      },
+      {
+        "name": "ease-settle",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Arrivals: dialogs (0.16s, 6px rise), toasts (0.18s, 8px rise), mark untick (0.22s, scale 0.6 to 1)."
+      },
+      {
+        "name": "fade",
+        "value": "0.14s ease-out",
+        "purpose": "Dialog scrim; tour card 0.18s."
+      },
+      {
+        "name": "status-in",
+        "value": "0.26s ease-out",
+        "purpose": "Each Draft all outcome fades in as its draft finishes."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "All animation and transition collapse under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "register-compact",
+        "value": "container reg ≤ 880px",
+        "purpose": "Day and Per lesson collapse; weeks 36px."
+      },
+      {
+        "name": "register-narrow",
+        "value": "container reg ≤ 640px",
+        "purpose": "Weeks 32px; family min 130px."
+      },
+      {
+        "name": "slip-stack",
+        "value": "max-width 1100px",
+        "purpose": "Pupil's page buttons stack; editor preview hides; sum 18px."
+      },
+      {
+        "name": "pages",
+        "value": "max-width 1020px",
+        "purpose": "Nav rail 200px; label columns 170px."
+      },
+      {
+        "name": "settings-icons",
+        "value": "max-width 860px",
+        "purpose": "Settings rail becomes 64px icons with side tooltips."
+      },
+      {
+        "name": "settings-narrow",
+        "value": "container settings ≤ 600px",
+        "purpose": "Setting rows stack."
+      },
+      {
+        "name": "short",
+        "value": "max-height 720px",
+        "purpose": "Pupil's page scrolls as one with its buttons pinned."
+      }
+    ],
+    "appearance": {
+      "switches": {
+        "data-scheme": [
+          "student-invoice",
+          "navy-amber"
+        ],
+        "data-corners": [
+          "square",
+          "rounded"
+        ],
+        "data-mode": [
+          "light",
+          "dark"
+        ]
+      },
+      "default": {
+        "data-scheme": "student-invoice",
+        "data-corners": "square",
+        "data-mode": "light"
+      },
+      "source": "app/src/styles/tokens.css",
+      "schemes": {
+        "student-invoice/light": {
+          "fonts": {
+            "ui": "\"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif",
+            "head": "\"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif",
+            "headWeight": "700",
+            "headTrack": "-0.005em"
+          },
+          "colors": {
+            "page": "#ffffff",
+            "ground": "#f2f5fa",
+            "cover": "#1d3f8a",
+            "cover-ink": "#ffffff",
+            "cover-muted": "#c9d6f2",
+            "cover-line": "rgba(255, 255, 255, 0.16)",
+            "cover-hover": "rgba(255, 255, 255, 0.12)",
+            "cover-press": "rgba(255, 255, 255, 0.2)",
+            "cover-ghost": "rgba(255, 255, 255, 0.46)",
+            "cover-ok": "#8be0ae",
+            "cover-off": "rgba(255, 255, 255, 0.12)",
+            "cover-off-ink": "rgba(255, 255, 255, 0.66)",
+            "band-btn": "#ffffff",
+            "band-btn-ink": "#1d3f8a",
+            "band-btn-hover": "#e6eefa",
+            "rule": "#c8d6ea",
+            "rule-strong": "#9db2d6",
+            "margin": "#d0453a",
+            "ink": "#172033",
+            "heading": "#111a2c",
+            "muted": "#53607a",
+            "head-ink": "#1d3f8a",
+            "mark": "#1d3f8a",
+            "mark-soft": "#7d93c4",
+            "mark-off": "#9aa6bd",
+            "holiday": "#f4f1ea",
+            "holiday-ink": "#6f6450",
+            "holiday-hatch": "#d9ceb8",
+            "selected": "#e6eefa",
+            "sel-line": "#9db5e3",
+            "row-hover": "#f5f8fd",
+            "totals": "#f6f8fc",
+            "totals-sel": "#d8e4f7",
+            "primary": "#1d3f8a",
+            "primary-ink": "#ffffff",
+            "primary-hover": "#17336f",
+            "primary-line": "#1d3f8a",
+            "sec-bg": "#ffffff",
+            "sec-line": "#9db2d6",
+            "sec-ink": "#1d3f8a",
+            "sec-hover": "#eef3fb",
+            "field-bg": "#ffffff",
+            "field-line": "#8fa5cc",
+            "money": "#1d3f8a",
+            "accent-line": "#1d3f8a",
+            "success": "#1f7a47",
+            "success-bg": "#e8f4ed",
+            "warning": "#8a5a00",
+            "warning-bg": "#fdf3e1",
+            "danger": "#b42318",
+            "danger-bg": "#fceeec",
+            "danger-bg2": "#f8e1de",
+            "danger-line": "#e3a199",
+            "focus": "#1d3f8a",
+            "focus-on-cover": "#ffffff",
+            "sel-bg": "#bfd2f3",
+            "sel-ink": "#172033",
+            "scroll-thumb": "#b4c4e0",
+            "win-border": "#7f93bd",
+            "scrim": "rgba(11, 22, 48, 0.52)",
+            "tour-scrim": "rgba(11, 22, 48, 0.62)"
+          },
+          "shadows": {
+            "shadow-1": "0 1px 2px rgba(16, 32, 72, 0.1)",
+            "shadow-2": "0 4px 14px rgba(16, 32, 72, 0.08)",
+            "shadow-3": "0 22px 52px rgba(16, 32, 72, 0.3)",
+            "shadow-slip": "-6px 0 16px rgba(16, 32, 72, 0.06)"
+          }
+        },
+        "student-invoice/dark": {
+          "fonts": {
+            "ui": "\"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif",
+            "head": "\"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif",
+            "headWeight": "700",
+            "headTrack": "-0.005em"
+          },
+          "colors": {
+            "page": "#10151f",
+            "ground": "#0b0f17",
+            "cover": "#23407f",
+            "cover-ink": "#ffffff",
+            "cover-muted": "#c9d6f2",
+            "cover-line": "rgba(255, 255, 255, 0.14)",
+            "cover-hover": "rgba(255, 255, 255, 0.1)",
+            "cover-press": "rgba(255, 255, 255, 0.18)",
+            "cover-ghost": "rgba(255, 255, 255, 0.42)",
+            "cover-ok": "#8be0ae",
+            "cover-off": "rgba(255, 255, 255, 0.1)",
+            "cover-off-ink": "rgba(255, 255, 255, 0.62)",
+            "band-btn": "#dce6fa",
+            "band-btn-ink": "#142b5e",
+            "band-btn-hover": "#c8d7f5",
+            "rule": "#22304a",
+            "rule-strong": "#34496e",
+            "margin": "#e0675c",
+            "ink": "#e5eaf3",
+            "heading": "#f2f5fa",
+            "muted": "#9faac0",
+            "head-ink": "#9db7f0",
+            "mark": "#9db7f0",
+            "mark-soft": "#5d76a8",
+            "mark-off": "#5f6b82",
+            "holiday": "#1a1812",
+            "holiday-ink": "#b8ab8c",
+            "holiday-hatch": "#3a3526",
+            "selected": "#1a2740",
+            "sel-line": "#3a5486",
+            "row-hover": "#151c29",
+            "totals": "#131a26",
+            "totals-sel": "#213150",
+            "primary": "#23407f",
+            "primary-ink": "#ffffff",
+            "primary-hover": "#2b4c94",
+            "primary-line": "#4466b4",
+            "sec-bg": "#151c29",
+            "sec-line": "#3a4f76",
+            "sec-ink": "#c9d8f6",
+            "sec-hover": "#1c2538",
+            "field-bg": "#0d121b",
+            "field-line": "#46597f",
+            "money": "#c9d8f6",
+            "accent-line": "#8faae8",
+            "success": "#5dbb85",
+            "success-bg": "#11261a",
+            "warning": "#e8b45c",
+            "warning-bg": "#2a2111",
+            "danger": "#f0877d",
+            "danger-bg": "#2a1517",
+            "danger-bg2": "#331a1c",
+            "danger-line": "#7a3a33",
+            "focus": "#9db7f0",
+            "focus-on-cover": "#ffffff",
+            "sel-bg": "#2e4a80",
+            "sel-ink": "#ffffff",
+            "scroll-thumb": "#34496e",
+            "win-border": "#2c3c5c",
+            "scrim": "rgba(2, 5, 12, 0.66)",
+            "tour-scrim": "rgba(2, 5, 12, 0.74)"
+          },
+          "shadows": {
+            "shadow-1": "0 1px 2px rgba(0, 0, 0, 0.4)",
+            "shadow-2": "0 4px 14px rgba(0, 0, 0, 0.3)",
+            "shadow-3": "0 24px 56px rgba(0, 0, 0, 0.55)",
+            "shadow-slip": "-6px 0 16px rgba(0, 0, 0, 0.25)"
+          }
+        },
+        "navy-amber/light": {
+          "fonts": {
+            "ui": "\"Nunito Sans\", \"Segoe UI\", system-ui, sans-serif",
+            "head": "\"Nunito\", \"Nunito Sans\", \"Segoe UI\", system-ui, sans-serif",
+            "headWeight": "800",
+            "headTrack": "-0.01em"
+          },
+          "colors": {
+            "page": "#ffffff",
+            "ground": "#eff3f7",
+            "cover": "#2e4c6d",
+            "cover-ink": "#ffffff",
+            "cover-muted": "#c9d6e4",
+            "cover-line": "rgba(255, 255, 255, 0.14)",
+            "cover-hover": "rgba(255, 255, 255, 0.12)",
+            "cover-press": "rgba(255, 255, 255, 0.2)",
+            "cover-ghost": "rgba(255, 255, 255, 0.44)",
+            "cover-ok": "#9fe0b8",
+            "cover-off": "rgba(255, 255, 255, 0.12)",
+            "cover-off-ink": "rgba(255, 255, 255, 0.66)",
+            "band-btn": "#c98a34",
+            "band-btn-ink": "#2a1e06",
+            "band-btn-hover": "#b97b27",
+            "rule": "#d3dce4",
+            "rule-strong": "#a9b8c6",
+            "margin": "#c98a34",
+            "ink": "#1e2a36",
+            "heading": "#16222e",
+            "muted": "#51606c",
+            "head-ink": "#2e4c6d",
+            "mark": "#2e4c6d",
+            "mark-soft": "#7d93ab",
+            "mark-off": "#9aa7b3",
+            "holiday": "#f7f1e7",
+            "holiday-ink": "#6e5a3a",
+            "holiday-hatch": "#e3d3b8",
+            "selected": "#e3eaf1",
+            "sel-line": "#aebfd0",
+            "row-hover": "#f5f8fb",
+            "totals": "#f6f8fa",
+            "totals-sel": "#d6e0ea",
+            "primary": "#2e4c6d",
+            "primary-ink": "#ffffff",
+            "primary-hover": "#223a56",
+            "primary-line": "#2e4c6d",
+            "sec-bg": "#ffffff",
+            "sec-line": "#a9b8c6",
+            "sec-ink": "#2e4c6d",
+            "sec-hover": "#eef3f7",
+            "field-bg": "#ffffff",
+            "field-line": "#98a9ba",
+            "money": "#223a56",
+            "accent-line": "#2e4c6d",
+            "success": "#1f7a47",
+            "success-bg": "#e8f4ed",
+            "warning": "#8a5a00",
+            "warning-bg": "#fdf3e1",
+            "danger": "#b42318",
+            "danger-bg": "#fceeec",
+            "danger-bg2": "#f8e1de",
+            "danger-line": "#e3a199",
+            "focus": "#2e4c6d",
+            "focus-on-cover": "#ffffff",
+            "sel-bg": "#f0dcbc",
+            "sel-ink": "#1e2a36",
+            "scroll-thumb": "#b8c6d3",
+            "win-border": "#a9b8c6",
+            "scrim": "rgba(23, 35, 46, 0.52)",
+            "tour-scrim": "rgba(23, 35, 46, 0.62)"
+          },
+          "shadows": {
+            "shadow-1": "0 1px 3px rgba(23, 35, 46, 0.08)",
+            "shadow-2": "0 6px 18px rgba(23, 35, 46, 0.08)",
+            "shadow-3": "0 22px 50px rgba(23, 35, 46, 0.16)",
+            "shadow-slip": "-6px 0 16px rgba(23, 35, 46, 0.06)"
+          }
+        },
+        "navy-amber/dark": {
+          "fonts": {
+            "ui": "\"Nunito Sans\", \"Segoe UI\", system-ui, sans-serif",
+            "head": "\"Nunito\", \"Nunito Sans\", \"Segoe UI\", system-ui, sans-serif",
+            "headWeight": "800",
+            "headTrack": "-0.01em"
+          },
+          "colors": {
+            "page": "#16212c",
+            "ground": "#0f1720",
+            "cover": "#223a56",
+            "cover-ink": "#ffffff",
+            "cover-muted": "#b9c9da",
+            "cover-line": "rgba(255, 255, 255, 0.12)",
+            "cover-hover": "rgba(255, 255, 255, 0.1)",
+            "cover-press": "rgba(255, 255, 255, 0.18)",
+            "cover-ghost": "rgba(255, 255, 255, 0.38)",
+            "cover-ok": "#9fe0b8",
+            "cover-off": "rgba(255, 255, 255, 0.1)",
+            "cover-off-ink": "rgba(255, 255, 255, 0.62)",
+            "band-btn": "#d59a45",
+            "band-btn-ink": "#2a1e06",
+            "band-btn-hover": "#c98a34",
+            "rule": "#2a3a4a",
+            "rule-strong": "#3a4d60",
+            "margin": "#d59a45",
+            "ink": "#e3eaf1",
+            "heading": "#f3f6f9",
+            "muted": "#9dadbc",
+            "head-ink": "#8fb4da",
+            "mark": "#8fb4da",
+            "mark-soft": "#5a7896",
+            "mark-off": "#5d6f80",
+            "holiday": "#1b1a15",
+            "holiday-ink": "#c4b08a",
+            "holiday-hatch": "#3b3528",
+            "selected": "#1d2b38",
+            "sel-line": "#3a5570",
+            "row-hover": "#1a2631",
+            "totals": "#1a2530",
+            "totals-sel": "#253747",
+            "primary": "#3a6390",
+            "primary-ink": "#ffffff",
+            "primary-hover": "#44709f",
+            "primary-line": "#3a6390",
+            "sec-bg": "#16212c",
+            "sec-line": "#3a4d60",
+            "sec-ink": "#8fb4da",
+            "sec-hover": "#1d2b38",
+            "field-bg": "#121b25",
+            "field-line": "#465b70",
+            "money": "#d59a45",
+            "accent-line": "#8fb4da",
+            "success": "#5dbb85",
+            "success-bg": "#12261c",
+            "warning": "#e8b45c",
+            "warning-bg": "#2a2111",
+            "danger": "#f0877d",
+            "danger-bg": "#2b1a1c",
+            "danger-bg2": "#35201f",
+            "danger-line": "#7a3a33",
+            "focus": "#8fb4da",
+            "focus-on-cover": "#ffffff",
+            "sel-bg": "#3a6390",
+            "sel-ink": "#ffffff",
+            "scroll-thumb": "#3a4d60",
+            "win-border": "#2a3a4a",
+            "scrim": "rgba(0, 0, 0, 0.62)",
+            "tour-scrim": "rgba(0, 0, 0, 0.72)"
+          },
+          "shadows": {
+            "shadow-1": "0 1px 3px rgba(0, 0, 0, 0.35)",
+            "shadow-2": "0 6px 18px rgba(0, 0, 0, 0.35)",
+            "shadow-3": "0 24px 56px rgba(0, 0, 0, 0.5)",
+            "shadow-slip": "-6px 0 16px rgba(0, 0, 0, 0.25)"
+          }
+        }
+      },
+      "corners": {
+        "square": {
+          "r-btn": "4px",
+          "r-field": "4px",
+          "r-panel": "4px",
+          "r-letter": "4px",
+          "r-block": "2px",
+          "r-chip": "3px"
+        },
+        "rounded": {
+          "r-btn": "999px",
+          "r-field": "8px",
+          "r-panel": "14px",
+          "r-letter": "22px",
+          "r-block": "6px",
+          "r-chip": "999px"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one committing action in a place, such as Save changes or Save as Gmail draft.",
+      "html": "<button class=\"ds-btn-primary\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"/><path d=\"m22 7-10 5L2 7\"/></svg>Save as Gmail draft</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--r-btn, 4px); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 0.12s, border-color 0.12s; background: var(--primary, #1d3f8a); border-color: var(--primary-line, #1d3f8a); color: var(--primary-ink, #ffffff); box-shadow: var(--shadow-1, 0 1px 2px rgba(16, 32, 72, 0.1)); } .ds-btn-primary:hover { background: var(--primary-hover, #17336f); } .ds-btn-primary:focus-visible { outline: 3px solid var(--focus, #1d3f8a); outline-offset: 2px; } .ds-btn-primary:active { background: var(--primary-hover, #17336f); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Copy subject, Add a family, Edit, Cancel: outlined in the strong rule.",
+      "html": "<button class=\"ds-btn-secondary\">Copy subject</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--r-btn, 4px); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 0.12s, border-color 0.12s; background: var(--sec-bg, #ffffff); border-color: var(--sec-line, #9db2d6); color: var(--sec-ink, #1d3f8a); } .ds-btn-secondary:hover { background: var(--sec-hover, #eef3fb); } .ds-btn-secondary:focus-visible { outline: 3px solid var(--focus, #1d3f8a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive actions outside a confirmation, outlined in the danger line.",
+      "html": "<button class=\"ds-btn-danger\">Delete Sarah…</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--r-btn, 4px); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; transition: background-color 0.12s, border-color 0.12s; background: var(--sec-bg, #ffffff); border-color: var(--danger-line, #e3a199); color: var(--danger, #b42318); } .ds-btn-danger:hover { background: var(--danger-bg, #fceeec); } .ds-btn-danger:focus-visible { outline: 3px solid var(--focus, #1d3f8a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Band Button",
+      "kind": "button",
+      "refersTo": "band-button",
+      "description": "40px buttons on the cover band: white in Student Invoice, amber in Navy and amber; a translucent ghost beside them.",
+      "html": "<div class=\"ds-band\"><button class=\"ds-bbtn\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"/><path d=\"m22 7-10 5L2 7\"/></svg>Connect Gmail</button><button class=\"ds-bbtn ds-bbtn--ghost\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"/><path d=\"m22 7-10 5L2 7\"/></svg>Draft all 6 in Gmail</button></div>",
+      "css": ".ds-band { display: flex; gap: 14px; padding: 16px 20px; background: var(--cover, #1d3f8a); } .ds-bbtn { display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--r-btn, 4px); background: var(--band-btn, #ffffff); color: var(--band-btn-ink, #1d3f8a); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); font-size: 15px; font-weight: 700; line-height: 1; box-shadow: var(--shadow-1, 0 1px 2px rgba(16, 32, 72, 0.1)); cursor: pointer; transition: background-color 0.12s; } .ds-bbtn:hover { background: var(--band-btn-hover, #e6eefa); } .ds-bbtn:focus-visible { outline: 3px solid var(--focus-on-cover, #ffffff); outline-offset: 2px; } .ds-bbtn--ghost { background: transparent; color: var(--cover-ink, #ffffff); border-color: var(--cover-ghost, rgba(255, 255, 255, 0.46)); box-shadow: none; font-weight: 600; } .ds-bbtn--ghost:hover { background: var(--cover-hover, rgba(255, 255, 255, 0.12)); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "38px field with a field-line border; focus draws a 3px outline and shifts the border to accent-line.",
+      "html": "<label class=\"ds-field-wrap\"><span>Who you write to</span><input class=\"ds-field\" value=\"Sarah\" /></label>",
+      "css": ".ds-field-wrap { display: grid; gap: 6px; font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); font-size: 15px; font-weight: 600; color: var(--ink, #172033); } .ds-field { height: 38px; padding: 0 12px; border: 1px solid var(--field-line, #8fa5cc); border-radius: var(--r-field, 4px); background: var(--field-bg, #ffffff); color: var(--ink, #172033); font: 400 15px var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); } .ds-field:hover { border-color: var(--rule-strong, #9db2d6); } .ds-field:focus-visible, .ds-field:focus { outline: 3px solid var(--focus, #1d3f8a); outline-offset: 1px; border-color: var(--accent-line, #1d3f8a); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented-on",
+      "description": "The appearance switches in Settings: a field-line tray whose chosen segment fills with primary.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button role=\"radio\" aria-checked=\"true\">Light</button><button role=\"radio\" aria-checked=\"false\">Dark</button></div>",
+      "css": ".ds-seg { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--field-line, #8fa5cc); border-radius: var(--r-btn, 4px); background: var(--field-bg, #ffffff); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); } .ds-seg button { height: 32px; padding: 0 14px; border: 0; border-radius: var(--r-btn, 4px); background: transparent; color: var(--ink, #172033); font: 600 14px var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); cursor: pointer; } .ds-seg button:hover { background: var(--sec-hover, #eef3fb); } .ds-seg button[aria-checked=\"true\"] { background: var(--primary, #1d3f8a); color: var(--primary-ink, #ffffff); } .ds-seg button:focus-visible { outline: 3px solid var(--focus, #1d3f8a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Term Strip",
+      "kind": "nav",
+      "refersTo": "term-block",
+      "description": "Six half-term blocks on the band; the current one is filled with the band button colour.",
+      "html": "<div class=\"ds-terms\"><span class=\"ds-term is-now\">Aut 1</span><span class=\"ds-term\">Aut 2</span><span class=\"ds-term\">Spr 1</span><span class=\"ds-term\">Spr 2</span><span class=\"ds-term\">Sum 1</span><span class=\"ds-term\">Sum 2</span></div>",
+      "css": ".ds-terms { display: flex; gap: 3px; padding: 14px 20px; background: var(--cover, #1d3f8a); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); } .ds-term { height: 26px; min-width: 52px; padding: 0 8px; display: grid; place-items: center; border: 1px solid var(--cover-ghost, rgba(255, 255, 255, 0.46)); border-radius: var(--r-block, 2px); color: var(--cover-muted, #c9d6f2); font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; } .ds-term.is-now { background: var(--band-btn, #ffffff); border-color: var(--band-btn, #ffffff); color: var(--band-btn-ink, #1d3f8a); }"
+    },
+    {
+      "name": "Register Row",
+      "kind": "custom",
+      "refersTo": "register-row-selected",
+      "description": "The signature: family, double margin rule, dated marks (one unticked, one holiday week), and the tinted totals block. Selected, so its marks are lit.",
+      "html": "<div class=\"ds-row is-selected\"><div class=\"ds-fam\"><strong>Sarah</strong><span>Oliver · Piano</span></div><div class=\"ds-weeks\"><button class=\"ds-mk\" aria-pressed=\"true\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path d=\"M8.6 20.4 15.4 3.6\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" fill=\"none\"/></svg></button><button class=\"ds-mk\" aria-pressed=\"false\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"6.5\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-dasharray=\"2.6 2.4\" fill=\"none\"/></svg></button><button class=\"ds-mk\" aria-pressed=\"true\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path d=\"M8.6 20.4 15.4 3.6\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" fill=\"none\"/></svg></button><span class=\"ds-wk is-holiday\"><button class=\"ds-mk\" aria-pressed=\"true\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path d=\"M8.6 20.4 15.4 3.6\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" fill=\"none\"/></svg></button></span></div><div class=\"ds-tot\"><span>3 <small>of 4</small></span><span>£25.00</span><b>£75.00</b></div></div>",
+      "css": ".ds-row { display: grid; grid-template-columns: minmax(130px, 1fr) auto 260px; min-height: 58px; border-bottom: 1px solid var(--rule, #c8d6ea); background: var(--page, #ffffff); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); font-size: 14px; color: var(--ink, #172033); } .ds-row:hover { background: var(--row-hover, #f5f8fd); } .ds-row.is-selected { background: var(--selected, #e6eefa); box-shadow: inset 0 0 0 1px var(--sel-line, #9db5e3); } .ds-fam { display: flex; flex-direction: column; justify-content: center; padding: 9px 8px 9px 20px; } .ds-fam strong { font-size: 15px; font-weight: 600; line-height: 1.3; } .ds-row.is-selected .ds-fam strong { color: var(--heading, #111a2c); } .ds-fam span { font-size: 13px; color: var(--muted, #53607a); } .ds-weeks { display: grid; grid-template-columns: repeat(4, 40px); border-left: 4px double var(--margin, #d0453a); } .ds-weeks > * { border-right: 1px solid var(--rule, #c8d6ea); } .ds-wk { display: grid; } .ds-wk.is-holiday { background: repeating-linear-gradient(-45deg, var(--holiday-hatch, #d9ceb8) 0 1.5px, transparent 1.5px 7px), var(--holiday, #f4f1ea); } .ds-mk { display: grid; place-items: center; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--mark-soft, #7d93c4); cursor: pointer; } .ds-mk:hover { background: var(--sec-hover, #eef3fb); } .ds-row.is-selected .ds-mk { color: var(--mark, #1d3f8a); } .ds-mk[aria-pressed=\"false\"], .ds-row.is-selected .ds-mk[aria-pressed=\"false\"] { color: var(--mark-off, #9aa6bd); } .ds-mk:focus-visible { outline: 3px solid var(--focus, #1d3f8a); outline-offset: -3px; } .ds-tot { display: grid; grid-template-columns: 1fr 1fr 1.2fr; align-items: center; justify-items: end; gap: 8px; padding: 0 18px 0 6px; border-left: 1px solid var(--rule-strong, #9db2d6); background: var(--totals, #f6f8fc); font-variant-numeric: tabular-nums; } .ds-row.is-selected .ds-tot { background: var(--totals-sel, #d8e4f7); } .ds-tot small { font-size: 13px; color: var(--muted, #53607a); } .ds-tot b { font-size: 15px; font-weight: 700; }"
+    },
+    {
+      "name": "Pupil's Page Head",
+      "kind": "card",
+      "refersTo": "pupil-page-head",
+      "description": "The side panel's head on the selection wash, with the invoice sum as a tabular figure.",
+      "html": "<div class=\"ds-slip\"><div class=\"ds-slip-head\"><p><strong>Sarah</strong> <span>Oliver · Piano · Monday</span></p><p class=\"ds-sum\">7 lessons × £25.00 = <b>£175.00</b></p><p class=\"ds-note\">Not charged: Mon 21 Sep</p></div></div>",
+      "css": ".ds-slip { max-width: 440px; background: var(--page, #ffffff); border-left: 1px solid var(--rule-strong, #9db2d6); box-shadow: var(--shadow-slip, -6px 0 16px rgba(16, 32, 72, 0.06)); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); color: var(--ink, #172033); } .ds-slip-head { display: flex; flex-direction: column; gap: 4px; padding: 14px 20px; background: var(--selected, #e6eefa); border-bottom: 1px solid var(--sel-line, #9db5e3); } .ds-slip-head p { margin: 0; } .ds-slip-head strong { font-family: var(--font-head, \"Atkinson Hyperlegible Next\", sans-serif); font-size: 17px; font-weight: var(--head-weight, 700); color: var(--heading, #111a2c); } .ds-slip-head span, .ds-note { font-size: 13px; color: var(--muted, #53607a); } .ds-sum { font-size: 22px; line-height: 30px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-sum b { font-weight: 700; color: var(--money, #1d3f8a); }"
+    },
+    {
+      "name": "Settings Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-current",
+      "description": "The Settings rail on the ground colour; the current item takes the selection wash and an inset line.",
+      "html": "<nav class=\"ds-nav\"><button aria-current=\"true\">Appearance</button><button>Gmail</button><button>Term dates</button></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; width: 248px; padding: 16px 12px; background: var(--ground, #f2f5fa); border-right: 1px solid var(--rule-strong, #9db2d6); font-family: var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); } .ds-nav button { height: 40px; padding: 0 12px; border: 0; border-radius: var(--r-field, 4px); background: transparent; color: var(--ink, #172033); font: 600 14px var(--font-ui, \"Atkinson Hyperlegible Next\", \"Segoe UI\", system-ui, sans-serif); text-align: left; cursor: pointer; } .ds-nav button:hover { background: var(--sec-hover, #eef3fb); } .ds-nav button[aria-current=\"true\"] { background: var(--selected, #e6eefa); color: var(--heading, #111a2c); box-shadow: inset 0 0 0 1px var(--sel-line, #9db5e3); } .ds-nav button:focus-visible { outline: 3px solid var(--focus, #1d3f8a); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Class Register",
+    "overview": "Student Invoice is a UK school register in software form. The half-term is the page. Every family is a ruled row, every lesson is a dated diagonal mark, and the tinted block at the end of the row is the invoice. A register-blue cover band runs across the title bar and header as one piece. Below it sits a white, feint-ruled page with a double margin rule between the names and the lessons. The pupil's page sits to the right as a side panel, like a slip laid on the register. The app avoids the usual invoice list with status pills. Any state it shows belongs to the register itself: a mark, a tint, or a word in the row.\n\nThe density is that of a working document, not a dashboard. Rows are a generous 58px and the lettering is Atkinson Hyperlegible Next, chosen for reading figures at a glance. Tabular figures appear wherever money or dates line up. The system has three independent appearance switches on the root element: colour scheme (Student Invoice or Navy and amber), corners (Square or Rounded) and mode (Light or Dark, Light by default). The frontmatter records the default combination: Student Invoice, square, light. The other combinations swap token values and never change the structure. The Navy and amber scheme takes its navy, amber and Nunito lettering from the teacher's website.\n\nthe teacher has basic computer confidence and uses the app by day and at night. That is why every scheme and mode keeps readable contrast, every control works from the keyboard, and all motion stops under reduced-motion.",
+    "keyCharacteristics": [
+      "A single cover band in the scheme's cover colour, joined to the Discord-style title bar with Windows 11 caption buttons.",
+      "A white ruled page. Blank rows keep their ruling below the last family, so the page never ends in empty space.",
+      "A double margin rule that marks where the lessons begin.",
+      "Lesson marks drawn as masked SVG strokes: a diagonal stroke for a lesson and a dashed circle for an unticked one.",
+      "A tinted totals block at the end of every row, where money is always tabular.",
+      "A pupil's page side panel with a slight shadow to its left.",
+      "Three appearance switches that change only token values, never structure."
+    ],
+    "rules": [
+      {
+        "name": "The One Band Rule",
+        "body": "The cover colour fills only the title bar and the header band beneath it. Everything below the band is page, ground or wash; there is no second saturated field.",
+        "section": "colors"
+      },
+      {
+        "name": "The Margin Is Not Danger Rule",
+        "body": "Margin Red belongs to the ruling of the register. Errors and deletion use danger (#b42318), which is a different red with its own pale backgrounds. Never swap one for the other.",
+        "section": "colors"
+      },
+      {
+        "name": "The Scheme Swaps Values Rule",
+        "body": "Components read only tokens. A new surface must look right under all four scheme-and-mode combinations and both corner settings without extra rules. Only the scheme preview swatches and the Windows close-button red (#c42b1c) use literal colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Every figure that lines up with another uses tabular numerals: totals, per-lesson costs, lesson counts, week dates, the term strip and the sum.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lettering Follows the Scheme Rule",
+        "body": "Fonts come from `--font-ui` and `--font-head` and nothing else. A surface never names a family directly.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ruled Page Rule",
+        "body": "Anything that is part of the register (rows, totals, week columns, Settings rows) is flat and divided by rules. Shadow means \"lying on top of the page\", nothing else.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Switch Rule",
+        "body": "Radius is always one of the six tokens. A component never sets its own corner value, so Square and Rounded stay complete for every new surface.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do read every colour, font and radius from the tokens so all four scheme-and-mode combinations and both corner settings stay complete.",
+      "Do put state in the register: lit marks for the selected row, dashed circles for unticked lessons, hatch for weeks after the half-term, muted text for drafted rows and a danger wash for failed ones.",
+      "Do use tabular numerals for every aligned figure, money and date.",
+      "Do keep the 4px double margin rule where names end and lessons begin (register rows, the editor's lesson strip, the first-run steps), in the scheme's margin colour.",
+      "Do keep rows ruled to the bottom of the page, and keep controls at 36px (buttons), 38px (fields) and 40px (band and navigation), with marks no smaller than 44px.",
+      "Do write labels in sentence case, and give icon-only buttons a data-tip tooltip and an accessible name."
+    ],
+    "donts": [
+      "Don't show invoice state as coloured status pills in a list; the register row and its status column carry it.",
+      "Don't use Margin Red for errors or Danger red for ruling.",
+      "Don't fill any second area with the cover colour, or put page content on the band beyond the heading, meta line, term strip, Gmail status and band buttons.",
+      "Don't give register rows, totals or Settings rows a shadow; use rules and washes.",
+      "Don't hard-code a radius, colour or font family in a component. The scheme swatches and the Windows close-button red are the only literal colours.",
+      "Don't use uppercase labels, eyebrows or small headings stacked above titles; column headings are 13px/600 sentence case in head-ink."
+    ]
+  }
+}

@@ -22,6 +22,8 @@ tooling (see [documentation](documentation.md)).
 
 - [Product](../PRODUCT.md): who uses the app, how and why; the brief for
   design work (Impeccable's `PRODUCT.md`).
+- [Design system](../DESIGN.md): the Register look: colours, lettering, shapes
+  and the rules that keep them consistent (Impeccable's `DESIGN.md`).
 - [UI](ui.md): screens, dialogs, theme.
 - [Gmail](gmail.md): OAuth sign-in and draft creation.
 - [Backup](backup.md): export/import between PCs, automatic backups, file format.
