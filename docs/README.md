@@ -20,6 +20,8 @@ tooling (see [documentation](documentation.md)).
 
 ## Reference
 
+- [Product](../PRODUCT.md): who uses the app, how and why; the brief for
+  design work (Impeccable's `PRODUCT.md`).
 - [UI](ui.md): screens, dialogs, theme.
 - [Gmail](gmail.md): OAuth sign-in and draft creation.
 - [Backup](backup.md): export/import between PCs, automatic backups, file format.
