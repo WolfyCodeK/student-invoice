@@ -54,6 +54,7 @@ if (cmd === 'prepare') {
   if (compareSemver(version, current) <= 0) die(`${version} is not greater than the current version ${current}`)
   changelogFor(version)
   capture('gh', ['auth', 'status'])
+  const env = await buildEnv()
 
   step('Repo checks (invariants, secrets, docs incl. coverage, tests, lint, Rust)')
   run('node', ['scripts/check-invariants.mjs'], { cwd: root })
@@ -87,7 +88,7 @@ if (cmd === 'prepare') {
   run('node', ['scripts/docs/generate.mjs'], { cwd: root })
 
   step('Build signed MSI')
-  run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env: buildEnv() })
+  run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env })
   const bundleDir = join(root, 'app/src-tauri/target/release/bundle/msi')
   const built = readdirSync(bundleDir).find((f) => f.endsWith(`_${version}_x64_en-US.msi`))
   if (!built || !existsSync(join(bundleDir, `${built}.sig`))) die(`signed MSI for ${version} not found in ${bundleDir}`)

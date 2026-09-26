@@ -8,7 +8,8 @@ Open issues and their fixes are tracked in the
 
 | Secret | Where it lives | Used by |
 |---|---|---|
-| Updater signing private key (`myapp.key`, minisign ID `8A406F2CA93B6BCC`) and its password | `%USERPROFILE%\.secrets\student-invoice\` plus the owner's password manager | Release builds, to sign the MSI |
+| Updater signing private key (`myapp.key`, minisign ID `8A406F2CA93B6BCC`) | `%USERPROFILE%\.secrets\student-invoice\` plus the owner's password manager | Release builds, to sign the MSI |
+| The signing key's password | The owner's password manager only. It is typed at a hidden prompt when signing, and never stored on disk | Unlocking `myapp.key` ([release](release.md#the-signing-key-password)) |
 | Google OAuth Desktop client (`google-oauth-client.json`, Google's download format) | same folder plus the password manager | Compiled into builds by `app/src-tauri/build.rs` (see [Gmail](gmail.md)) |
 | Gemini API key (design tooling only) | same folder | The icon-generation script (planned) |
 
@@ -30,7 +31,11 @@ Rules:
   the new one (or ship it), then disable and delete the old one.
 - **Signing key:** the key cannot be rotated without stranding every
   installed copy (see [compatibility](compatibility.md)). Keep it offline and
-  backed up.
+  backed up. Its password can be changed at any time, because that
+  re-encrypts the same key
+  ([release](release.md#the-signing-key-password)). The original password
+  was public, because it was hard-coded in the old `Release.ps1`. It is
+  being replaced before v1.1.0.
 
 ## The public updater key is not a secret
 

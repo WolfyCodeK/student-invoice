@@ -56,6 +56,8 @@ the GitHub release description instead, which the app never parses.
   Settings without first giving them the replacement credentials.
 - Rotating the updater signing key: v1.0.1 would reject every future update.
   If the key ever leaks, the only remedy is a manual reinstall for all users.
+  (Changing the key's *password* is fine: the key stays the same. See
+  [release](release.md#the-signing-key-password).)
 
 ## Versioning
 

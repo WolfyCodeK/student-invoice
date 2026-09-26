@@ -1,9 +1,10 @@
 // Shared helpers for the release scripts. Node built-ins only.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { EOL, homedir } from 'node:os'
 import { join } from 'node:path'
 import { LATEST_JSON_NOTES_PATTERN } from '../invariants.config.mjs'
+import { unlock } from './signing-key.mjs'
 
 export const REPO = 'WolfyCodeK/student-invoice'
 export const SECRETS_DIR = process.env.SI_SECRETS_DIR ?? join(homedir(), '.secrets', 'student-invoice')
@@ -85,27 +86,87 @@ export function changelogSection(changelog, version) {
 export function secretPaths() {
   return {
     signingKey: join(SECRETS_DIR, 'myapp.key'),
-    signingPassword: join(SECRETS_DIR, 'signing-key-password.txt'),
     googleClient: join(SECRETS_DIR, 'google-oauth-client.json'),
   }
 }
 
-/** Environment for `tauri build`: signing key + password, and the Google client if present. */
-export function buildEnv() {
+const ESC = String.fromCharCode(27)
+
+/**
+ * Asks for a secret in the terminal without echoing it. It needs an
+ * interactive terminal, so steps that sign are run by the owner, not a tool.
+ */
+export function askHidden(question) {
+  const { stdin, stdout } = process
+  if (!stdin.isTTY) die('This step asks for a password. Run it yourself in a terminal.')
+  return new Promise((resolve) => {
+    const typed = []
+    const onData = (data) => {
+      // Terminals may wrap a paste in ESC[200~ ... ESC[201~ (bracketed paste).
+      const chunk = data.split(`${ESC}[200~`).join('').split(`${ESC}[201~`).join('')
+      if (chunk.startsWith(ESC)) return // arrow keys and other escape sequences
+      for (const ch of chunk) {
+        const code = ch.charCodeAt(0)
+        if (code === 3) {
+          // Ctrl+C
+          stdin.setRawMode(false)
+          stdout.write(EOL)
+          process.exit(130)
+        } else if (code === 13 || code === 10) {
+          stdin.off('data', onData)
+          stdin.setRawMode(false)
+          stdin.pause()
+          stdout.write(EOL)
+          resolve(typed.join(''))
+          return
+        } else if (code === 8 || code === 127) {
+          typed.pop()
+        } else if (code >= 32) {
+          typed.push(ch)
+        }
+      }
+    }
+    stdout.write(question)
+    stdin.setRawMode(true)
+    stdin.setEncoding('utf8')
+    stdin.on('data', onData)
+    stdin.resume()
+  })
+}
+
+/** Asks for the signing key password and checks it at once. It is never stored. */
+export async function askSigningPassword(keyPath) {
+  const keyText = readFileSync(keyPath, 'utf8')
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const password = await askHidden('Signing key password (from Bitwarden): ')
+    try {
+      unlock(keyText, password)
+      return password
+    } catch {
+      console.error('That password does not unlock the signing key.')
+    }
+  }
+  die('Signing key not unlocked.')
+}
+
+/**
+ * Environment for `tauri build`: the signing key, its password (asked for in
+ * the terminal) and the Google client. Call it before any long-running step,
+ * so the password prompt comes first.
+ */
+export async function buildEnv() {
   const p = secretPaths()
   if (!existsSync(p.signingKey)) die(`Signing key not found at ${p.signingKey}. Restore it from your password manager (see docs/release.md).`)
-  if (!existsSync(p.signingPassword)) die(`Signing key password file not found at ${p.signingPassword}. Create it in Notepad containing only the password.`)
-  const env = {
-    ...process.env,
-    TAURI_SIGNING_PRIVATE_KEY: p.signingKey, // Tauri accepts a path
-    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: readFileSync(p.signingPassword, 'utf8').replace(/^\uFEFF/, '').replace(/\r?\n$/, ''), // Notepad may add a BOM or a final newline
-  }
   // Release builds must have Gmail: build.rs embeds this client (docs/gmail.md).
   if (!existsSync(p.googleClient)) die(`Google OAuth client file not found at ${p.googleClient}. Restore it from your password manager.`)
   const c = JSON.parse(readFileSync(p.googleClient, 'utf8'))
   const creds = c.installed ?? c
   if (!creds.client_id || !creds.client_secret) die(`${p.googleClient} has no installed.client_id/client_secret (is it a Desktop app client?)`)
-  env.SI_GOOGLE_CLIENT_ID = creds.client_id
-  env.SI_GOOGLE_CLIENT_SECRET = creds.client_secret
-  return env
+  return {
+    ...process.env,
+    TAURI_SIGNING_PRIVATE_KEY: p.signingKey, // Tauri accepts a path
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: await askSigningPassword(p.signingKey),
+    SI_GOOGLE_CLIENT_ID: creds.client_id,
+    SI_GOOGLE_CLIENT_SECRET: creds.client_secret,
+  }
 }

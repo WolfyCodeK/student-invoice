@@ -56,6 +56,7 @@ if (cmd === 'harness') {
 } else if (cmd === 'target') {
   if (!isSemver(version ?? '')) die('usage: update-test.mjs target <x.y.z>')
   if (capture('git', ['status', '--porcelain'], { cwd: root })) die('Working tree must be clean (the version bump is reverted with git checkout)')
+  const env = await buildEnv()
   const files = ['app/package.json', 'app/src-tauri/tauri.conf.json', 'app/src-tauri/Cargo.toml', 'app/src-tauri/Cargo.lock']
   try {
     step(`Temporarily label the build ${version}`)
@@ -70,7 +71,7 @@ if (cmd === 'harness') {
       writeFileSync(join(root, file), t.replace(re, `$1${version}$2`))
     }
     step('Build signed MSI')
-    run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env: buildEnv() })
+    run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env })
     const bundle = join(root, 'app/src-tauri/target/release/bundle/msi')
     const built = readdirSync(bundle).find((f) => f.endsWith(`_${version}_x64_en-US.msi`))
     if (!built) die('built MSI not found')

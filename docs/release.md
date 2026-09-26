@@ -12,8 +12,11 @@ The secrets folder `%USERPROFILE%\.secrets\student-invoice\` must contain:
 | File | Contents | Backup |
 |---|---|---|
 | `myapp.key` | Updater signing private key (minisign ID `8A406F2CA93B6BCC`) | Bitwarden |
-| `signing-key-password.txt` | The key's password, on a single line | Bitwarden |
 | `google-oauth-client.json` | Google OAuth Desktop client, as downloaded from Google Cloud. Embedded into the build; the release refuses to build without it | Bitwarden |
+
+The signing key's **password is not stored in a file**. It lives only in
+Bitwarden, in the same item as `myapp.key`, and the scripts ask for it (see
+[the signing key password](#the-signing-key-password)).
 
 You also need the GitHub CLI signed in (`gh auth login`) with push rights.
 
@@ -24,13 +27,16 @@ You also need the GitHub CLI signed in (`gh auth login`) with push rights.
    `<!-- latest-json-summary: ... -->` line. The summary must be one plain line
    (see [compatibility](compatibility.md#the-latestjson-notes-rule)). Commit
    and push.
-2. **Prepare:** `node scripts/release/release.mjs prepare x.y.z`
+2. **Prepare:** `node scripts/release/release.mjs prepare x.y.z`, run by
+   the owner in a terminal, because it asks for the signing key password.
    - Preflight:
      - on `main`, clean tree, up to date with `origin/main`;
      - the tag is not already taken, locally or on GitHub;
      - the new version is greater than the current one;
      - the changelog section and summary are present;
-     - `gh` is signed in.
+     - `gh` is signed in;
+     - the signing key password, asked for and checked at once, before the
+       long checks.
    - Runs every check: invariants, secret scan, docs, and `pnpm check`,
      `cargo fmt/clippy/test`.
    - Bumps the version in `app/package.json`, `tauri.conf.json`, `Cargo.toml`
@@ -83,7 +89,8 @@ against a build of the current checkout, entirely on this PC.
    updater asks `http://127.0.0.1:8765/latest.json` instead of GitHub.
 2. **Build the target:** `node scripts/release/update-test.mjs target 1.1.0`
    builds a signed MSI of the current checkout labelled 1.1.0, plus a
-   `latest.json` for the local server. The version bump is reverted
+   `latest.json` for the local server. It asks for the signing key password
+   first. The version bump is reverted
    afterwards and nothing is committed.
 3. **Serve:** `node scripts/release/update-test.mjs serve`, and leave it
    running.
@@ -100,6 +107,41 @@ against a build of the current checkout, entirely on this PC.
    `Student.Invoice_1.0.1_x64_en-US.msi` from GitHub). The harness updater
    only looks at `127.0.0.1`, so leaving it installed would cut this PC off
    from real updates. Then run `update-test.mjs clean`.
+
+## The signing key password
+
+`myapp.key` is stored encrypted with a password. Signing needs both. The
+password only protects copies of the key file, so it is never written to disk
+next to the key.
+
+- **When it's asked for:** `release.mjs prepare` and `update-test.mjs target`
+  ask for it in the terminal (hidden) before they start, and check it straight
+  away against the updater public key in `scripts/invariants.config.mjs`. It
+  reaches `tauri build` only through the `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+  environment variable. These steps therefore can't run through a tool
+  without a terminal, such as an AI assistant.
+- **Changing it:** `node scripts/release/change-key-password.mjs`, run by the
+  owner in a terminal.
+  1. Generate the new password in Bitwarden and save it in the `myapp.key`
+     item first.
+  2. The script asks for the current password and the new one (twice; at
+     least 16 characters), then re-encrypts the **same** key. The public key,
+     which installed copies trust, doesn't change, so this is not a key
+     rotation (see [compatibility](compatibility.md)).
+  3. Before switching, it checks the result: Tauri's own signer must sign a
+     test file with the new key file and password, and the signature must
+     verify against the updater public key. If anything fails, nothing is
+     changed.
+  4. It keeps the previous file as `myapp.key.old`. Replace the key in
+     Bitwarden, then delete `myapp.key.old` and any other old copies, since
+     those still open with the old password.
+- **How it works:** `scripts/release/signing-key.mjs` implements the minisign
+  secret-key format as the `minisign` crate that Tauri's signer uses: scrypt,
+  then XOR over the key id, key and checksum. Its tests are in
+  `scripts/release/signing-key.test.mjs`. On 2026-09-26 it was also checked on
+  a throwaway key against `tauri signer sign` (which rejects the old password
+  and accepts the new one) and against `minisign-verify` 0.2.5, the verifier
+  the updater uses.
 
 ## If something goes wrong after publishing
 
