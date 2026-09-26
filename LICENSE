@@ -1,0 +1,22 @@
+Copyright (c) 2025-2026 WolfyCodeK. All rights reserved.
+
+This repository and the Student Invoice application it contains are
+published for reference only. No permission is granted to use, copy, modify,
+merge, publish, distribute, sublicense or sell the software, or any part of
+it, without the prior written permission of the copyright holder.
+
+Installing and using the released application for its intended purpose, as
+provided by the copyright holder, is permitted.
+
+Third-party components keep their own licences, including:
+- the fonts in app/src/assets/fonts/ (SIL Open Font License 1.1; see the
+  OFL-*.txt files there);
+- the open-source libraries listed in app/package.json and
+  app/src-tauri/Cargo.toml, under their respective licences.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
