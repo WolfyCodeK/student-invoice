@@ -13,7 +13,7 @@ related_targets: []
 **Audience and job:** This is the teacher, a private music teacher with basic computer confidence. At each half-term he checks every family's invoice, then saves them all as Gmail drafts, which he reviews and sends from Gmail.
 **Constraints:**
 - Every existing function stays.
-- Money and email wording change only through an approved proposal. The lesson unticking in `docs/proposals/2026-09-untick-lessons.md` is awaiting approval.
+- Money and email wording change only through an approved proposal. Lesson unticking is approved for v1.1.0.
 - The compatibility invariants hold.
 - The app stays within the performance budgets.
 - The title bar is Discord-style, with Windows 11 caption buttons.
@@ -25,14 +25,15 @@ related_targets: []
 - mode: Light or Dark, with Light the default.
 
 **App icon:** "Invoices and tick", to be redrawn as a vector master.
+**After updating:** "What's new" is shown once, the first time the app opens after an update. It lists only changes a user would notice, in 3–5 very short lines, and never behind-the-scenes work.
+**Guided tour:** after the v1.1.0 update, a tour runs once. Everything is dimmed except one highlighted area at a time, with a text box saying how to use that element. It has numbered steps (1 of N) in the order the teacher actually works: half-term, register rows, lesson marks, totals, pupil's page, add/edit, Gmail and Draft all, Settings. It can be skipped. **Show the tour again** in Settings replays it. **Order after the v1.1.0 update:** What's new first, then the tour. **Later updates:** What's new only.
 
 **Memorable moment:** the register grid itself, where every lesson is a dated mark and the totals sit at the row's end.
 
 **Reference mock:** the Register fragment published on the design review artifact, https://claude.ai/artifact/5FCMHUDncH5tpiXjGxcL5y. It is the critique reference for the finish review. It is code-led, so there is no approved comp.
 
 **Unresolved:**
-- the untick-lessons proposal: the rule, which version, and how a single lesson's date range reads;
-- billing decisions 1, 3, 4 and 6 are still pending with the teacher.
+- billing decisions 1, 3, 4 and 6 are still pending with the teacher. They will be settled through v1.1.x releases after his feedback. Lesson unticking is approved and built (`docs/proposals/2026-09-untick-lessons.md`).
 
 ## Direction contract
 
