@@ -42,8 +42,11 @@ variables in `app/src/App.css`.
 
 ## Toasts
 
-`app/src/hooks/use-toast.ts` (shadcn toast store, one toast at a time,
-auto-dismiss removed) is rendered by `App.tsx`.
+`app/src/hooks/use-toast.ts` is the shadcn toast store, showing one toast at
+a time. `App.tsx` renders it. Toasts close after 5 seconds, which is Radix
+Toast's default duration. The store's own removal timer is disabled, and a
+comment in `use-toast.ts` wrongly suggests toasts never auto-close (bug audit
+B34).
 
 ## Window
 

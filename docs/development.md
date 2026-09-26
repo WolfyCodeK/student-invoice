@@ -97,6 +97,11 @@ node scripts/docs/check.mjs              # all docs checks
     `tauri.conf.json`, which invariant `mcp-bridge-dev-only` enforces.
   - Claude Code asks you to approve the server the first time it loads the
     project.
+  - **Warning:** the bridge's WebSocket accepts any connection without
+    checking where it comes from. While `pnpm dev:mcp` is running, a web page
+    open in your browser could connect to it and drive the dev app. Only run
+    `dev:mcp` with test data and no real Gmail account connected, and stop it
+    when you're done (security audit S16).
 
 ## Locked dependency versions
 
