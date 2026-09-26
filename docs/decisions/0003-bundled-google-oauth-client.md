@@ -1,6 +1,6 @@
 # 0003: The Google OAuth Desktop client is compiled into release builds
 
-**Date:** 2026-09-26. **Status:** accepted; implementation pending.
+**Date:** 2026-09-26. **Status:** accepted; implemented in v1.1.0 (see [Gmail](../gmail.md)).
 
 ## Context
 

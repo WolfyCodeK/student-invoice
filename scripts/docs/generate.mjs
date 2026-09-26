@@ -28,6 +28,23 @@ function rustFiles(dir) {
   )
 }
 
+/** Splits on commas that are not inside <...> or (...) (e.g. `State<'_, T>`). */
+function splitTopLevel(text) {
+  const parts = []
+  let depth = 0
+  let current = ''
+  for (const ch of text) {
+    if (ch === '<' || ch === '(') depth++
+    if (ch === '>' || ch === ')') depth--
+    if (ch === ',' && depth === 0) {
+      parts.push(current)
+      current = ''
+    } else current += ch
+  }
+  parts.push(current)
+  return parts
+}
+
 export function parseCommands() {
   const commands = []
   for (const file of rustFiles('app/src-tauri/src')) {
@@ -42,8 +59,7 @@ export function parseCommands() {
       const sigText = lines.slice(i + 1, i + 30).join('\n')
       const sig = sigText.match(/(?:pub\s+)?(async\s+)?fn\s+(\w+)\s*(?:<[^>]*>)?\s*\(([\s\S]*?)\)\s*(?:->\s*([^{]+))?\{/)
       if (!sig) throw new Error(`${file}:${i + 1}: could not parse command signature`)
-      const args = sig[3]
-        .split(',')
+      const args = splitTopLevel(sig[3])
         .map((a) => a.trim())
         .filter(Boolean)
         .filter((a) => !/:\s*(tauri::)?(AppHandle|State<|Window|WebviewWindow)/.test(a))
@@ -71,7 +87,7 @@ function registeredCommands() {
 
 function manifestCommands() {
   const build = readRepoFile('app/src-tauri/build.rs')
-  const m = build.match(/\.commands\(\s*&\[([\s\S]*?)\]\s*\)/)
+  const m = build.match(/const COMMANDS:\s*&\[&str\]\s*=\s*&\[([\s\S]*?)\];/) ?? build.match(/\.commands\(\s*&\[([\s\S]*?)\]\s*\)/)
   if (!m) return null // no app ACL manifest yet: every registered command is callable
   return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1])
 }

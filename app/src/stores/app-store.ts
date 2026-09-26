@@ -3,8 +3,13 @@ import { persist } from 'zustand/middleware'
 import { InvoiceTemplate, AppSettings, TermData } from '../types'
 import { generateInvoice, generateAllInvoices, InvoiceData } from '../utils/invoice-generator'
 import { calculateTermData, getTermsForAcademicYear } from '../utils/terms'
-import { invoke } from '@tauri-apps/api/core'
-import { openUrl } from '@tauri-apps/plugin-opener'
+import { backend, isBackendError, errorMessage, type GmailStatus, type UpdateInfo } from '../lib/backend'
+
+/** One template's result from "Draft all". */
+export interface DraftFailure {
+  label: string
+  message: string
+}
 
 interface AppState {
   // Templates
@@ -28,23 +33,22 @@ interface AppState {
   generateCurrentInvoice: () => void
   generateAllInvoicesAction: () => InvoiceData[]
 
-  // Gmail Integration
-  gmailConnected: boolean
-  gmailAuthUrl: string | null
-  pkceVerifier: string | null
-  showGmailAuthDialog: boolean
-  updateGmailStatus: () => Promise<void>
-  connectGmail: () => Promise<void>
-  disconnectGmail: () => void
-  exchangeGmailCode: (code: string) => Promise<void>
-  hideGmailAuthDialog: () => void
-  createGmailDraft: (subject: string, body: string) => Promise<unknown>
-  createCurrentInvoiceDraft: () => Promise<unknown>
-  createAllInvoiceDrafts: () => Promise<{success: number, failed: number, errors: string[]}>
-  checkGmailAuthStatus: () => Promise<unknown>
+  // Gmail (tokens live in Rust / Windows Credential Manager, never here)
+  gmailConnected: boolean // persisted only for v1.0.1 compatibility
+  gmail: GmailStatus | null
+  gmailConnecting: boolean
+  drafting: boolean
+  refreshGmailStatus: () => Promise<void>
+  connectGmail: () => Promise<GmailStatus>
+  cancelGmailConnect: () => Promise<void>
+  disconnectGmail: () => Promise<void>
+  setCustomGmailClient: (clientId: string, clientSecret: string) => Promise<void>
+  clearCustomGmailClient: () => Promise<void>
+  createCurrentInvoiceDraft: () => Promise<void>
+  createAllInvoiceDrafts: () => Promise<{ success: number; failures: DraftFailure[]; skipped: number }>
 
   // Updates
-  checkForUpdates: () => Promise<{available: boolean, version?: string, body?: string}>
+  checkForUpdates: () => Promise<UpdateInfo>
   installUpdate: () => Promise<void>
 
   // UI State
@@ -69,171 +73,104 @@ export { getTermsForAcademicYear }
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      // Gmail Integration
+      // Gmail
       gmailConnected: false,
-      gmailAuthUrl: null,
-      pkceVerifier: null,
-      showGmailAuthDialog: false,
+      gmail: null,
+      gmailConnecting: false,
+      drafting: false,
+
+      refreshGmailStatus: async () => {
+        try {
+          const gmail = await backend.gmailStatus()
+          set({ gmail, gmailConnected: gmail.connected })
+        } catch (error) {
+          console.error('Failed to read Gmail status:', errorMessage(error))
+        }
+      },
 
       connectGmail: async () => {
+        set({ gmailConnecting: true })
         try {
-          const currentSettings = get().settings
-
-          if (!currentSettings.gmailClientId || !currentSettings.gmailClientSecret) {
-            throw new Error('Gmail client ID and secret must be configured in settings')
-          }
-
-          console.log('Starting OAuth server and generating auth URL...')
-          const authUrl = await invoke('start_oauth_server', {
-            clientId: currentSettings.gmailClientId,
-            clientSecret: currentSettings.gmailClientSecret
-          }) as string
-
-          console.log('Opening browser for Gmail authentication...')
-          // Open browser automatically
-          openUrl(authUrl)
-
-          // Show a simple waiting dialog
-          set({ showGmailAuthDialog: true })
-
-        } catch (error) {
-          console.error('Failed to start OAuth server:', error)
-          throw error
+          const gmail = await backend.gmailConnect()
+          set({ gmail, gmailConnected: gmail.connected })
+          return gmail
+        } finally {
+          set({ gmailConnecting: false })
+          await get().refreshGmailStatus()
         }
       },
 
-      disconnectGmail: () => {
-        set({ gmailConnected: false, gmailAuthUrl: null, pkceVerifier: null, showGmailAuthDialog: false })
+      cancelGmailConnect: async () => {
+        await backend.gmailCancelConnect()
       },
 
-      hideGmailAuthDialog: () => {
-        set({ showGmailAuthDialog: false, gmailAuthUrl: null, pkceVerifier: null })
+      disconnectGmail: async () => {
+        const gmail = await backend.gmailDisconnect()
+        set({ gmail, gmailConnected: gmail.connected })
       },
 
-      exchangeGmailCode: async (code: string) => {
-        try {
-          const state = get()
-          if (!state.pkceVerifier) {
-            throw new Error('No PKCE verifier available')
-          }
-          const settings = state.settings
-          if (!settings.gmailClientId || !settings.gmailClientSecret) {
-            throw new Error('Gmail client ID and secret not found in settings')
-          }
-
-          await invoke('exchange_gmail_code', {
-            code,
-            pkceVerifier: state.pkceVerifier,
-            clientId: settings.gmailClientId,
-            clientSecret: settings.gmailClientSecret
-          })
-
-          // Update status after successful exchange
-          await get().updateGmailStatus()
-          set({ gmailAuthUrl: null, pkceVerifier: null, showGmailAuthDialog: false })
-        } catch (error) {
-          console.error('Failed to exchange Gmail code:', error)
-          throw error
-        }
+      setCustomGmailClient: async (clientId, clientSecret) => {
+        const gmail = await backend.gmailSetCustomClient(clientId, clientSecret)
+        set({ gmail, gmailConnected: gmail.connected })
       },
 
-      updateGmailStatus: async () => {
-        try {
-          const status = await invoke('check_gmail_auth_status') as {
-            has_token: boolean
-            has_client_id: boolean
-            has_client_secret: boolean
-            token_expires_at?: string
-            current_time: string
-          }
-          const isConnected = status.has_token && status.has_client_id && status.has_client_secret
-
-          // Check if token is expired
-          if (isConnected && status.token_expires_at) {
-            const expiresAt = new Date(status.token_expires_at)
-            const now = new Date()
-            if (expiresAt <= now) {
-              // Token is expired, mark as disconnected
-              set({ gmailConnected: false })
-              return
-            }
-          }
-
-          set({ gmailConnected: isConnected })
-        } catch (error) {
-          console.error('Failed to check Gmail auth status:', error)
-          set({ gmailConnected: false })
-        }
-      },
-
-      createGmailDraft: async (subject: string, body: string) => {
-        try {
-          const result = await invoke('create_gmail_draft', { subject, body })
-          set({ gmailConnected: true })
-          return result
-        } catch (error) {
-          console.error('Failed to create Gmail draft:', error)
-          throw error
-        }
+      clearCustomGmailClient: async () => {
+        const gmail = await backend.gmailClearCustomClient()
+        set({ gmail, gmailConnected: gmail.connected })
       },
 
       createCurrentInvoiceDraft: async () => {
-        const state = get()
-        if (state.currentInvoice) {
-          return await state.createGmailDraft(state.currentInvoice.subject, state.currentInvoice.body)
+        const { currentInvoice, drafting } = get()
+        if (drafting) return
+        if (!currentInvoice) throw new Error('There is no invoice to save for this template right now.')
+        set({ drafting: true })
+        try {
+          await backend.gmailCreateDraft(currentInvoice.subject, currentInvoice.body)
+        } catch (error) {
+          if (isBackendError(error) && (error.kind === 'ReauthRequired' || error.kind === 'NotConnected')) {
+            await get().refreshGmailStatus()
+          }
+          throw error
+        } finally {
+          set({ drafting: false })
         }
-        throw new Error('No current invoice to send')
       },
 
       createAllInvoiceDrafts: async () => {
         const state = get()
-        const invoices = state.generateAllInvoicesAction()
-
-        if (invoices.length === 0) {
-          throw new Error('No invoices to create drafts for')
-        }
-
+        if (state.drafting) return { success: 0, failures: [], skipped: 0 }
+        const term = state.currentTerm
+        if (!term) throw new Error('It is outside term time, so there are no invoices to create.')
+        if (state.templates.length === 0) throw new Error('There are no templates yet.')
+        set({ drafting: true })
         let success = 0
-        let failed = 0
-        const errors: string[] = []
-
-        for (const invoice of invoices) {
-          try {
-            await state.createGmailDraft(invoice.subject, invoice.body)
-            success++
-          } catch (error) {
-            failed++
-            const recipient = invoice.subject.match(/for (.+) Lessons/)?.[1] || 'Unknown'
-            errors.push(`${recipient}: ${error instanceof Error ? error.message : String(error)}`)
+        let skipped = 0
+        const failures: DraftFailure[] = []
+        try {
+          for (const [i, template] of state.templates.entries()) {
+            const invoice = generateInvoice(template, term, state.settings.customEmailBodyTemplate)
+            try {
+              await backend.gmailCreateDraft(invoice.subject, invoice.body)
+              success++
+            } catch (error) {
+              failures.push({ label: `${template.students} (${template.recipient})`, message: errorMessage(error) })
+              // Without a working connection every remaining draft would fail too.
+              if (isBackendError(error) && ['ReauthRequired', 'NotConnected', 'NotConfigured'].includes(error.kind)) {
+                skipped = state.templates.length - i - 1
+                await get().refreshGmailStatus()
+                break
+              }
+            }
           }
+        } finally {
+          set({ drafting: false })
         }
-
-        return { success, failed, errors }
-      },
-
-      checkGmailAuthStatus: async () => {
-        return await invoke('check_gmail_auth_status')
+        return { success, failures, skipped }
       },
 
       // Updates
-      checkForUpdates: async () => {
-        try {
-          const result = await invoke<string>('check_for_updates')
-          return JSON.parse(result)
-        } catch (error) {
-          console.error('Failed to check for updates:', error)
-          throw error
-        }
-      },
-
-      installUpdate: async () => {
-        try {
-          await invoke('install_update')
-        } catch (error) {
-          console.error('Failed to install update:', error)
-          throw error
-        }
-      },
+      checkForUpdates: () => backend.checkForUpdates(),
+      installUpdate: () => backend.installUpdate(),
 
       // Templates
       templates: [],
@@ -250,6 +187,7 @@ export const useAppStore = create<AppState>()(
           templates: [...state.templates, newTemplate],
           currentTemplateId: newTemplate.id
         }))
+        get().generateCurrentInvoice()
       },
 
       updateTemplate: (id, updates) => {
@@ -260,6 +198,7 @@ export const useAppStore = create<AppState>()(
               : template
           )
         }))
+        get().generateCurrentInvoice()
       },
 
       deleteTemplate: (id) => {
@@ -267,10 +206,12 @@ export const useAppStore = create<AppState>()(
           templates: state.templates.filter(template => template.id !== id),
           currentTemplateId: state.currentTemplateId === id ? null : state.currentTemplateId
         }))
+        get().generateCurrentInvoice()
       },
 
       setCurrentTemplate: (id) => {
         set({ currentTemplateId: id })
+        get().generateCurrentInvoice()
       },
 
       // Settings
@@ -280,6 +221,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           settings: { ...state.settings, ...updates }
         }))
+        get().generateCurrentInvoice()
       },
 
       // Terms
@@ -288,6 +230,7 @@ export const useAppStore = create<AppState>()(
       calculateCurrentTerm: (date = new Date()) => {
         const termData = calculateTermData(date)
         set({ currentTerm: termData })
+        get().generateCurrentInvoice()
       },
 
       // Invoice Generation
@@ -298,10 +241,10 @@ export const useAppStore = create<AppState>()(
         const template = state.templates.find(t => t.id === state.currentTemplateId)
         const termData = state.currentTerm
 
-        if (template && termData) {
-          const invoice = generateInvoice(template, termData, state.settings.customEmailBodyTemplate)
-          set({ currentInvoice: invoice })
-        }
+        // No template selected or outside term time: nothing to show (a stale
+        // invoice for another template must never be displayed or copied).
+        const invoice = template && termData ? generateInvoice(template, termData, state.settings.customEmailBodyTemplate) : null
+        set({ currentInvoice: invoice })
       },
 
       generateAllInvoicesAction: () => {
@@ -326,14 +269,19 @@ export const useAppStore = create<AppState>()(
         currentTemplateId: state.currentTemplateId,
         settings: state.settings,
         gmailConnected: state.gmailConnected
-      })
+      }),
+      onRehydrateStorage: () => (state) => {
+        // v1.0.1 kept the Google client ID/secret in plaintext here. v1.1.0
+        // uses a built-in client (or one in Windows Credential Manager), so
+        // remove them. Fields stay (as '') so older versions can still load.
+        if (state && (state.settings.gmailClientId || state.settings.gmailClientSecret)) {
+          state.updateSettings({ gmailClientId: '', gmailClientSecret: '' })
+        }
+      }
     }
   )
 )
 
 // Initialize term calculation and Gmail status on app start
 useAppStore.getState().calculateCurrentTerm()
-// Check Gmail status asynchronously
-setTimeout(() => {
-  useAppStore.getState().updateGmailStatus()
-}, 1000)
+void useAppStore.getState().refreshGmailStatus()

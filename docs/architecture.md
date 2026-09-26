@@ -10,18 +10,17 @@ can't: the Google OAuth loopback server, Gmail API calls, and the updater.
 │ React UI (app/src)                                                                      │
 │   App.tsx ── components/* ── zustand store (stores/app-store.ts) ── utils/* (pure logic) │
 │        │                         │ persist → localStorage "student-invoice-store"        │
-│        │ invoke('<command>')     │                                                       │
-└────────┼─────────────────────────┼───────────────────────────────────────────────────────┘
+│        │ lib/backend.ts (typed invoke wrappers; CSP + command allowlist enforced)        │
+└────────┼────────────────────────────────────────────────────────────────────────────────┘
          ▼ Tauri IPC
-┌──────── Rust (app/src-tauri/src) ────────┐      ┌──────────── Internet ────────────┐
-│ lib.rs: commands, OAuth loopback server,  │ ───▶ │ accounts.google.com (OAuth)      │
-│         updater commands                  │ ───▶ │ gmail.googleapis.com (drafts)    │
-│ gmail.rs: OAuth + Gmail draft client      │ ───▶ │ github.com releases (updates)    │
-│ plugins: opener, updater                  │      └──────────────────────────────────┘
-└───────────────────────────────────────────┘
+┌──────── Rust (app/src-tauri/src) ─────────┐      ┌──────────── Internet ────────────┐
+│ commands.rs → google/ (sign-in, drafts)    │ ───▶ │ accounts.google.com (OAuth)      │
+│             → updates.rs                   │ ───▶ │ gmail.googleapis.com (drafts)    │
+│ google/store.rs → Windows Credential Mgr   │ ───▶ │ github.com releases (updates)    │
+│ plugins: opener (Rust-side), updater       │      └──────────────────────────────────┘
+└────────────────────────────────────────────┘
 The feedback form calls api.emailjs.com directly from the webview.
 ```
-
 ## Frontend (`app/src`)
 
 - `main.tsx` mounts `App` in React StrictMode.
@@ -34,18 +33,29 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `utils/terms.ts` and `utils/invoice-generator.ts`: pure, tested billing logic.
   See [billing](billing.md).
 - `types/index.ts`: shared domain types.
+- `lib/backend.ts`: typed wrappers for every Rust command and the shared
+  `{ kind, message }` error type. The UI calls these instead of `invoke`.
 
 **Start-up side effects** (`app/src/stores/app-store.ts`, bottom of file): as
-soon as the store module loads it computes the current term, and after one
-second it asks Rust for the Gmail status.
+soon as the store module loads it computes the current term (which also
+builds the current invoice) and asks Rust for the Gmail status.
 
 ## Backend (`app/src-tauri`)
 
 - `src/main.rs` calls `student_invoice_tauri_lib::run()`.
-- `src/lib.rs` registers the plugins (`opener`, `updater`) and the commands
-  below. It keeps Gmail state (client credentials and tokens) in a global
-  in-memory mutex, so nothing is written to disk. See [Gmail](gmail.md).
-- `src/gmail.rs` is the OAuth2 (PKCE) and Gmail drafts client.
+- `src/lib.rs` registers the plugins and the commands below. It also creates
+  the shared state: the Google sign-in manager, holding one HTTP client, and
+  the updater state.
+- `src/commands.rs` holds every command the UI can call. They validate input
+  and delegate.
+- `src/error.rs` defines `AppError`, which reaches the UI as `{ kind, message }`.
+- `src/google/` covers Google sign-in, token storage in Windows Credential
+  Manager, and Gmail drafts. See [Gmail](gmail.md).
+- `src/updates.rs` handles update checks and installs (see Updates below).
+- `build.rs` does two things:
+  - declares the command allowlist (the app ACL manifest);
+  - embeds the Google OAuth client from the release environment or the
+    owner's secrets folder.
 - `tauri.conf.json` holds the window, security (CSP), updater and bundle
   settings. Several of these values are frozen; see [compatibility](compatibility.md).
 - `tauri.dev.conf.json` is a development-only overlay, merged by
@@ -55,19 +65,19 @@ second it asks Rust for the Gmail status.
 ### Commands callable from the UI
 
 <!-- GEN:tauri-commands -->
-**No app ACL manifest yet:** every registered command can be called by any script running in the webview.
+Only commands granted an `allow-<command>` permission in `app/src-tauri/capabilities/` can be called from the webview.
 
 | Command | Arguments | Returns | Purpose | Defined at |
 |---|---|---|---|---|
-| `check_for_updates` | — | `Result<String, String>` | — | `src/lib.rs:245` |
-| `check_gmail_auth_status` | — | `Result<serde_json::Value, String>` | — | `src/lib.rs:120` |
-| `create_gmail_draft` | `subject: String`<br>`body: String` | `Result<serde_json::Value, String>` | — | `src/lib.rs:75` |
-| `exchange_gmail_code` | `code: String`<br>`pkce_verifier: String`<br>`client_id: String`<br>`client_secret: String` | `Result<(), String>` | — | `src/lib.rs:54` |
-| `get_gmail_auth_url` | `client_id: String`<br>`client_secret: String` | `Result<(String, String), String>` | — | `src/lib.rs:33` |
-| `greet` | `name: &str` | `String` | — | `src/lib.rs:28` |
-| `install_update` | — | `Result<(), String>` | — | `src/lib.rs:288` |
-| `is_gmail_authenticated` | — | `Result<bool, String>` | — | `src/lib.rs:114` |
-| `start_oauth_server` | `client_id: String`<br>`client_secret: String` | `Result<String, String>` | — | `src/lib.rs:133` |
+| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:98` |
+| `gmail_cancel_connect` | — | `()` | Cancels a sign-in that is waiting for the browser. | `src/commands.rs:29` |
+| `gmail_clear_custom_client` | — | `AppResult<GmailStatus>` | Goes back to the built-in Google OAuth client. | `src/commands.rs:92` |
+| `gmail_connect` | — | `AppResult<GmailStatus>` | Signs in with Google in the browser; resolves when finished, cancelled or timed out. | `src/commands.rs:23` |
+| `gmail_create_draft` | `subject: String`<br>`body: String`<br>`to: Option<String>` | `AppResult<DraftCreated>` | Saves one invoice as a Gmail draft (optionally addressed to `to`). | `src/commands.rs:41` |
+| `gmail_disconnect` | — | `AppResult<GmailStatus>` | Revokes Gmail access and forgets the account on this PC. | `src/commands.rs:35` |
+| `gmail_set_custom_client` | `client_id: String`<br>`client_secret: String` | `AppResult<GmailStatus>` | Uses the user's own Google OAuth client instead of the built-in one (advanced). | `src/commands.rs:65` |
+| `gmail_status` | — | `AppResult<GmailStatus>` | Gmail connection status (connected account, whether Gmail is set up). | `src/commands.rs:17` |
+| `install_update` | — | `AppResult<()>` | Downloads and installs the update found by the last check; the app then exits. | `src/commands.rs:107` |
 <!-- /GEN:tauri-commands -->
 
 ### Capabilities (permissions granted to the window)
@@ -75,16 +85,41 @@ second it asks Rust for the Gmail status.
 <!-- GEN:capabilities -->
 **`app/src-tauri/capabilities/default.json`** (identifier `default`, windows: `main`)
 
-- `core:default`
-- `opener:default`
+- `core:app:allow-version`
+- `core:event:allow-listen`
+- `core:event:allow-unlisten`
+- `allow-gmail-status`
+- `allow-gmail-connect`
+- `allow-gmail-cancel-connect`
+- `allow-gmail-disconnect`
+- `allow-gmail-create-draft`
+- `allow-gmail-set-custom-client`
+- `allow-gmail-clear-custom-client`
+- `allow-check-for-updates`
+- `allow-install-update`
 <!-- /GEN:capabilities -->
 
 ## Updates
 
-On start-up the UI calls `check_for_updates`. When a newer version exists, the
-"Updates" button turns green. Clicking it shows the version and notes.
-"Install Update" calls `install_update`, which downloads the MSI named in
-`latest.json`, verifies its minisign signature against the public key in
-`tauri.conf.json`, runs it with `msiexec /passive`, and exits the app. The
-release side is described in [release](release.md), and the rules that keep
-old installs updatable are in [compatibility](compatibility.md).
+These live in `app/src-tauri/src/updates.rs`.
+
+1. **On start-up** the UI calls `check_for_updates`. This asks GitHub for
+   `latest.json`, with a 60-second timeout, and remembers the update it found.
+   If a newer version exists, the "Updates" button is highlighted.
+2. **When the user clicks it**, the dialog shows the version and notes.
+3. **"Install Update"** calls `install_update`, which installs exactly the
+   update that was shown:
+   - it downloads the MSI and sends `update://progress` events for the
+     progress text;
+   - it verifies the minisign signature against the public key in
+     `tauri.conf.json`;
+   - it runs the MSI with `msiexec /passive`, and the app exits.
+4. **Development builds** skip the check (`disabledInDev`), so they can
+   never install a production MSI.
+5. **Minimum supported version:** if a future `latest.json` contains
+   `minimumSupportedVersion`, the check reports `required: true`. This is a
+   dormant safety net for security emergencies, see
+   [decision 0002](decisions/0002-no-forced-updates.md).
+
+The release side is described in [release](release.md), and the rules that
+keep old installs updatable are in [compatibility](compatibility.md).

@@ -27,16 +27,29 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data:",
+        "font-src": "'self' data:",
+        "connect-src": "ipc: http://ipc.localhost https://api.emailjs.com",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-ancestors": "'none'"
+      },
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ],
+      "freezePrototype": true
     }
   },
   "plugins": {
     "updater": {
-      "active": true,
       "endpoints": [
         "https://github.com/WolfyCodeK/student-invoice/releases/latest/download/latest.json"
       ],
-      "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhBNDA2RjJDQTkzQjZCQ0MKUldUTWF6dXBMRzlBaXFLNUdXRGJMWHl0Q2NWczFhcVFGbk41SndqeXczVzhEQjJSdDJSYUdTaDQK",
       "windows": {
         "installMode": "passive"
@@ -45,7 +58,9 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["msi"],
+    "targets": [
+      "msi"
+    ],
     "createUpdaterArtifacts": true,
     "publisher": "isaac",
     "icon": [

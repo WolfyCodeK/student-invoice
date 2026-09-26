@@ -17,21 +17,26 @@ components in `app/src/components/ui/` (built on Radix primitives), and
   - the invoice total and lesson count.
 - **Left panel, "Actions & Status" card:**
   - counters for templates, Gmail status and the current term's week count;
-  - Draft Email, Draft All, Copy Subject and Copy Body;
-  - Connect/Disconnect Gmail;
+  - Draft Email, Draft All, Copy Subject and Copy Body. Draft buttons are
+    disabled outside term time, when Gmail isn't connected, and while drafts
+    are being created (they show a spinner);
+  - Connect Gmail, or when connected "Connected as <email>" and Disconnect
+    Gmail. If this build has no Google client, the button says so and is
+    disabled;
   - Settings;
   - the Updates button (highlighted when an update is available).
 - **Right panel:** the "Email Preview" (subject and body) for the selected
-  template, and below it a "Send Feedback" button.
+  template, and below it a "Send Feedback" button. With no template selected,
+  or outside term time, the preview explains why it is empty.
 
 ## Dialogs
 
 | Dialog | Where | Purpose |
 |---|---|---|
 | Template form | `app/src/components/template-form.tsx` | Create or edit a template: recipient, cost, instrument (fixed list), day (Mon–Sun), students. Validated with zod and react-hook-form. |
-| Settings | `app/src/components/settings-dialog.tsx` | Notifications switch (unused), default template (unused), email body editor, Gmail client ID and secret, read-only term dates for the current academic year. |
+| Settings | `app/src/components/settings-dialog.tsx` | Notifications switch (unused), default template (unused), email body editor, Gmail status with an *Advanced* section for a custom Google OAuth client (saved immediately to Credential Manager, separate from the dialog's Save), read-only term dates for the current academic year. |
 | Email body editor | same file (`EmailBodyEditorDialog`) | Edit the custom body with placeholders; see [billing](billing.md#invoice-text). |
-| Connect Gmail Account (waiting for browser sign-in), Delete Template, Software Update, Feedback | `app/src/App.tsx` | The Feedback form (`FeedbackForm`) sends a message through EmailJS. |
+| Connect Gmail (while the browser sign-in is pending, with Cancel), Draft results (lists each failed student and why), Delete Template, Software Update (shows download progress; can't be closed while installing), Feedback | `app/src/App.tsx` | The Feedback form (`FeedbackForm`) sends a message through EmailJS (max 5,000 characters). |
 
 ## Theme
 

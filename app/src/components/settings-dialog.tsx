@@ -10,6 +10,7 @@ import { AlertTriangle, Info, Settings, Mail, Palette, Calendar } from "lucide-r
 import { useAppStore, getTermsForAcademicYear } from "../stores/app-store";
 import { AppSettings, InvoiceTemplate, TermData } from "../types";
 import { getDefaultTemplateString } from "../utils/invoice-generator";
+import { errorMessage } from "../lib/backend";
 import { format } from "date-fns";
 
 interface SettingsDialogProps {
@@ -127,45 +128,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             </div>
           </div>
 
-          {/* Gmail Integration */}
-          <div className="space-y-4 bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <Mail className="h-5 w-5 text-red-600 dark:text-red-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Gmail Integration</h3>
-            </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              Configure your Google API credentials. These can also be set as environment variables:
-              <code className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs font-mono ml-1">
-                GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
-              </code>
-            </p>
-
-            <div className="space-y-2">
-              <Label htmlFor="gmail-client-id">Client ID</Label>
-              <input
-                id="gmail-client-id"
-                type="password"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={localSettings.gmailClientId || ""}
-                onChange={(e) => updateSetting('gmailClientId', e.target.value)}
-                placeholder="Enter your Google Client ID"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gmail-client-secret">Client Secret</Label>
-              <input
-                id="gmail-client-secret"
-                type="password"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={localSettings.gmailClientSecret || ""}
-                onChange={(e) => updateSetting('gmailClientSecret', e.target.value)}
-                placeholder="Enter your Google Client Secret"
-              />
-            </div>
-          </div>
+          <GmailSettingsSection />
 
           {/* Term Dates */}
           <TermDatesSection />
@@ -211,6 +174,112 @@ interface EmailBodyEditorDialogProps {
   currentTemplate?: InvoiceTemplate;
   currentTerm?: TermData | null;
   onSave: (template: string | undefined) => void;
+}
+
+// Gmail connection status plus an optional, advanced "use my own Google
+// OAuth client" override (stored in Windows Credential Manager by Rust,
+// never in app settings). See docs/gmail.md.
+function GmailSettingsSection() {
+  const { gmail, setCustomGmailClient, clearCustomGmailClient } = useAppStore();
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const run = async (action: () => Promise<void>, success: string) => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await action();
+      setClientId("");
+      setClientSecret("");
+      setMessage({ ok: true, text: success });
+    } catch (error) {
+      setMessage({ ok: false, text: errorMessage(error) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const statusText = !gmail
+    ? "Checking…"
+    : gmail.connected
+      ? `Connected${gmail.email ? ` as ${gmail.email}` : ""}.`
+      : gmail.configured
+        ? "Not connected. Use Connect Gmail on the main screen."
+        : "Gmail isn't set up in this copy of the app. You can add your own Google OAuth client below.";
+
+  return (
+    <div className="space-y-4 bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+          <Mail className="h-5 w-5 text-red-600 dark:text-red-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Gmail</h3>
+      </div>
+      <p className="text-sm text-slate-600 dark:text-slate-400">{statusText}</p>
+
+      <details className="text-sm">
+        <summary className="cursor-pointer select-none text-slate-700 dark:text-slate-300">
+          Advanced: use your own Google OAuth client
+        </summary>
+        <div className="mt-3 space-y-3">
+          <p className="text-muted-foreground">
+            {gmail?.clientSource === "custom"
+              ? "This app is using your own OAuth client."
+              : "Only needed if you run your own Google Cloud project. Changing it disconnects Gmail."}
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="gmail-client-id">Client ID</Label>
+            <input
+              id="gmail-client-id"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              placeholder="….apps.googleusercontent.com"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="gmail-client-secret">Client secret</Label>
+            <input
+              id="gmail-client-secret"
+              type="password"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={clientSecret}
+              onChange={(e) => setClientSecret(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={busy || !clientId.trim() || !clientSecret.trim()}
+              onClick={() => run(() => setCustomGmailClient(clientId, clientSecret), "Saved. Connect Gmail again to use it.")}
+            >
+              Use this client
+            </Button>
+            {gmail?.clientSource === "custom" && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => run(() => clearCustomGmailClient(), "Switched back to the built-in client. Connect Gmail again.")}
+              >
+                Use the built-in client
+              </Button>
+            )}
+          </div>
+          {message && (
+            <p className={message.ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"} role="status">
+              {message.text}
+            </p>
+          )}
+        </div>
+      </details>
+    </div>
+  );
 }
 
 function TermDatesSection() {

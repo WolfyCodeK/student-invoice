@@ -13,7 +13,7 @@ The secrets folder `%USERPROFILE%\.secrets\student-invoice\` must contain:
 |---|---|---|
 | `myapp.key` | Updater signing private key (minisign ID `8A406F2CA93B6BCC`) | Bitwarden |
 | `signing-key-password.txt` | The key's password, on a single line | Bitwarden |
-| `google-oauth-client.json` | Google OAuth Desktop client, as downloaded from Google Cloud | Bitwarden |
+| `google-oauth-client.json` | Google OAuth Desktop client, as downloaded from Google Cloud. Embedded into the build; the release refuses to build without it | Bitwarden |
 
 You also need the GitHub CLI signed in (`gh auth login`) with push rights.
 

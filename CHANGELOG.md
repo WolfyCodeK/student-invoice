@@ -11,14 +11,43 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+### Changed
+- Connecting Gmail is simpler: no more pasting a client ID and secret into
+  Settings. Click **Connect Gmail**, choose your account in the browser, and
+  you stay connected, even after closing the app.
+- The app now only asks Google for permission to manage drafts. It no longer
+  asks to read your mailbox.
+- Settings shows which Gmail account is connected. Advanced users can still
+  use their own Google OAuth client.
+- The installer is now pinned to its existing identity, so updates always
+  replace the installed app in place.
+
+### Fixed
+- Cancelling or failing Google sign-in no longer leaves the app stuck on
+  "Waiting for authentication", and you can try again straight away.
+- Sign-in works on PCs whose antivirus or network inspects secure
+  connections.
+- "Draft All" can no longer create duplicate drafts when clicked twice. If
+  some drafts fail, the app lists which students failed and why.
+- Error messages now say what actually went wrong, instead of always "check
+  your Gmail connection".
+- Draft buttons are disabled outside term time, rather than failing.
+- The email preview updates straight away after you edit a template or the
+  email wording, and it clears when a template is deleted.
+- Accented names and the £ sign display correctly in Gmail drafts.
+- The update window shows download progress and can't be closed halfway
+  through installing.
+
 ### Security
 - Removed a Google sign-in credential that had been published by mistake in the
   project's source history, and replaced it with a new one.
+- Gmail sign-in tokens are kept in Windows Credential Manager, and the old
+  plaintext Google credentials are removed from the app's settings.
+- Sign-in is protected against another program or web page intercepting or
+  faking it.
+- The app window is locked down: it can only reach the services it needs and
+  only run the app's own code.
 - The app no longer reads settings from a `.env` file on the computer at start-up.
-
-### Changed
-- The installer is now pinned to its existing identity, so updates always
-  replace the installed app in place.
 
 ## [1.0.1] - 2026-02-05
 <!-- latest-json-summary: Student Invoice 1.0.1 -->

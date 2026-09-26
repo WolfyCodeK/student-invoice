@@ -11,9 +11,10 @@ import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, Toas
 import { TemplateForm } from "./components/template-form";
 import { SettingsDialog } from "./components/settings-dialog";
 import { Mail, Edit, Plus, Send, Copy, Users, CheckCircle, XCircle, Trash2, Settings, Loader2, Download, MessageSquare } from "lucide-react";
-import { useAppStore } from "./stores/app-store";
+import { useAppStore, type DraftFailure } from "./stores/app-store";
 import { useToast } from "./hooks/use-toast";
 import { InvoiceTemplate } from "./types";
+import { errorMessage, isBackendError, type UpdateInfo } from "./lib/backend";
 import { listen } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
 import emailjs from '@emailjs/browser';
@@ -27,18 +28,18 @@ function App() {
     currentInvoice,
     settings,
     gmailConnected,
-    showGmailAuthDialog,
+    gmail,
+    gmailConnecting,
+    drafting,
     connectGmail,
+    cancelGmailConnect,
     disconnectGmail,
-    hideGmailAuthDialog,
     createCurrentInvoiceDraft,
     createAllInvoiceDrafts,
     setCurrentTemplate,
     addTemplate,
     updateTemplate,
     deleteTemplate,
-    updateGmailStatus,
-    generateCurrentInvoice,
     checkForUpdates,
     installUpdate
   } = useAppStore();
@@ -52,7 +53,9 @@ function App() {
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [checkingForUpdates, setCheckingForUpdates] = useState(false);
   const [installingUpdate, setInstallingUpdate] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState<{available: boolean, version?: string, body?: string} | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [updateProgress, setUpdateProgress] = useState<{ downloaded: number; total: number | null } | null>(null);
+  const [draftResult, setDraftResult] = useState<{ success: number; failures: DraftFailure[]; skipped: number } | null>(null);
   const [appVersion, setAppVersion] = useState<string>('1.0.0');
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
 
@@ -65,21 +68,13 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Listen for OAuth success events
+  // Download progress while an update installs.
   useEffect(() => {
-    const unlisten = listen('oauth_success', () => {
-      console.log('OAuth authentication successful!');
-      // Update Gmail status and close dialog
-      updateGmailStatus();
-      hideGmailAuthDialog();
-      toast({
-        title: "Success",
-        description: "Gmail connected successfully!",
-      });
+    const unlisten = listen<{ downloaded: number; total: number | null }>("update://progress", (e) => {
+      setUpdateProgress(e.payload);
     });
-
     return () => {
-      unlisten.then(f => f());
+      unlisten.then((f) => f());
     };
   }, []);
 
@@ -100,13 +95,6 @@ function App() {
 
 
 
-  // Generate invoice when template or term changes
-  useEffect(() => {
-    if (currentTemplateId && currentTerm) {
-      generateCurrentInvoice();
-    }
-  }, [currentTemplateId, currentTerm, generateCurrentInvoice]);
-
   const currentTemplate = templates.find(t => t.id === currentTemplateId);
 
   const getTermDisplay = () => {
@@ -118,13 +106,13 @@ function App() {
     try {
       await createCurrentInvoiceDraft();
       toast({
-        title: "Success",
-        description: "Email draft created successfully!",
+        title: "Draft saved",
+        description: "The invoice is in your Gmail drafts, ready to review and send.",
       });
-    } catch {
+    } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create draft. Please check your Gmail connection.",
+        title: "Couldn't create the draft",
+        description: errorMessage(error),
         variant: "destructive",
       });
     }
@@ -133,25 +121,46 @@ function App() {
   const handleCreateAllDrafts = async () => {
     try {
       const result = await createAllInvoiceDrafts();
-      if (result.failed === 0) {
+      if (result.failures.length === 0) {
         toast({
-          title: "Success",
-          description: `Created ${result.success} email drafts successfully!`,
+          title: "Drafts saved",
+          description: `Created ${result.success} Gmail draft${result.success === 1 ? "" : "s"}.`,
         });
       } else {
-        toast({
-          title: "Partial Success",
-          description: `Created ${result.success} drafts, ${result.failed} failed. Check console for details.`,
-          variant: "destructive",
-        });
-        console.error("Draft creation errors:", result.errors);
+        setDraftResult(result);
       }
-    } catch {
+    } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create drafts. Please check your Gmail connection and ensure you have templates.",
+        title: "Couldn't create drafts",
+        description: errorMessage(error),
         variant: "destructive",
       });
+    }
+  };
+
+  const handleConnectGmail = async () => {
+    try {
+      const status = await connectGmail();
+      toast({
+        title: "Gmail connected",
+        description: status.email ? `Drafts will be saved to ${status.email}.` : "Drafts will be saved to your Gmail account.",
+      });
+    } catch (error) {
+      if (isBackendError(error) && error.kind === "Cancelled") return;
+      toast({
+        title: "Gmail wasn't connected",
+        description: errorMessage(error),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDisconnectGmail = async () => {
+    try {
+      await disconnectGmail();
+      toast({ title: "Gmail disconnected", description: "Access has been removed from this PC." });
+    } catch (error) {
+      toast({ title: "Couldn't disconnect Gmail", description: errorMessage(error), variant: "destructive" });
     }
   };
 
@@ -177,18 +186,18 @@ function App() {
       const result = await checkForUpdates();
       setUpdateInfo(result);
       setHasUpdateAvailable(result.available);
-      setUpdateDialogOpen(true);
-
-      if (!result.available) {
+      if (result.available) {
+        setUpdateDialogOpen(true);
+      } else {
         toast({
-          title: "Up to date",
-          description: "You're running the latest version!",
+          title: result.disabledInDev ? "Updates are off in development builds" : "Up to date",
+          description: `You're running version ${result.currentVersion}.`,
         });
       }
-    } catch {
+    } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to check for updates. Please try again.",
+        title: "Couldn't check for updates",
+        description: errorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -214,22 +223,17 @@ function App() {
 
   const handleInstallUpdate = async () => {
     setInstallingUpdate(true);
+    setUpdateProgress(null);
     try {
+      // On success the installer takes over and the app closes, so this only
+      // returns if something went wrong.
       await installUpdate();
-      toast({
-        title: "Update installed",
-        description: "The app will restart to apply the update.",
-      });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('Update installation error:', errorMessage);
-      
       toast({
         title: "Update failed",
-        description: errorMessage,
+        description: errorMessage(error),
         variant: "destructive",
       });
-    } finally {
       setInstallingUpdate(false);
       setUpdateDialogOpen(false);
     }
@@ -433,20 +437,22 @@ function App() {
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <Button
-                          disabled={!currentTemplate || !gmailConnected}
+                          disabled={!currentInvoice || !gmailConnected || drafting}
                           onClick={handleCreateDraft}
                           className="h-9"
+                          title={!currentTerm ? "It's outside term time" : !gmailConnected ? "Connect Gmail first" : undefined}
                         >
-                          <Send className="h-4 w-4 mr-1" />
+                          {drafting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />}
                           Draft Email
                         </Button>
-                        <Button 
-                          variant="secondary" 
-                          disabled={!gmailConnected || templates.length === 0} 
+                        <Button
+                          variant="secondary"
+                          disabled={!gmailConnected || templates.length === 0 || !currentTerm || drafting}
                           onClick={handleCreateAllDrafts}
                           className="h-9"
+                          title={!currentTerm ? "It's outside term time" : !gmailConnected ? "Connect Gmail first" : undefined}
                         >
-                          <Users className="h-4 w-4 mr-1" />
+                          {drafting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Users className="h-4 w-4 mr-1" />}
                           Draft All
                         </Button>
                       </div>
@@ -473,13 +479,20 @@ function App() {
                     </div>
                     <div className="border-t pt-4 space-y-2">
                       {!gmailConnected ? (
-                        <Button onClick={connectGmail} className="w-full h-9">
-                          Connect Gmail
+                        <Button onClick={handleConnectGmail} disabled={gmailConnecting || gmail?.configured === false} className="w-full h-9">
+                          {gmail?.configured === false ? "Gmail isn't set up in this copy" : "Connect Gmail"}
                         </Button>
                       ) : (
-                        <Button onClick={disconnectGmail} variant="outline" className="w-full h-9">
-                          Disconnect Gmail
-                        </Button>
+                        <>
+                          {gmail?.email && (
+                            <p className="text-center text-xs text-muted-foreground truncate" title={gmail.email}>
+                              Connected as {gmail.email}
+                            </p>
+                          )}
+                          <Button onClick={handleDisconnectGmail} variant="outline" className="w-full h-9">
+                            Disconnect Gmail
+                          </Button>
+                        </>
                       )}
                       
                       <div className="grid grid-cols-2 gap-2">
@@ -545,7 +558,11 @@ function App() {
                       <div className="text-center">
                         <Mail className="h-16 w-16 mx-auto mb-4 opacity-20" />
                         <p className="text-lg font-medium mb-2">No Preview Available</p>
-                        <p className="text-sm">Select a template to preview the invoice</p>
+                        <p className="text-sm">
+                          {!currentTemplate
+                            ? "Select a template to preview the invoice"
+                            : "It's outside term time, so there's no invoice to show"}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -583,35 +600,50 @@ function App() {
             template={editingTemplate}
             onSubmit={handleTemplateSubmit}
           />
-          <Dialog open={showGmailAuthDialog} onOpenChange={(open) => {
-            if (!open) hideGmailAuthDialog();
+          <Dialog open={gmailConnecting} onOpenChange={(open) => {
+            if (!open) void cancelGmailConnect();
           }}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Connect Gmail Account</DialogTitle>
+                <DialogTitle>Connect Gmail</DialogTitle>
                 <DialogDescription>
-                  Complete Gmail authentication in your browser. The app will automatically handle the rest.
-                  1. Sign in to your Google account if prompted
-                  2. Grant the requested Gmail permissions
-                  3. The authentication will complete automatically
-                  You can close this dialog - authentication happens in the background.
+                  Finish signing in in the browser window that just opened.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-                <p className="text-center text-sm text-muted-foreground">
-                  Waiting for authentication to complete...
+              <ol className="list-decimal pl-5 space-y-1 text-sm">
+                <li>Choose the Google account to save drafts to.</li>
+                <li>If Google says the app isn't verified, choose Advanced, then continue.</li>
+                <li>Allow Student Invoice to manage drafts.</li>
+              </ol>
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Waiting for you to finish in the browser…
                 </p>
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => hideGmailAuthDialog()}
-                  >
-                    Close
-                  </Button>
-                </div>
+                <Button variant="outline" onClick={() => void cancelGmailConnect()}>
+                  Cancel
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={draftResult !== null} onOpenChange={(open) => { if (!open) setDraftResult(null); }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{draftResult && draftResult.success > 0 ? "Some drafts weren't created" : "No drafts were created"}</DialogTitle>
+                <DialogDescription>
+                  {draftResult && `Created ${draftResult.success}, failed ${draftResult.failures.length}${draftResult.skipped ? `, not attempted ${draftResult.skipped}` : ""}.`}
+                </DialogDescription>
+              </DialogHeader>
+              <ul className="max-h-64 overflow-y-auto space-y-2 text-sm">
+                {draftResult?.failures.map((f, i) => (
+                  <li key={i} className="rounded-md border p-2">
+                    <p className="font-medium break-words">{f.label}</p>
+                    <p className="text-muted-foreground break-words">{f.message}</p>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex justify-end">
+                <Button onClick={() => setDraftResult(null)}>Close</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -638,7 +670,7 @@ function App() {
               </div>
             </DialogContent>
           </Dialog>
-          <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+          <Dialog open={updateDialogOpen} onOpenChange={(open) => { if (!installingUpdate) setUpdateDialogOpen(open); }}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Software Update</DialogTitle>
@@ -649,14 +681,22 @@ function App() {
                     "You are running the latest version."
                   )}
                 </DialogDescription>
-                {updateInfo?.available && updateInfo.body && (
+                {updateInfo?.available && updateInfo.notes && (
                   <div className="mt-2 p-3 bg-muted rounded-md">
-                    <p className="text-sm">{updateInfo.body}</p>
+                    <p className="text-sm">{updateInfo.notes}</p>
                   </div>
+                )}
+                {installingUpdate && (
+                  <p className="text-sm text-muted-foreground">
+                    {updateProgress?.total
+                      ? `Downloading… ${Math.round((updateProgress.downloaded / updateProgress.total) * 100)}%`
+                      : "Downloading…"}{" "}
+                    The app will close and the installer will finish the update.
+                  </p>
                 )}
               </DialogHeader>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
+                <Button variant="outline" disabled={installingUpdate} onClick={() => setUpdateDialogOpen(false)}>
                   {updateInfo?.available ? "Not now" : "Close"}
                 </Button>
                 {updateInfo?.available && (
@@ -745,13 +785,6 @@ function FeedbackForm({ onClose }: { onClose: () => void }) {
         app_info: 'Sent from Student Invoice App'
       };
 
-      console.log('EmailJS Debug:', {
-        SERVICE_ID,
-        TEMPLATE_ID,
-        PUBLIC_KEY,
-        templateParams
-      });
-
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
 
       toast({
@@ -761,8 +794,7 @@ function FeedbackForm({ onClose }: { onClose: () => void }) {
       });
 
       onClose();
-    } catch (error) {
-      console.error('EmailJS error:', error);
+    } catch {
       toast({
         title: "Error",
         description: "Failed to send feedback. Please email isaack2wolf@gmail.com directly.",
@@ -780,6 +812,7 @@ function FeedbackForm({ onClose }: { onClose: () => void }) {
         <Textarea
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
+          maxLength={5000}
           className="min-h-[150px] resize-none"
           placeholder="Tell us what you think about the app, any issues you've encountered, or suggestions for improvement..."
         />

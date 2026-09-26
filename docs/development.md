@@ -118,14 +118,13 @@ node scripts/docs/check.mjs              # all docs checks
 | `date-fns` | npm | 4.4.0 |
 | `@tauri-apps/api` | npm | 2.11.1 |
 | `@tauri-apps/cli` | npm | 2.11.5 |
-| `@tauri-apps/plugin-opener` | npm | 2.5.5 |
 | `vitest` | npm | 5.0.2 |
 | `eslint` | npm | 10.11.0 |
 | `tauri` | crate | 2.11.6 |
 | `tauri-build` | crate | 2.6.3 |
 | `tauri-plugin-updater` | crate | 2.12.0 |
 | `tauri-plugin-opener` | crate | 2.5.5 |
-| `oauth2` | crate | 4.4.2 |
-| `reqwest` | crate | 0.11.27, 0.12.28, 0.13.5 |
+| `oauth2` | crate | 5.0.0 |
+| `reqwest` | crate | 0.12.28, 0.13.5 |
 | `tokio` | crate | 1.53.1 |
 <!-- /GEN:versions -->

@@ -39,7 +39,11 @@
         "app/src/stores/**",
         "app/src/main.tsx",
         "app/src/types/**",
-        "app/vite.config.ts"
+        "app/vite.config.ts",
+        "app/src-tauri/src/commands.rs",
+        "app/src-tauri/src/error.rs",
+        "app/src-tauri/src/updates.rs",
+        "app/src/lib/backend.ts"
       ]
     },
     "docs/data-model.md": {
@@ -59,7 +63,7 @@
     },
     "docs/gmail.md": {
       "covers": [
-        "app/src-tauri/src/gmail.rs"
+        "app/src-tauri/src/google/**"
       ]
     },
     "docs/ui.md": {
@@ -83,7 +87,10 @@
     "docs/security.md": {
       "covers": [
         "app/src-tauri/capabilities/**",
-        "scripts/check-secrets.mjs"
+        "scripts/check-secrets.mjs",
+        "app/src-tauri/build.rs",
+        "app/src-tauri/src/google/loopback.rs",
+        "app/src-tauri/src/google/store.rs"
       ]
     },
     "docs/development.md": {

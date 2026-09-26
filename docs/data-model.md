@@ -15,8 +15,9 @@ no files written by the app, and nothing in the cloud.
 | `student-invoice-store` | zustand `persist` in `app/src/stores/app-store.ts` | `{"state": {templates, currentTemplateId, settings, gmailConnected}, "version": 0}` |
 | `student-invoice-theme` | `app/src/components/theme-provider.tsx` | `"light"` or `"dark"` |
 
-The Gmail OAuth tokens are **not** stored; they are held in memory by the Rust
-process (see [Gmail](gmail.md)).
+Gmail credentials are **not** in localStorage. The refresh token (and an
+optional custom OAuth client) live in Windows Credential Manager, and the
+access token only in the Rust process's memory (see [Gmail](gmail.md)).
 
 ## Persisted shapes
 
@@ -39,8 +40,8 @@ interface AppSettings {
   emailMode: 'clipboard' | 'gmail-draft'   // unused
   defaultTemplateId?: string        // editable, unused
   windowPosition: { x, y }          // unused
-  gmailClientId?: string
-  gmailClientSecret?: string        // plaintext (security audit S3)
+  gmailClientId?: string            // legacy (v1.0.1); cleared to '' on load
+  gmailClientSecret?: string        // legacy (v1.0.1); cleared to '' on load
   autoSave: boolean                 // unused
   showNotifications: boolean        // editable, unused
   customEmailBodyTemplate?: string  // replaces the default email body
@@ -48,8 +49,14 @@ interface AppSettings {
 ```
 
 `currentTemplateId` is the template selected when the app last closed.
-`gmailConnected` is persisted, but it is reset about a second after start-up
-(bug audit B22).
+`gmailConnected` is still written so that v1.0.1 can read the data, but
+v1.1.0 derives the connection state from Rust (`gmail_status`) at start-up.
+
+**Legacy credential clean-up:** v1.0.1 stored the Google client ID and secret
+in plaintext in `settings`. On load, v1.1.0 sets both fields to `''` (in
+`onRehydrateStorage` in the store). The fields are kept so older versions
+still load the data, but someone who downgrades to v1.0.1 would have to paste
+credentials again to use Gmail there.
 
 ## Rules for changing persisted data
 

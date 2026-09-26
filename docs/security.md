@@ -9,7 +9,7 @@ Open issues and their fixes are tracked in the
 | Secret | Where it lives | Used by |
 |---|---|---|
 | Updater signing private key (`myapp.key`, minisign ID `8A406F2CA93B6BCC`) and its password | `%USERPROFILE%\.secrets\student-invoice\` plus the owner's password manager | Release builds, to sign the MSI |
-| Google OAuth Desktop client (`google-oauth-client.json`, Google's download format) | same folder plus the password manager | Release builds (planned), manual testing |
+| Google OAuth Desktop client (`google-oauth-client.json`, Google's download format) | same folder plus the password manager | Compiled into builds by `app/src-tauri/build.rs` (see [Gmail](gmail.md)) |
 | Gemini API key (design tooling only) | same folder | The icon-generation script (planned) |
 
 Rules:
@@ -38,17 +38,42 @@ The `pubkey` in `app/src-tauri/tauri.conf.json` is the public half. Anyone can
 see it. It only lets installed apps verify that an update was signed by the
 private key.
 
-## Webview boundary (current state)
+## Secrets the app holds at runtime
 
-- The webview loads only the bundled UI from `http://tauri.localhost`. No
-  remote pages are loaded.
-- Permissions granted to the window are listed in
-  [architecture](architecture.md#capabilities-permissions-granted-to-the-window).
-  There are currently no filesystem, shell or HTTP plugin permissions.
-- There is not yet a Content Security Policy or a command allowlist (audit S4
-  and S5), so any script running in the webview could call every command.
-- User-entered text is rendered as text by React (no `dangerouslySetInnerHTML`,
-  `innerHTML` or `eval` anywhere).
+- **Gmail refresh token:** stored in Windows Credential Manager
+  (`com.isaac.student-invoice` / `google-account`, persistence *Local*). The
+  access token is held only in memory in the Rust process. Neither ever
+  reaches the webview.
+- **Custom Google OAuth client** (optional, advanced): stored in Credential
+  Manager (`google-oauth-client`), never in localStorage.
+- **Logs:** the app never logs or displays codes, tokens or secrets. Structs
+  holding them have redacting `Debug` implementations.
+
+## Webview boundary
+
+- **Content:** the webview loads only the bundled UI from
+  `http://tauri.localhost`. No remote pages are loaded.
+- **Content Security Policy** (`app/src-tauri/tauri.conf.json`):
+  - `default-src 'self'` and `script-src 'self'`;
+  - `connect-src` limited to Tauri IPC and `https://api.emailjs.com`;
+  - `object-src`, `base-uri`, `form-action` and `frame-ancestors` set to
+    `'none'`;
+  - inline styles are allowed, because Radix components inject style tags,
+    so Tauri's style hashing is disabled for `style-src`.
+- **Prototype freezing:** `freezePrototype` is on.
+- **Command allowlist:**
+  - `app/src-tauri/build.rs` declares the app's commands (ACL manifest).
+  - Only commands granted an `allow-*` permission in
+    `app/src-tauri/capabilities/default.json` can be called; see
+    [architecture](architecture.md#capabilities-permissions-granted-to-the-window).
+  - Core permissions are limited to reading the app version and listening
+    to events.
+  - There are no filesystem, shell, HTTP or opener permissions in the
+    webview. URLs are opened by Rust.
+- **Input checks:** commands validate their input (length limits, email
+  address format, OAuth client ID shape) before acting.
+- **Text rendering:** user-entered text is rendered as text by React (no
+  `dangerouslySetInnerHTML`, `innerHTML` or `eval` anywhere).
 
 ## Network destinations
 

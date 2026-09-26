@@ -100,13 +100,12 @@ export function buildEnv() {
     TAURI_SIGNING_PRIVATE_KEY: p.signingKey, // Tauri accepts a path
     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: readFileSync(p.signingPassword, 'utf8').replace(/\r?\n$/, ''),
   }
-  if (existsSync(p.googleClient)) {
-    const c = JSON.parse(readFileSync(p.googleClient, 'utf8'))
-    const creds = c.installed ?? c.web ?? c
-    if (creds.client_id && creds.client_secret) {
-      env.SI_GOOGLE_CLIENT_ID = creds.client_id
-      env.SI_GOOGLE_CLIENT_SECRET = creds.client_secret
-    }
-  }
+  // Release builds must have Gmail: build.rs embeds this client (docs/gmail.md).
+  if (!existsSync(p.googleClient)) die(`Google OAuth client file not found at ${p.googleClient}. Restore it from your password manager.`)
+  const c = JSON.parse(readFileSync(p.googleClient, 'utf8'))
+  const creds = c.installed ?? c
+  if (!creds.client_id || !creds.client_secret) die(`${p.googleClient} has no installed.client_id/client_secret (is it a Desktop app client?)`)
+  env.SI_GOOGLE_CLIENT_ID = creds.client_id
+  env.SI_GOOGLE_CLIENT_SECRET = creds.client_secret
   return env
 }
