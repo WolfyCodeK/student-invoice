@@ -55,7 +55,12 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `src/main.rs` calls `student_invoice_tauri_lib::run()`.
 - `src/lib.rs` registers the plugins and the commands below. It also creates
   the shared state: the Google sign-in manager, holding one HTTP client, and
-  the updater state.
+  the updater state. It then creates the main window itself from the
+  `tauri.conf.json` config (`"create": false`), so the WebView2 arguments can
+  follow the user's Low memory mode choice (see
+  [performance](performance.md#low-memory-mode)).
+- `src/preferences.rs` holds per-PC preferences read before the window
+  exists (`preferences.json`).
 - `src/commands.rs` holds every command the UI can call. They validate input
   and delegate.
 - `src/error.rs` defines `AppError`, which reaches the UI as `{ kind, message }`.
@@ -81,21 +86,24 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 
 | Command | Arguments | Returns | Purpose | Defined at |
 |---|---|---|---|---|
-| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:99` |
-| `create_auto_backup` | `reason: BackupReason`<br>`content: String` | `AppResult<BackupInfo>` | Saves an automatic backup in the app's backups folder. | `src/commands.rs:130` |
-| `export_backup` | `content: String`<br>`suggested_name: String` | `AppResult<Option<String>>` | Asks where to save and writes an export of all data; returns the file name, or null if cancelled. | `src/commands.rs:114` |
-| `gmail_cancel_connect` | — | `()` | Cancels a sign-in that is waiting for the browser. | `src/commands.rs:30` |
-| `gmail_clear_custom_client` | — | `AppResult<GmailStatus>` | Goes back to the built-in Google OAuth client. | `src/commands.rs:93` |
-| `gmail_connect` | — | `AppResult<GmailStatus>` | Signs in with Google in the browser; resolves when finished, cancelled or timed out. | `src/commands.rs:24` |
-| `gmail_create_draft` | `subject: String`<br>`body: String`<br>`to: Option<String>` | `AppResult<DraftCreated>` | Saves one invoice as a Gmail draft (optionally addressed to `to`). | `src/commands.rs:42` |
-| `gmail_disconnect` | — | `AppResult<GmailStatus>` | Revokes Gmail access and forgets the account on this PC. | `src/commands.rs:36` |
-| `gmail_set_custom_client` | `client_id: String`<br>`client_secret: String` | `AppResult<GmailStatus>` | Uses the user's own Google OAuth client instead of the built-in one (advanced). | `src/commands.rs:66` |
-| `gmail_status` | — | `AppResult<GmailStatus>` | Gmail connection status (connected account, whether Gmail is set up). | `src/commands.rs:18` |
-| `import_backup` | — | `AppResult<Option<String>>` | Asks for a backup file and returns its contents, or null if cancelled. | `src/commands.rs:124` |
-| `install_update` | — | `AppResult<()>` | Downloads and installs the update found by the last check; the app then exits. | `src/commands.rs:108` |
-| `list_backups` | — | `AppResult<Vec<BackupInfo>>` | Lists automatic backups, newest first. | `src/commands.rs:140` |
-| `open_backups_folder` | — | `AppResult<()>` | Opens the automatic backups folder in File Explorer. | `src/commands.rs:152` |
-| `read_backup` | `name: String` | `AppResult<String>` | Reads one automatic backup by name. | `src/commands.rs:146` |
+| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:100` |
+| `create_auto_backup` | `reason: BackupReason`<br>`content: String` | `AppResult<BackupInfo>` | Saves an automatic backup in the app's backups folder. | `src/commands.rs:131` |
+| `export_backup` | `content: String`<br>`suggested_name: String` | `AppResult<Option<String>>` | Asks where to save and writes an export of all data; returns the file name, or null if cancelled. | `src/commands.rs:115` |
+| `get_preferences` | — | `Preferences` | Device preferences (e.g. low memory mode). | `src/commands.rs:159` |
+| `gmail_cancel_connect` | — | `()` | Cancels a sign-in that is waiting for the browser. | `src/commands.rs:31` |
+| `gmail_clear_custom_client` | — | `AppResult<GmailStatus>` | Goes back to the built-in Google OAuth client. | `src/commands.rs:94` |
+| `gmail_connect` | — | `AppResult<GmailStatus>` | Signs in with Google in the browser; resolves when finished, cancelled or timed out. | `src/commands.rs:25` |
+| `gmail_create_draft` | `subject: String`<br>`body: String`<br>`to: Option<String>` | `AppResult<DraftCreated>` | Saves one invoice as a Gmail draft (optionally addressed to `to`). | `src/commands.rs:43` |
+| `gmail_disconnect` | — | `AppResult<GmailStatus>` | Revokes Gmail access and forgets the account on this PC. | `src/commands.rs:37` |
+| `gmail_set_custom_client` | `client_id: String`<br>`client_secret: String` | `AppResult<GmailStatus>` | Uses the user's own Google OAuth client instead of the built-in one (advanced). | `src/commands.rs:67` |
+| `gmail_status` | — | `AppResult<GmailStatus>` | Gmail connection status (connected account, whether Gmail is set up). | `src/commands.rs:19` |
+| `import_backup` | — | `AppResult<Option<String>>` | Asks for a backup file and returns its contents, or null if cancelled. | `src/commands.rs:125` |
+| `install_update` | — | `AppResult<()>` | Downloads and installs the update found by the last check; the app then exits. | `src/commands.rs:109` |
+| `list_backups` | — | `AppResult<Vec<BackupInfo>>` | Lists automatic backups, newest first. | `src/commands.rs:141` |
+| `open_backups_folder` | — | `AppResult<()>` | Opens the automatic backups folder in File Explorer. | `src/commands.rs:153` |
+| `read_backup` | `name: String` | `AppResult<String>` | Reads one automatic backup by name. | `src/commands.rs:147` |
+| `restart_app` | — | `()` | Restarts the app (used to apply low memory mode). | `src/commands.rs:174` |
+| `set_low_memory_mode` | `enabled: bool` | `AppResult<Preferences>` | Turns low memory mode on or off; takes effect after a restart. | `src/commands.rs:165` |
 <!-- /GEN:tauri-commands -->
 
 ### Capabilities (permissions granted to the window)
@@ -121,6 +129,9 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 - `allow-list-backups`
 - `allow-read-backup`
 - `allow-open-backups-folder`
+- `allow-get-preferences`
+- `allow-set-low-memory-mode`
+- `allow-restart-app`
 <!-- /GEN:capabilities -->
 
 ## Updates

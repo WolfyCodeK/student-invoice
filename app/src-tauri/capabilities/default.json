@@ -23,6 +23,9 @@
     "allow-create-auto-backup",
     "allow-list-backups",
     "allow-read-backup",
-    "allow-open-backups-folder"
+    "allow-open-backups-folder",
+    "allow-get-preferences",
+    "allow-set-low-memory-mode",
+    "allow-restart-app"
   ]
 }

@@ -39,10 +39,33 @@ screen:
 - **The GPU process is WebView2's own fixed overhead on this machine.**
   Removing every blur, gradient and shadow in the page made no difference.
 - **Disabling GPU rendering** (the WebView2 argument `--disable-gpu`) cuts the
-  total to ~131 MB, but moves all drawing to the CPU. That trade-off is an
-  open decision; see the bug audit and CHANGELOG when it's made.
+  total to ~131 MB, but moves all drawing to the CPU. Users choose this with
+  **Low memory mode** (below); GPU rendering stays the default.
 - **Idle CPU is effectively zero:** no timers or polling run while the app
   sits idle.
+
+## Low memory mode
+
+Settings → Performance → **Low memory mode** turns off WebView2's GPU
+rendering, which saves roughly 40% of the app's memory. It is off by
+default, because on high-resolution screens drawing on the CPU can make
+scrolling and animations a little less smooth.
+
+- **Why it needs a restart:** WebView2 reads its command-line arguments only
+  when the window is created. So the window isn't created from
+  `tauri.conf.json` (`"create": false`). Instead, `create_main_window` in
+  `app/src-tauri/src/lib.rs` builds it from that same config at start-up, after
+  reading the preference, and passes `preferences::browser_args`. The
+  **Restart now** button calls `restart_app`.
+- **Default arguments are kept.** Setting custom WebView2 arguments replaces
+  wry's defaults (`--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection`),
+  so `app/src-tauri/src/preferences.rs` always includes them.
+- **Where it's stored:** `%LOCALAPPDATA%\com.isaac.student-invoice\preferences.json`
+  (`preferences-dev.json` for development builds), e.g.
+  `{"lowMemoryMode": true}`. It is a setting for this PC, so it is not part
+  of exports or backups. A missing or unreadable file means the defaults. Unknown fields
+  are ignored, so older and newer versions can share the file.
+- **UI:** `app/src/components/performance-section.tsx`.
 
 ## What keeps it small
 

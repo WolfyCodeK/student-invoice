@@ -2,8 +2,15 @@
 
 All user data lives in the WebView2 **localStorage** of the app's origin
 `http://tauri.localhost`. On disk that is inside
-`%LOCALAPPDATA%\com.isaac.student-invoice\EBWebView\`. There is no database,
-no files written by the app, and nothing in the cloud.
+`%LOCALAPPDATA%\com.isaac.student-invoice\EBWebView\`. There is no database
+and nothing in the cloud. The only other files the app writes are in the same
+folder:
+
+- `backups\`: automatic backups (see [backup](backup.md));
+- `preferences.json`: per-PC settings that must be known before the window
+  opens, currently only Low memory mode (see
+  [performance](performance.md#low-memory-mode)). It is not part of the
+  store, exports or backups.
 
 > Dev builds (`pnpm tauri dev`) use the origin `http://localhost:3000`, so
 > development data is separate from the installed app's data.

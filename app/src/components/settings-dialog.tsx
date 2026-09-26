@@ -12,6 +12,7 @@ import { AppSettings, InvoiceTemplate, TermData } from "../types";
 import { getDefaultTemplateString } from "../utils/invoice-generator";
 import { errorMessage } from "../lib/backend";
 import { DataSection } from "./data-section";
+import { PerformanceSection } from "./performance-section";
 import { format } from "date-fns";
 
 interface SettingsDialogProps {
@@ -132,6 +133,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <GmailSettingsSection />
 
           <DataSection />
+
+          <PerformanceSection />
 
           {/* Term Dates */}
           <TermDatesSection />

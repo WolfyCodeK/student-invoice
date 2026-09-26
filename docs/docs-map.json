@@ -131,7 +131,9 @@
     },
     "docs/performance.md": {
       "covers": [
-        "scripts/perf/**"
+        "scripts/perf/**",
+        "app/src-tauri/src/preferences.rs",
+        "app/src/components/performance-section.tsx"
       ]
     }
   },

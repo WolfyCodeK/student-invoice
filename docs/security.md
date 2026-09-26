@@ -72,6 +72,11 @@ private key.
   - There are no filesystem, shell, HTTP or opener permissions in the
     webview. URLs are opened by Rust.
 - **Files:** the webview can't read or write arbitrary files. Export and import use native dialogs opened by Rust, and automatic backups are addressed by strictly checked names. Imported files are size-limited and strictly validated ([backup](backup.md)).
+- **WebView2 start-up arguments:** the page can only switch Low memory mode
+  on or off (`set_low_memory_mode(bool)`), which adds or removes the fixed
+  `--disable-gpu` argument at the next start. It can't pass arbitrary
+  browser arguments. It can also restart the app (`restart_app`), which
+  is harmless. See [performance](performance.md#low-memory-mode).
 - **Input checks:** commands validate their input (length limits, email
   address format, OAuth client ID shape) before acting.
 - **Text rendering:** user-entered text is rendered as text by React (no

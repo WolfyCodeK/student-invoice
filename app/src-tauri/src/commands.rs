@@ -9,6 +9,7 @@ use crate::google::auth::{GmailStatus, GoogleAuth};
 use crate::google::gmail::{self, DraftCreated};
 use crate::google::mime;
 use crate::google::store::ClientCredentials;
+use crate::preferences::{self, Preferences};
 use crate::updates::{self, UpdateInfo, UpdateState};
 
 const MAX_SUBJECT: usize = 1_000;
@@ -152,4 +153,25 @@ pub fn read_backup(app: AppHandle, name: String) -> AppResult<String> {
 #[tauri::command]
 pub fn open_backups_folder(app: AppHandle) -> AppResult<()> {
     backup::open_folder(&app)
+}
+
+/// Device preferences (e.g. low memory mode).
+#[tauri::command]
+pub fn get_preferences(app: AppHandle) -> Preferences {
+    preferences::load(&app)
+}
+
+/// Turns low memory mode on or off; takes effect after a restart.
+#[tauri::command]
+pub fn set_low_memory_mode(app: AppHandle, enabled: bool) -> AppResult<Preferences> {
+    let mut prefs = preferences::load(&app);
+    prefs.low_memory_mode = enabled;
+    preferences::save(&app, &prefs)?;
+    Ok(prefs)
+}
+
+/// Restarts the app (used to apply low memory mode).
+#[tauri::command]
+pub fn restart_app(app: AppHandle) {
+    app.restart();
 }

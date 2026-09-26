@@ -2,6 +2,7 @@ mod backup;
 mod commands;
 mod error;
 mod google;
+mod preferences;
 mod updates;
 
 use std::time::Duration;
@@ -21,6 +22,23 @@ fn http_client() -> reqwest::Client {
         .user_agent(concat!("StudentInvoice/", env!("CARGO_PKG_VERSION")))
         .build()
         .expect("HTTP client configuration is valid")
+}
+
+/// The main window is defined in tauri.conf.json (`create: false`) and built
+/// here, so device preferences such as low memory mode can set WebView2's
+/// browser arguments, which are fixed once the window exists.
+fn create_main_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == "main")
+        .cloned()
+        .ok_or("the main window is missing from tauri.conf.json")?;
+    config.additional_browser_args = Some(preferences::browser_args(preferences::load(app)));
+    tauri::WebviewWindowBuilder::from_config(app, &config)?.build()?;
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -47,6 +65,7 @@ pub fn run() {
             google::store::init()?;
             app.manage(GoogleAuth::new(http_client()));
             app.manage(UpdateState::default());
+            create_main_window(app.handle())?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -65,6 +84,9 @@ pub fn run() {
             commands::list_backups,
             commands::read_backup,
             commands::open_backups_folder,
+            commands::get_preferences,
+            commands::set_low_memory_mode,
+            commands::restart_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

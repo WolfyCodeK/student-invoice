@@ -19,6 +19,9 @@ const COMMANDS: &[&str] = &[
     "list_backups",
     "read_backup",
     "open_backups_folder",
+    "get_preferences",
+    "set_low_memory_mode",
+    "restart_app",
 ];
 
 fn main() {

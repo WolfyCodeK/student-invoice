@@ -12,6 +12,8 @@
   "app": {
     "windows": [
       {
+        "label": "main",
+        "create": false,
         "title": "Student Invoice",
         "width": 1500,
         "height": 940,

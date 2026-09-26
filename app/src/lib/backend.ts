@@ -61,6 +61,11 @@ export interface BackupInfo {
   size: number
 }
 
+/** Per-PC preferences, read by Rust before the window opens (not exported). */
+export interface Preferences {
+  lowMemoryMode: boolean
+}
+
 export const backend = {
   gmailStatus: () => invoke<GmailStatus>('gmail_status'),
   gmailConnect: () => invoke<GmailStatus>('gmail_connect'),
@@ -81,4 +86,8 @@ export const backend = {
   listBackups: () => invoke<BackupInfo[]>('list_backups'),
   readBackup: (name: string) => invoke<string>('read_backup', { name }),
   openBackupsFolder: () => invoke<void>('open_backups_folder'),
+  getPreferences: () => invoke<Preferences>('get_preferences'),
+  /** Takes effect after `restartApp`. */
+  setLowMemoryMode: (enabled: boolean) => invoke<Preferences>('set_low_memory_mode', { enabled }),
+  restartApp: () => invoke<void>('restart_app'),
 }
