@@ -11,6 +11,7 @@ import { useAppStore, getTermsForAcademicYear } from "../stores/app-store";
 import { AppSettings, InvoiceTemplate, TermData } from "../types";
 import { getDefaultTemplateString } from "../utils/invoice-generator";
 import { errorMessage } from "../lib/backend";
+import { DataSection } from "./data-section";
 import { format } from "date-fns";
 
 interface SettingsDialogProps {
@@ -129,6 +130,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </div>
 
           <GmailSettingsSection />
+
+          <DataSection />
 
           {/* Term Dates */}
           <TermDatesSection />

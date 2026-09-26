@@ -51,6 +51,16 @@ export interface UpdateInfo {
   disabledInDev: boolean
 }
 
+export type BackupReason = 'pre-migration' | 'pre-import' | 'pre-update' | 'pre-restore' | 'daily'
+
+export interface BackupInfo {
+  name: string
+  reason: BackupReason
+  /** UTC ISO timestamp. */
+  createdAt: string
+  size: number
+}
+
 export const backend = {
   gmailStatus: () => invoke<GmailStatus>('gmail_status'),
   gmailConnect: () => invoke<GmailStatus>('gmail_connect'),
@@ -63,4 +73,12 @@ export const backend = {
   gmailClearCustomClient: () => invoke<GmailStatus>('gmail_clear_custom_client'),
   checkForUpdates: () => invoke<UpdateInfo>('check_for_updates'),
   installUpdate: () => invoke<void>('install_update'),
+  /** Opens a save dialog; resolves to the saved file name, or null if cancelled. */
+  exportBackup: (content: string, suggestedName: string) => invoke<string | null>('export_backup', { content, suggestedName }),
+  /** Opens a file dialog; resolves to the file's text, or null if cancelled. */
+  importBackup: () => invoke<string | null>('import_backup'),
+  createAutoBackup: (reason: BackupReason, content: string) => invoke<BackupInfo>('create_auto_backup', { reason, content }),
+  listBackups: () => invoke<BackupInfo[]>('list_backups'),
+  readBackup: (name: string) => invoke<string>('read_backup', { name }),
+  openBackupsFolder: () => invoke<void>('open_backups_folder'),
 }

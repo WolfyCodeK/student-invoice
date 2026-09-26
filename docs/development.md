@@ -124,6 +124,7 @@ node scripts/docs/check.mjs              # all docs checks
 | `tauri-build` | crate | 2.6.3 |
 | `tauri-plugin-updater` | crate | 2.12.0 |
 | `tauri-plugin-opener` | crate | 2.5.5 |
+| `tauri-plugin-dialog` | crate | 2.7.3 |
 | `oauth2` | crate | 5.0.0 |
 | `reqwest` | crate | 0.12.28, 0.13.5 |
 | `tokio` | crate | 1.53.1 |

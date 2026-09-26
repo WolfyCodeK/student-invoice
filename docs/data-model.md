@@ -58,6 +58,100 @@ in plaintext in `settings`. On load, v1.1.0 sets both fields to `''` (in
 still load the data, but someone who downgrades to v1.0.1 would have to paste
 credentials again to use Gmail there.
 
+## Schema
+
+The stored shape is described in zod in `app/src/lib/schema/index.ts`
+(`persistedStateSchema`). It is lenient, because unknown fields from newer
+versions must survive. It is shown here as JSON Schema:
+
+<!-- GEN:persisted-schema -->
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "instrument": {
+            "type": "string"
+          },
+          "day": {
+            "type": "string"
+          },
+          "students": {
+            "type": "string"
+          },
+          "createdAt": {},
+          "updatedAt": {}
+        },
+        "required": [
+          "id",
+          "recipient",
+          "cost",
+          "instrument",
+          "day",
+          "students"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "currentTemplateId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": [
+            "light",
+            "dark"
+          ]
+        },
+        "customEmailBodyTemplate": {
+          "type": "string"
+        },
+        "gmailClientId": {
+          "type": "string"
+        },
+        "gmailClientSecret": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "gmailConnected": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "templates",
+    "currentTemplateId",
+    "settings"
+  ],
+  "additionalProperties": {}
+}
+```
+<!-- /GEN:persisted-schema -->
+
+Backups in `%LOCALAPPDATA%\com.isaac.student-invoice\backups\` and export
+files use the stricter backup format; see [backup](backup.md).
+
 ## Rules for changing persisted data
 
 These rules keep every installed version working, including a downgrade from

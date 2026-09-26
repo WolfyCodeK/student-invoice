@@ -41,6 +41,8 @@ good intentions.
      `app/src/stores/app-store.ts`) must exist, so renames can't leave dead
      references.
    - `docs/README.md` must link every doc.
+   - Docs must not contain invisible control characters (for example a
+     backspace from an escaping mistake), which silently corrupt paths.
 
 ## Where the checks run
 

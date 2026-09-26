@@ -3,6 +3,7 @@
 //! generator fails if the three lists disagree.
 use tauri::{AppHandle, State};
 
+use crate::backup::{self, BackupInfo, BackupReason};
 use crate::error::{AppError, AppResult};
 use crate::google::auth::{GmailStatus, GoogleAuth};
 use crate::google::gmail::{self, DraftCreated};
@@ -107,4 +108,48 @@ pub async fn check_for_updates(
 #[tauri::command]
 pub async fn install_update(app: AppHandle, state: State<'_, UpdateState>) -> AppResult<()> {
     updates::install(&app, &state).await
+}
+
+/// Asks where to save and writes an export of all data; returns the file name, or null if cancelled.
+#[tauri::command]
+pub async fn export_backup(
+    app: AppHandle,
+    content: String,
+    suggested_name: String,
+) -> AppResult<Option<String>> {
+    backup::export(&app, content, suggested_name).await
+}
+
+/// Asks for a backup file and returns its contents, or null if cancelled.
+#[tauri::command]
+pub async fn import_backup(app: AppHandle) -> AppResult<Option<String>> {
+    backup::import(&app).await
+}
+
+/// Saves an automatic backup in the app's backups folder.
+#[tauri::command]
+pub fn create_auto_backup(
+    app: AppHandle,
+    reason: BackupReason,
+    content: String,
+) -> AppResult<BackupInfo> {
+    backup::create_auto(&app, reason, &content)
+}
+
+/// Lists automatic backups, newest first.
+#[tauri::command]
+pub fn list_backups(app: AppHandle) -> AppResult<Vec<BackupInfo>> {
+    backup::list(&app)
+}
+
+/// Reads one automatic backup by name.
+#[tauri::command]
+pub fn read_backup(app: AppHandle, name: String) -> AppResult<String> {
+    backup::read(&app, &name)
+}
+
+/// Opens the automatic backups folder in File Explorer.
+#[tauri::command]
+pub fn open_backups_folder(app: AppHandle) -> AppResult<()> {
+    backup::open_folder(&app)
 }

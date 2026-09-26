@@ -3,7 +3,10 @@ import { persist } from 'zustand/middleware'
 import { InvoiceTemplate, AppSettings, TermData } from '../types'
 import { generateInvoice, generateAllInvoices, InvoiceData } from '../utils/invoice-generator'
 import { calculateTermData, getTermsForAcademicYear } from '../utils/terms'
-import { backend, isBackendError, errorMessage, type GmailStatus, type UpdateInfo } from '../lib/backend'
+import { backend, isBackendError, errorMessage, type BackupReason, type GmailStatus, type UpdateInfo } from '../lib/backend'
+import { buildBackup, parseBackup, suggestedBackupName, type ParseResult } from '../lib/backup'
+import type { BackupFile } from '../lib/schema'
+import { getVersion } from '@tauri-apps/api/app'
 
 /** One template's result from "Draft all". */
 export interface DraftFailure {
@@ -51,6 +54,12 @@ interface AppState {
   checkForUpdates: () => Promise<UpdateInfo>
   installUpdate: () => Promise<void>
 
+  // Data transfer and backups (docs/backup.md)
+  exportData: () => Promise<string | null>
+  pickImportFile: () => Promise<ParseResult | null>
+  replaceAllData: (backup: BackupFile, safetyBackup: 'pre-import' | 'pre-restore') => Promise<void>
+  backupNow: (reason: BackupReason) => Promise<void>
+
   // UI State
   isLoading: boolean
   setLoading: (loading: boolean) => void
@@ -65,6 +74,26 @@ const defaultSettings: AppSettings = {
   autoSave: true,
   showNotifications: true,
   customEmailBodyTemplate: undefined
+}
+
+export const THEME_STORAGE_KEY = 'student-invoice-theme'
+
+async function currentBackupText(): Promise<string> {
+  const { templates, currentTemplateId, settings } = useAppStore.getState()
+  const stored = localStorage.getItem(THEME_STORAGE_KEY)
+  const theme = stored === 'light' || stored === 'dark' ? stored : null
+  const version = await getVersion().catch(() => 'unknown')
+  return buildBackup({ templates, currentTemplateId, settings, theme }, version)
+}
+
+/** Takes the daily automatic backup if there isn't one from today yet. */
+export async function ensureDailyBackup(): Promise<void> {
+  if (useAppStore.getState().templates.length === 0) return
+  const today = new Date().toISOString().slice(0, 10)
+  const backups = await backend.listBackups()
+  if (!backups.some((b) => b.reason === 'daily' && b.createdAt.startsWith(today))) {
+    await useAppStore.getState().backupNow('daily')
+  }
 }
 
 // Re-exported for existing importers (settings dialog).
@@ -170,7 +199,39 @@ export const useAppStore = create<AppState>()(
 
       // Updates
       checkForUpdates: () => backend.checkForUpdates(),
-      installUpdate: () => backend.installUpdate(),
+      installUpdate: async () => {
+        // Best effort: an update never touches data, so don't block it.
+        await get().backupNow('pre-update').catch((e) => console.warn('Pre-update backup failed:', errorMessage(e)))
+        await backend.installUpdate()
+      },
+
+      // Data transfer and backups
+      exportData: async () => {
+        return backend.exportBackup(await currentBackupText(), suggestedBackupName())
+      },
+
+      pickImportFile: async () => {
+        const text = await backend.importBackup()
+        return text === null ? null : parseBackup(text)
+      },
+
+      replaceAllData: async (backup, safetyBackup) => {
+        // Never replace data without a copy of what is being replaced.
+        await get().backupNow(safetyBackup)
+        const { store, theme } = backup.data
+        const templates = store.templates as unknown as InvoiceTemplate[]
+        set({
+          templates,
+          currentTemplateId: templates.some((t) => t.id === store.currentTemplateId) ? store.currentTemplateId : (templates[0]?.id ?? null),
+          settings: { ...defaultSettings, ...(store.settings as Partial<AppSettings>), gmailClientId: '', gmailClientSecret: '' },
+        })
+        if (theme) localStorage.setItem(THEME_STORAGE_KEY, theme)
+        get().generateCurrentInvoice()
+      },
+
+      backupNow: async (reason) => {
+        await backend.createAutoBackup(reason, await currentBackupText())
+      },
 
       // Templates
       templates: [],

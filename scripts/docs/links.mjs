@@ -20,7 +20,12 @@ function markdownFiles(dir) {
 const files = [...markdownFiles('docs'), 'CLAUDE.md', 'AGENTS.md', 'README.md', 'CHANGELOG.md'].filter((f) => existsSync(join(root, f)))
 
 for (const file of files) {
-  const text = readRepoFile(file)
+  // Invisible control characters (e.g. a stray backspace from an escaping
+  // mistake) silently corrupt paths and commands shown in the docs.
+  const raw = readRepoFile(file)
+  const control = raw.search(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F﻿]/)
+  if (control !== -1) problems.push(`${file}: invisible control character at offset ${control}`)
+  const text = raw
     .replace(/<!-- GEN:([\w-]+) -->[\s\S]*?<!-- \/GEN:\1 -->/g, '') // generated blocks are checked by generate.mjs
     .replace(/```[\s\S]*?```/g, '') // code fences
   for (const m of text.matchAll(/\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {

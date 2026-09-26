@@ -13,6 +13,12 @@ const COMMANDS: &[&str] = &[
     "gmail_clear_custom_client",
     "check_for_updates",
     "install_update",
+    "export_backup",
+    "import_backup",
+    "create_auto_backup",
+    "list_backups",
+    "read_backup",
+    "open_backups_folder",
 ];
 
 fn main() {

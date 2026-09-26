@@ -11,6 +11,13 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+### Added
+- **Move your data to another PC:** Settings → Your data → Export, then
+  Import on the other PC. It includes templates, settings, the email wording
+  and the theme.
+- **Automatic backups:** a copy of your data is saved every day, and before
+  imports and updates. You can restore any of them from Settings.
+
 ### Changed
 - Connecting Gmail is simpler: no more pasting a client ID and secret into
   Settings. Click **Connect Gmail**, choose your account in the browser, and

@@ -50,7 +50,8 @@
       "covers": [
         "app/src/stores/app-store.ts",
         "app/src/types/**",
-        "app/src/components/theme-provider.tsx"
+        "app/src/components/theme-provider.tsx",
+        "app/src/lib/schema/**"
       ]
     },
     "docs/billing.md": {
@@ -116,6 +117,15 @@
     "docs/release.md": {
       "covers": [
         "scripts/release/**"
+      ]
+    },
+    "docs/backup.md": {
+      "covers": [
+        "app/src-tauri/src/backup.rs",
+        "app/src/lib/backup.ts",
+        "app/src/lib/backup.test.ts",
+        "app/src/lib/schema/**",
+        "app/src/components/data-section.tsx"
       ]
     }
   },

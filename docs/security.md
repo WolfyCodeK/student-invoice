@@ -70,6 +70,7 @@ private key.
     to events.
   - There are no filesystem, shell, HTTP or opener permissions in the
     webview. URLs are opened by Rust.
+- **Files:** the webview can't read or write arbitrary files. Export and import use native dialogs opened by Rust, and automatic backups are addressed by strictly checked names. Imported files are size-limited and strictly validated ([backup](backup.md)).
 - **Input checks:** commands validate their input (length limits, email
   address format, OAuth client ID shape) before acting.
 - **Text rendering:** user-entered text is rendered as text by React (no

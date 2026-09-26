@@ -1,3 +1,4 @@
+mod backup;
 mod commands;
 mod error;
 mod google;
@@ -27,6 +28,7 @@ pub fn run() {
     #[allow(unused_mut)]
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::default().build());
 
     // Development only (never in release builds): the Tauri MCP bridge,
@@ -57,6 +59,12 @@ pub fn run() {
             commands::gmail_clear_custom_client,
             commands::check_for_updates,
             commands::install_update,
+            commands::export_backup,
+            commands::import_backup,
+            commands::create_auto_backup,
+            commands::list_backups,
+            commands::read_backup,
+            commands::open_backups_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

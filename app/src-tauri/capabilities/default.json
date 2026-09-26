@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Everything the main window may do. Keep this minimal: each entry is reachable by any script running in the webview.",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:app:allow-version",
     "core:event:allow-listen",
@@ -15,6 +17,12 @@
     "allow-gmail-set-custom-client",
     "allow-gmail-clear-custom-client",
     "allow-check-for-updates",
-    "allow-install-update"
+    "allow-install-update",
+    "allow-export-backup",
+    "allow-import-backup",
+    "allow-create-auto-backup",
+    "allow-list-backups",
+    "allow-read-backup",
+    "allow-open-backups-folder"
   ]
 }
