@@ -23,7 +23,8 @@ The feedback form calls api.emailjs.com directly from the webview.
 ```
 ## Frontend (`app/src`)
 
-- `main.tsx` mounts `App` in React StrictMode.
+- `main.tsx` mounts `App` in React StrictMode, inside an error boundary
+  (`components/error-boundary.tsx`).
 - `App.tsx` is the whole UI today: header, template picker and actions, invoice
   preview, and all dialogs. See [UI](ui.md).
 - `stores/app-store.ts`: the single zustand store. It holds templates, settings,
@@ -36,9 +37,14 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `lib/backend.ts`: typed wrappers for every Rust command and the shared
   `{ kind, message }` error type. The UI calls these instead of `invoke`.
 
-**Start-up side effects** (`app/src/stores/app-store.ts`, bottom of file): as
-soon as the store module loads it computes the current term (which also
-builds the current invoice) and asks Rust for the Gmail status.
+**Start-up side effects:**
+- **When the store module loads** (bottom of `app/src/stores/app-store.ts`):
+  it loads the stored state, computes the current term (which also builds the
+  current invoice), and asks Rust for the Gmail status.
+- **When `App` mounts:** it upgrades data from older versions after a backup
+  (`migrateStoredData`), takes the daily automatic backup
+  (`ensureDailyBackup`), starts listening for update progress, and checks for
+  updates.
 
 ## Backend (`app/src-tauri`)
 

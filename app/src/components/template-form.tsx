@@ -10,13 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { InvoiceTemplate } from "../types";
 
 const templateSchema = z.object({
-  recipient: z.string().min(1, "Recipient name is required"),
+  recipient: z.string().trim().min(1, "Recipient name is required").max(200, "Keep this under 200 characters"),
   cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Cost must be a positive number",
   }),
   instrument: z.string().min(1, "Instrument is required"),
   day: z.string().min(1, "Day is required"),
-  students: z.string().min(1, "Student name is required"),
+  students: z.string().trim().min(1, "Student name is required").max(500, "Keep this under 500 characters"),
 });
 
 type TemplateFormData = z.infer<typeof templateSchema>;
@@ -74,7 +74,10 @@ export function TemplateForm({ open, onOpenChange, template, onSubmit }: Templat
     }
   });
 
+  // Reset every time the dialog opens, so values from a previous (or
+  // cancelled) edit never carry over into this one.
   React.useEffect(() => {
+    if (!open) return;
     if (template) {
       reset({
         recipient: template.recipient,
@@ -92,7 +95,7 @@ export function TemplateForm({ open, onOpenChange, template, onSubmit }: Templat
         students: "",
       });
     }
-  }, [template, reset]);
+  }, [open, template, reset]);
 
   const handleFormSubmit = (data: TemplateFormData) => {
     onSubmit({

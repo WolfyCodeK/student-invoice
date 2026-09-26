@@ -45,6 +45,7 @@ interface AppSettings {
   autoSave: boolean                 // unused
   showNotifications: boolean        // editable, unused
   customEmailBodyTemplate?: string  // replaces the default email body
+  dataRevision?: number             // v1.1.0+: which upgrades have run (see below)
 }
 ```
 
@@ -52,11 +53,25 @@ interface AppSettings {
 `gmailConnected` is still written so that v1.0.1 can read the data, but
 v1.1.0 derives the connection state from Rust (`gmail_status`) at start-up.
 
-**Legacy credential clean-up:** v1.0.1 stored the Google client ID and secret
-in plaintext in `settings`. On load, v1.1.0 sets both fields to `''` (in
-`onRehydrateStorage` in the store). The fields are kept so older versions
-still load the data, but someone who downgrades to v1.0.1 would have to paste
-credentials again to use Gmail there.
+## Loading and upgrading stored data
+
+- **Loading:** zustand loads the stored state synchronously when the store
+  module is created. The store's custom `merge` fills in defaults for settings
+  that didn't exist when the data was written, which zustand's shallow merge
+  would otherwise leave `undefined`.
+- **Upgrading (`migrateStoredData` in the store):** runs on start-up.
+  - `settings.dataRevision` (absent in v1.0.1 data) records which upgrades
+    have been applied; the current revision is 1.
+  - If the stored revision is older, a `pre-migration` automatic backup is
+    saved first (see [backup](backup.md)). The upgrade is applied only if that
+    backup succeeded; otherwise it is retried on the next start.
+- **Revision 1:** v1.0.1 stored the Google client ID and secret in plaintext
+  in `settings`. The upgrade sets both fields to `''`. The fields are kept, so
+  older versions still load the data, but someone who downgrades to v1.0.1
+  would have to paste credentials again to use Gmail there.
+- **Unusable lesson days:** a template whose `day` isn't one of the seven
+  weekday names (possible only through damaged data) produces no invoice and
+  is reported by Draft all, instead of reaching the invoice generator.
 
 ## Schema
 
@@ -168,4 +183,7 @@ a newer version back to v1.0.1. The reasons are explained in
    top-level state keys. v1.0.1 keeps unknown fields inside those objects
    when it saves, but it drops unknown top-level keys.
 4. Nothing may write to storage before the stored state has been loaded
-   (otherwise defaults would overwrite real data).
+   (otherwise defaults would overwrite real data). This holds because loading
+   is synchronous (localStorage).
+5. Every upgrade goes in `migrateStoredData`, bumps `CURRENT_DATA_REVISION`,
+   and is covered by `app/src/stores/app-store.test.ts`.

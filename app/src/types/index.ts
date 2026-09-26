@@ -47,6 +47,8 @@ export interface AppSettings {
   autoSave: boolean
   showNotifications: boolean
   customEmailBodyTemplate?: string
+  /** Stored-data revision (see docs/data-model.md). Absent in v1.0.1 data. */
+  dataRevision?: number
 }
 
 // API Response types

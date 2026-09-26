@@ -11,7 +11,7 @@ import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, Toas
 import { TemplateForm } from "./components/template-form";
 import { SettingsDialog } from "./components/settings-dialog";
 import { Mail, Edit, Plus, Send, Copy, Users, CheckCircle, XCircle, Trash2, Settings, Loader2, Download, MessageSquare } from "lucide-react";
-import { useAppStore, ensureDailyBackup, type DraftFailure } from "./stores/app-store";
+import { useAppStore, ensureDailyBackup, migrateStoredData, type DraftFailure } from "./stores/app-store";
 import { useToast } from "./hooks/use-toast";
 import { InvoiceTemplate } from "./types";
 import { errorMessage, isBackendError, type UpdateInfo } from "./lib/backend";
@@ -68,9 +68,13 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // One automatic backup per day (see docs/backup.md).
+  // Upgrade data from older versions (backed up first), then take the daily
+  // automatic backup (see docs/data-model.md and docs/backup.md).
   useEffect(() => {
-    ensureDailyBackup().catch((error) => console.warn("Daily backup failed:", errorMessage(error)));
+    migrateStoredData()
+      .catch((error) => console.warn("Data upgrade postponed:", errorMessage(error)))
+      .then(ensureDailyBackup)
+      .catch((error) => console.warn("Daily backup failed:", errorMessage(error)));
   }, []);
 
   // Download progress while an update installs.

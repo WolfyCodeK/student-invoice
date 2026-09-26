@@ -42,6 +42,10 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 - The email preview updates straight away after you edit a template or the
   email wording, and it clears when a template is deleted.
 - Accented names and the £ sign display correctly in Gmail drafts.
+- Editing a template always starts from its saved values. Previously,
+  details from an earlier or cancelled edit could reappear and be saved.
+- If something unexpected goes wrong, the app shows a way forward instead
+  of a blank window.
 - The update window shows download progress and can't be closed halfway
   through installing.
 

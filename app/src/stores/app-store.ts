@@ -5,7 +5,7 @@ import { generateInvoice, generateAllInvoices, InvoiceData } from '../utils/invo
 import { calculateTermData, getTermsForAcademicYear } from '../utils/terms'
 import { backend, isBackendError, errorMessage, type BackupReason, type GmailStatus, type UpdateInfo } from '../lib/backend'
 import { buildBackup, parseBackup, suggestedBackupName, type ParseResult } from '../lib/backup'
-import type { BackupFile } from '../lib/schema'
+import { WEEKDAYS, type BackupFile } from '../lib/schema'
 import { getVersion } from '@tauri-apps/api/app'
 
 /** One template's result from "Draft all". */
@@ -84,6 +84,37 @@ async function currentBackupText(): Promise<string> {
   const theme = stored === 'light' || stored === 'dark' ? stored : null
   const version = await getVersion().catch(() => 'unknown')
   return buildBackup({ templates, currentTemplateId, settings, theme }, version)
+}
+
+/**
+ * Upgrades stored data written by older versions, after saving a
+ * `pre-migration` backup of it. Additive only (docs/data-model.md): older
+ * versions must still be able to read the result. Runs once per revision.
+ */
+export const CURRENT_DATA_REVISION = 1
+
+export async function migrateStoredData(): Promise<void> {
+  const { settings, updateSettings } = useAppStore.getState()
+  const revision = settings.dataRevision ?? 0
+  if (revision >= CURRENT_DATA_REVISION) return
+  // Nothing is changed unless the backup succeeded; it is retried next start.
+  await useAppStore.getState().backupNow('pre-migration')
+  const updates: Partial<AppSettings> = { dataRevision: CURRENT_DATA_REVISION }
+  if (revision < 1) {
+    // v1.0.1 kept the Google client ID/secret in plaintext. v1.1.0 uses a
+    // built-in client (or one in Windows Credential Manager). The fields stay
+    // (as '') so older versions can still load the data.
+    updates.gmailClientId = ''
+    updates.gmailClientSecret = ''
+  }
+  updateSettings(updates)
+}
+
+const VALID_DAYS: readonly string[] = WEEKDAYS
+
+/** Guards the invoice generator, which needs a real weekday name. */
+function hasValidLessonDay(template: InvoiceTemplate): boolean {
+  return VALID_DAYS.includes(template.day)
 }
 
 /** Takes the daily automatic backup if there isn't one from today yet. */
@@ -177,6 +208,10 @@ export const useAppStore = create<AppState>()(
         const failures: DraftFailure[] = []
         try {
           for (const [i, template] of state.templates.entries()) {
+            if (!hasValidLessonDay(template)) {
+              failures.push({ label: `${template.students} (${template.recipient})`, message: 'The lesson day is not set correctly. Edit the template and choose a day.' })
+              continue
+            }
             const invoice = generateInvoice(template, term, state.settings.customEmailBodyTemplate)
             try {
               await backend.gmailCreateDraft(invoice.subject, invoice.body)
@@ -302,16 +337,19 @@ export const useAppStore = create<AppState>()(
         const template = state.templates.find(t => t.id === state.currentTemplateId)
         const termData = state.currentTerm
 
-        // No template selected or outside term time: nothing to show (a stale
-        // invoice for another template must never be displayed or copied).
-        const invoice = template && termData ? generateInvoice(template, termData, state.settings.customEmailBodyTemplate) : null
+        // No template selected, outside term time, or an unusable lesson day:
+        // nothing to show (a stale invoice must never be displayed or copied).
+        const invoice =
+          template && termData && hasValidLessonDay(template)
+            ? generateInvoice(template, termData, state.settings.customEmailBodyTemplate)
+            : null
         set({ currentInvoice: invoice })
       },
 
       generateAllInvoicesAction: () => {
         const state = get()
         if (state.currentTerm) {
-          return generateAllInvoices(state.templates, state.currentTerm, state.settings.customEmailBodyTemplate)
+          return generateAllInvoices(state.templates.filter(hasValidLessonDay), state.currentTerm, state.settings.customEmailBodyTemplate)
         }
         return []
       },
@@ -331,14 +369,12 @@ export const useAppStore = create<AppState>()(
         settings: state.settings,
         gmailConnected: state.gmailConnected
       }),
-      onRehydrateStorage: () => (state) => {
-        // v1.0.1 kept the Google client ID/secret in plaintext here. v1.1.0
-        // uses a built-in client (or one in Windows Credential Manager), so
-        // remove them. Fields stay (as '') so older versions can still load.
-        if (state && (state.settings.gmailClientId || state.settings.gmailClientSecret)) {
-          state.updateSettings({ gmailClientId: '', gmailClientSecret: '' })
-        }
-      }
+      // zustand's default merge is shallow, which would drop defaults for
+      // settings added in newer versions. Merge settings one level deeper.
+      merge: (persisted, current) => {
+        const stored = (persisted ?? {}) as Partial<AppState>
+        return { ...current, ...stored, settings: { ...current.settings, ...(stored.settings ?? {}) } }
+      },
     }
   )
 )

@@ -65,6 +65,15 @@ node scripts/docs/check.mjs              # all docs checks
 
 - **Vitest** runs `app/src/**/*.test.ts(x)` with `TZ=Europe/London`, set in
   `app/vitest.config.ts`.
+- **Store tests** (`app/src/stores/app-store.test.ts`, jsdom, backend mocked)
+  cover:
+  - loading v1.0.1-shaped data;
+  - the stored shape that older versions read;
+  - migrations and imports only running after a successful backup;
+  - the preview staying in sync;
+  - Draft all.
+- **Backup file tests** (`app/src/lib/backup.test.ts`) cover round trips and
+  hostile files.
 - **Billing characterization tests** (`app/src/utils/billing.characterization.test.ts`)
   pin today's exact money output. **Never update their snapshots** without an
   approved proposal (see [billing](billing.md)).
