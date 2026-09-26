@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { InvoiceTemplate, AppSettings, TermData } from '../types'
-import { generateInvoice, generateAllInvoices, InvoiceData } from '../utils/invoice-generator'
+import { generateInvoice, generateAllInvoices, InvoiceData, lessonDateKey, lessonDates } from '../utils/invoice-generator'
 import { calculateTermData, getTermsForAcademicYear } from '../utils/terms'
 import { backend, isBackendError, errorMessage, type BackupReason, type GmailStatus, type UpdateInfo } from '../lib/backend'
 import { buildBackup, suggestedBackupName } from '../lib/backup'
@@ -16,6 +16,17 @@ export interface DraftFailure {
   message: string
 }
 
+export interface DraftAllResult {
+  success: number
+  failures: DraftFailure[]
+  /** Not attempted, because an earlier failure means every draft would fail. */
+  skipped: number
+  /** Families with every lesson unticked: there is nothing to invoice. */
+  nothingToInvoice: string[]
+}
+
+const NOTHING_TO_INVOICE = 'Every lesson is unticked for this family, so there is nothing to invoice.'
+
 interface AppState {
   // Templates
   templates: InvoiceTemplate[]
@@ -24,6 +35,8 @@ interface AppState {
   updateTemplate: (id: string, updates: Partial<InvoiceTemplate>) => void
   deleteTemplate: (id: string) => void
   setCurrentTemplate: (id: string | null) => void
+  /** Untick a lesson that didn't happen, or tick it again (docs/billing.md). */
+  toggleLesson: (templateId: string, date: string) => void
 
   // Settings
   settings: AppSettings
@@ -50,7 +63,7 @@ interface AppState {
   setCustomGmailClient: (clientId: string, clientSecret: string) => Promise<void>
   clearCustomGmailClient: () => Promise<void>
   createCurrentInvoiceDraft: () => Promise<void>
-  createAllInvoiceDrafts: () => Promise<{ success: number; failures: DraftFailure[]; skipped: number }>
+  createAllInvoiceDrafts: () => Promise<DraftAllResult>
 
   // Updates
   checkForUpdates: () => Promise<UpdateInfo>
@@ -184,6 +197,7 @@ export const useAppStore = create<AppState>()(
         const { currentInvoice, drafting } = get()
         if (drafting) return
         if (!currentInvoice) throw new Error('There is no invoice to save for this template right now.')
+        if (currentInvoice.lessonCount === 0) throw new Error(NOTHING_TO_INVOICE)
         set({ drafting: true })
         try {
           await backend.gmailCreateDraft(currentInvoice.subject, currentInvoice.body)
@@ -199,7 +213,7 @@ export const useAppStore = create<AppState>()(
 
       createAllInvoiceDrafts: async () => {
         const state = get()
-        if (state.drafting) return { success: 0, failures: [], skipped: 0 }
+        if (state.drafting) return { success: 0, failures: [], skipped: 0, nothingToInvoice: [] }
         const term = state.currentTerm
         if (!term) throw new Error('It is outside term time, so there are no invoices to create.')
         if (state.templates.length === 0) throw new Error('There are no templates yet.')
@@ -207,6 +221,7 @@ export const useAppStore = create<AppState>()(
         let success = 0
         let skipped = 0
         const failures: DraftFailure[] = []
+        const nothingToInvoice: string[] = []
         try {
           for (const [i, template] of state.templates.entries()) {
             if (!hasValidLessonDay(template)) {
@@ -214,6 +229,10 @@ export const useAppStore = create<AppState>()(
               continue
             }
             const invoice = generateInvoice(template, term, state.settings.customEmailBodyTemplate)
+            if (invoice.lessonCount === 0) {
+              nothingToInvoice.push(`${template.students} (${template.recipient})`)
+              continue
+            }
             try {
               await backend.gmailCreateDraft(invoice.subject, invoice.body)
               success++
@@ -230,7 +249,7 @@ export const useAppStore = create<AppState>()(
         } finally {
           set({ drafting: false })
         }
-        return { success, failures, skipped }
+        return { success, failures, skipped, nothingToInvoice }
       },
 
       // Updates
@@ -311,6 +330,20 @@ export const useAppStore = create<AppState>()(
       setCurrentTemplate: (id) => {
         set({ currentTemplateId: id })
         get().generateCurrentInvoice()
+      },
+
+      toggleLesson: (templateId, date) => {
+        const { currentTerm, templates } = get()
+        const template = templates.find((t) => t.id === templateId)
+        if (!currentTerm || !template || !hasValidLessonDay(template)) return
+        // Only this half-term's lesson dates are kept, so unticks from past
+        // half-terms (or an old lesson day) are dropped here.
+        const lessons = new Set(lessonDates(template, currentTerm).map(lessonDateKey))
+        if (!lessons.has(date)) return
+        const skipped = new Set((template.skippedLessonDates ?? []).filter((d) => lessons.has(d)))
+        if (skipped.has(date)) skipped.delete(date)
+        else skipped.add(date)
+        get().updateTemplate(templateId, { skippedLessonDates: [...skipped].sort() })
       },
 
       // Settings

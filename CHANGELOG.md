@@ -17,6 +17,10 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   and the theme.
 - **Automatic backups:** a copy of your data is saved every day, and before
   imports and updates. You can restore any of them from Settings.
+- **Untick a lesson that didn't happen:** click a lesson in the register to
+  take it off that family's invoice (for illness, a concert or a holiday).
+  The lesson count, total and dates in the email follow. Click it again to put
+  it back. Each half-term starts with every lesson ticked.
 - **Low memory mode:** Settings → Performance. The app uses about 40% less
   memory, at the cost of slightly less smooth scrolling on high-resolution
   screens. It's off by default and applies after a restart.

@@ -234,7 +234,7 @@ describe('Draft all', () => {
     const { useAppStore } = await loadStore()
     backend.gmailCreateDraft.mockRejectedValue({ kind: 'ReauthRequired', message: 'Please reconnect Gmail.' })
     const result = await useAppStore.getState().createAllInvoiceDrafts()
-    expect(result).toEqual({ success: 0, failures: [{ label: 'Sam (Alex Parent)', message: 'Please reconnect Gmail.' }], skipped: 1 })
+    expect(result).toEqual({ success: 0, failures: [{ label: 'Sam (Alex Parent)', message: 'Please reconnect Gmail.' }], skipped: 1, nothingToInvoice: [] })
     expect(useAppStore.getState().drafting).toBe(false)
   })
 
@@ -244,5 +244,41 @@ describe('Draft all', () => {
     const result = await useAppStore.getState().createAllInvoiceDrafts()
     expect(result.success).toBe(2)
     expect(backend.gmailCreateDraft).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('unticking a lesson that did not happen (docs/proposals/2026-09-untick-lessons.md)', () => {
+  it('takes the lesson off the invoice, is saved, and can be ticked again', async () => {
+    const { useAppStore } = await loadStore()
+    useAppStore.getState().setCurrentTemplate('a1') // Monday, £20
+    expect(useAppStore.getState().currentInvoice?.totalCost).toBe(160)
+    useAppStore.getState().toggleLesson('a1', '2026-09-21')
+    expect(useAppStore.getState().currentInvoice?.lessonCount).toBe(7)
+    expect(useAppStore.getState().currentInvoice?.totalCost).toBe(140)
+    expect(stored().state.templates[0].skippedLessonDates).toEqual(['2026-09-21'])
+    useAppStore.getState().toggleLesson('a1', '2026-09-21')
+    expect(useAppStore.getState().currentInvoice?.totalCost).toBe(160)
+    expect(stored().state.templates[0].skippedLessonDates).toEqual([])
+  })
+
+  it('ignores dates that are not one of the lessons, and drops unticks from other half-terms', async () => {
+    const data = structuredClone(v101Data) as typeof v101Data
+    ;(data.state.templates[0] as Record<string, unknown>).skippedLessonDates = ['2026-06-01']
+    const { useAppStore } = await loadStore(data)
+    useAppStore.getState().toggleLesson('a1', '2026-09-22') // a Tuesday: not a lesson
+    expect(stored().state.templates[0].skippedLessonDates).toEqual(['2026-06-01'])
+    useAppStore.getState().toggleLesson('a1', '2026-10-26')
+    expect(stored().state.templates[0].skippedLessonDates).toEqual(['2026-10-26'])
+  })
+
+  it('Draft all skips a family with every lesson unticked and names it', async () => {
+    const { useAppStore } = await loadStore()
+    const { lessonDates, lessonDateKey } = await import('../utils/invoice-generator')
+    const term = useAppStore.getState().currentTerm!
+    for (const d of lessonDates({ day: 'Thursday' }, term)) useAppStore.getState().toggleLesson('b2', lessonDateKey(d))
+    backend.gmailCreateDraft.mockResolvedValue({ id: 'd' })
+    const result = await useAppStore.getState().createAllInvoiceDrafts()
+    expect(result).toEqual({ success: 1, failures: [], skipped: 0, nothingToInvoice: ['Kim (Jo Parent)'] })
+    await expect(useAppStore.getState().createCurrentInvoiceDraft()).rejects.toThrow('nothing to invoice')
   })
 })

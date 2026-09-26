@@ -103,9 +103,10 @@ the teacher
   template is saved.
 - Going back to v1.0.1 ignores the field, so every lesson is charged again
   after a downgrade.
-- Backups: the field is part of the template. The backup format version is
-  bumped, so an older app refuses a backup that contains unticks instead of
-  silently dropping them.
+- Backups: the field is part of the template and travels in backup format 1.
+  v1.1.0 is the first version with backups, and backup readers keep unknown
+  template fields, so no format bump is needed. (This corrects the first
+  draft, which assumed a bump.)
 - Tests: with nothing unticked, output is byte-identical to today, and the
   characterization snapshots must not change. New tests cover every example
   in this proposal.

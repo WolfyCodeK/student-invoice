@@ -6,16 +6,18 @@
 > examples and approved by the owner. The characterization tests below will
 > fail on any such change, by design.
 
-This page describes the rules exactly as implemented today (v1.0.1 logic).
-Known problems with them are listed at the end; they are not fixed until a
-proposal is approved.
+This page describes the rules exactly as implemented. They are v1.0.1's
+logic plus one approved change in v1.1.0, unticking a lesson that didn't
+happen ([proposal](proposals/2026-09-untick-lessons.md)). Known problems are
+listed at the end; they are not fixed until a proposal is approved.
 
 ## Where the logic lives
 
 | What | Where |
 |---|---|
 | Term dates and "which term is it?" | `app/src/utils/terms.ts` (`getTermsForAcademicYear`, `calculateTermData`) |
-| Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`generateInvoice`) |
+| Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`lessonDates`, `generateInvoice`) |
+| Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts`; tests in `app/src/utils/untick-lessons.test.ts` |
 | When the current term is computed | once at start-up (`calculateCurrentTerm` in `app/src/stores/app-store.ts`) |
 | Locked-in expected output | `app/src/utils/billing.characterization.test.ts` and its snapshots in `app/src/utils/__snapshots__/` |
 
@@ -45,6 +47,27 @@ are the same every year:
   point, shown with 2 decimals).
 - First lesson = the first date on or after the term start that falls on the
   template's weekday. Last lesson = first lesson + (weeksCount − 1) weeks.
+  These `weeksCount` dates are the half-term's **lessons** (`lessonDates`).
+
+## Unticked lessons (v1.1.0)
+
+Approved in [untick lessons](proposals/2026-09-untick-lessons.md).
+
+- Each lesson can be unticked when it didn't happen. It is stored on the
+  template as its date in `skippedLessonDates` ("yyyy-MM-dd").
+- **Lessons charged** = the lessons that are still ticked. **Total** =
+  lessons charged × cost per lesson. `N` in the text below is lessons charged.
+- The date range quotes the first and last *ticked* lessons. The wording is
+  unchanged, including a single lesson ("from Monday 7th September to and
+  including Monday 7th September").
+- **Nothing ticked:** that invoice can't be drafted or copied, and Draft All
+  skips it and names it.
+- `toggleLesson` accepts only a date that is one of the current half-term's
+  lessons for that template. While saving, it drops unticks that no longer
+  match a lesson (from past half-terms, or from before the lesson day was
+  changed). Dates that don't match are ignored by the calculation anyway.
+- With nothing unticked, the output is byte-identical to v1.0.1, and the
+  characterization snapshots prove it.
 
 ## Invoice text
 

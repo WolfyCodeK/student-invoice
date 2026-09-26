@@ -6,6 +6,8 @@ export interface InvoiceTemplate {
   instrument: string
   day: string
   students: string
+  /** Lessons unticked because they didn't happen, as "yyyy-MM-dd" dates. Absent in v1.0.1 data. */
+  skippedLessonDates?: string[]
   createdAt: Date
   updatedAt: Date
 }

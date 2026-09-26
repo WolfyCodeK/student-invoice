@@ -38,6 +38,7 @@ interface InvoiceTemplate {        // one per student / family
   instrument: string               // e.g. "piano"
   day: string                      // weekday name, "Monday".."Sunday"
   students: string                 // student name(s)
+  skippedLessonDates?: string[]    // v1.1.0: unticked lessons, "yyyy-MM-dd" (docs/billing.md)
   createdAt: Date                  // stored as ISO string; not revived to Date on load
   updatedAt: Date                  // stored as ISO string; not revived to Date on load
 }
@@ -118,6 +119,12 @@ versions must survive. It is shown here as JSON Schema:
           },
           "students": {
             "type": "string"
+          },
+          "skippedLessonDates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "createdAt": {},
           "updatedAt": {}

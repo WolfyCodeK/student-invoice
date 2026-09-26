@@ -45,13 +45,35 @@ function findFirstLessonDate(termStart: Date, lessonDay: string): Date {
   return currentDate
 }
 
-export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string): InvoiceData {
-  const { term, weeksCount } = termData
+/** A lesson date as stored in `skippedLessonDates`, e.g. "2026-10-26". */
+export const lessonDateKey = (date: Date): string => format(date, 'yyyy-MM-dd')
 
-  // Calculate lesson dates
-  const firstLessonDate = findFirstLessonDate(term.startDate, template.day)
-  const lastLessonDate = new Date(firstLessonDate)
-  lastLessonDate.setDate(lastLessonDate.getDate() + (weeksCount - 1) * 7)
+/**
+ * Every lesson the half-term charges for (v1.0.1 rule): the first lesson day
+ * on or after the half-term's start, then every 7 days, `weeksCount` times.
+ */
+export function lessonDates(template: Pick<InvoiceTemplate, 'day'>, termData: TermData): Date[] {
+  const first = findFirstLessonDate(termData.term.startDate, template.day)
+  return Array.from({ length: termData.weeksCount }, (_, i) => {
+    const date = new Date(first)
+    date.setDate(date.getDate() + i * 7)
+    return date
+  })
+}
+
+export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string): InvoiceData {
+  const { term } = termData
+
+  // Lessons charged: every lesson date except the ones the teacher unticked
+  // (docs/proposals/2026-09-untick-lessons.md). With nothing unticked this is
+  // exactly the v1.0.1 calculation.
+  const allDates = lessonDates(template, termData)
+  const skipped = new Set(template.skippedLessonDates ?? [])
+  const charged = allDates.filter((date) => !skipped.has(lessonDateKey(date)))
+  const weeksCount = charged.length
+  const rangeDates = charged.length > 0 ? charged : allDates
+  const firstLessonDate = rangeDates[0]
+  const lastLessonDate = rangeDates[rangeDates.length - 1]
 
   // Generate term info
   const termInfo = `${term.half} half ${term.season} term ${format(term.startDate, 'yyyy')}`

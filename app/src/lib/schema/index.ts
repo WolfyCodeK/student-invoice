@@ -20,6 +20,7 @@ export const storedTemplateSchema = z.looseObject({
   instrument: z.string(),
   day: z.string(),
   students: z.string(),
+  skippedLessonDates: z.array(z.string()).optional(),
   createdAt: z.unknown().optional(),
   updatedAt: z.unknown().optional(),
 })
@@ -52,6 +53,7 @@ export const backupTemplateSchema = z.looseObject({
   instrument: text(1_000),
   day: z.enum(WEEKDAYS),
   students: text(5_000),
+  skippedLessonDates: z.array(z.iso.date()).max(500).optional(),
   createdAt: z.string().max(40).optional(),
   updatedAt: z.string().max(40).optional(),
 })
