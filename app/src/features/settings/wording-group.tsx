@@ -7,7 +7,8 @@ import { useAppStore } from "../../stores/app-store";
 import { getDefaultTemplateString } from "../../utils/invoice-generator";
 import { getTermsForAcademicYear } from "../../utils/terms";
 import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
-import { academicYearStart, unknownPlaceholders, wordingToSave } from "./settings-logic";
+import { academicYearStart } from "../../lib/term-display";
+import { PLACEHOLDERS, unknownPlaceholders, wordingToSave } from "./settings-logic";
 
 const STANDARD = getDefaultTemplateString();
 
@@ -67,18 +68,10 @@ export function WordingGroup() {
     });
   };
 
-  const placeholders: [string, string][] = [
-    ["{{recipient}}", "The name you greet"],
-    ["{{students}}", "Student name(s)"],
-    ["{{instrument}}", "The instrument, such as piano"],
-    ["{{termInfo}}", `The half-term, e.g. "${termInfoExample}"`],
-    ["{{weeksCount}}", "Number of lessons"],
-    ["{{lessonCountText}}", `"session" or "sessions"`],
-    ["{{dateRange}}", "First to last lesson"],
-    ["{{cost}}", "Cost per lesson"],
-    ["{{totalCost}}", "Total"],
-    ["{{isAre}}", `"is" or "are"`],
-  ];
+  const placeholders = Object.entries(PLACEHOLDERS).map(([name, meaning]): [token: string, meaning: string] => [
+    `{{${name}}}`,
+    name === "termInfo" ? `${meaning}, e.g. "${termInfoExample}"` : meaning,
+  ]);
 
   return (
     <div className="tpl">

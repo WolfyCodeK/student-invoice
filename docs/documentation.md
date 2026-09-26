@@ -27,7 +27,8 @@ good intentions.
 3. **Generated sections**: `scripts/docs/generate.mjs`.
    - Facts that can be read from code are generated, never typed:
      - the Tauri command list, cross-checked against the handler
-       registration and the permission allowlist;
+       registration and the permission allowlist (the generator fails if
+       `build.rs` has no command allowlist);
      - capabilities;
      - the compatibility invariants;
      - dependency versions;

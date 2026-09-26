@@ -1,6 +1,6 @@
 // Settings → Your data: move everything to another PC (export and import) and
 // restore automatic backups. Acts straight away. See docs/backup.md.
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Download, FolderOpen, Loader2, RotateCcw, Upload } from "lucide-react";
 import { useAppStore } from "../../stores/app-store";
@@ -8,7 +8,7 @@ import { backend, errorMessage, type BackupInfo } from "../../lib/backend";
 import { describeBackup } from "../../lib/backup";
 import { parseBackup } from "../../lib/backup-parse";
 import type { BackupFile } from "../../lib/schema";
-import { useToast } from "../../hooks/use-toast";
+import { toast } from "../../hooks/use-toast";
 import { Dialog, DialogActions, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
 
 const REASON_LABELS: Record<BackupInfo["reason"], string> = {
@@ -29,9 +29,7 @@ type Busy = "export" | "import" | "folder" | "restore" | "replace" | null;
 
 export function DataGroup() {
   const exportData = useAppStore((s) => s.exportData);
-  const pickImportFile = useAppStore((s) => s.pickImportFile);
   const replaceAllData = useAppStore((s) => s.replaceAllData);
-  const { toast } = useToast();
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
   const [backups, setBackups] = useState<BackupInfo[] | null>(null);
@@ -39,7 +37,7 @@ export function DataGroup() {
   const [showAll, setShowAll] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
 
-  const refresh = useCallback(() => {
+  useEffect(() => {
     backend.listBackups().then(
       (list) => {
         setBackups(list);
@@ -51,7 +49,6 @@ export function DataGroup() {
       },
     );
   }, []);
-  useEffect(refresh, [refresh]);
 
   const guard = async (kind: Exclude<Busy, null>, action: () => Promise<void>) => {
     setBusy(kind);
@@ -73,8 +70,9 @@ export function DataGroup() {
 
   const onImport = () =>
     guard("import", async () => {
-      const result = await pickImportFile();
-      if (!result) return;
+      const text = await backend.importBackup();
+      if (text === null) return; // cancelled
+      const result = parseBackup(text);
       if (!result.ok) throw new Error(result.error);
       setPending({ backup: result.backup, source: "import", label: "this file" });
     });

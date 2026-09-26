@@ -3,6 +3,7 @@
 // order are in tour-steps.ts; placement is in tour-layout.ts.
 import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
+import { prefersReducedMotion } from "../../lib/appearance";
 import { layoutTour, type Box } from "./tour-layout";
 import { TOUR_STEPS, type TourStep, type TourTarget } from "./tour-steps";
 import "./tour.css";
@@ -30,10 +31,6 @@ function isShown(element: HTMLElement | null): element is HTMLElement {
 /** Steps whose element is on the page and visible right now. */
 function availableSteps(): TourStep[] {
   return TOUR_STEPS.filter((step) => isShown(findTarget(step.target)));
-}
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 const px = (value: number) => `${Math.round(value)}px`;

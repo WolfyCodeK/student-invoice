@@ -33,7 +33,7 @@ file.
 | `store-key` | zustand persist `name` and `version` in `app/src/stores/app-store.ts` | `student-invoice-store`, version 0 (default) | Where all templates/settings live. zustand wipes stored data when the version differs and there is no migration, so bumping it would also make a downgrade to v1.0.1 destroy data. Schema changes must be additive (docs/data-model.md). |
 | `theme-key` | Theme localStorage key | `student-invoice-theme` | Users' light/dark choice. |
 | `versions-match` | App version in `package.json`, `Cargo.toml`, `tauri.conf.json` | all equal | The updater compares the Tauri version; the UI shows the package version. |
-| `no-secrets-tracked` | Tracked files | no `.env*`, `*.key`, `client_secret*.json` | Secrets live in `%USERPROFILE%\.secrets\student-invoice` (docs/security.md). |
+| `no-secrets-tracked` | Tracked files | no `.env*` (except `.env.example`), `*.key`, `*.key.pub`, `client_secret*.json`, `google-oauth*.json` (`scripts/lib/secret-files.mjs`) | Secrets live in `%USERPROFILE%\.secrets\student-invoice` (docs/security.md). |
 <!-- /GEN:invariants -->
 
 ## The `latest.json` notes rule

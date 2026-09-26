@@ -2,12 +2,7 @@
 // App.tsx provides it; screens read it with useAppActions().
 import { createContext, useContext } from "react";
 
-export type SettingsSection = "appearance" | "gmail" | "wording" | "terms" | "data" | "performance" | "about";
-
-export type View =
-  | { name: "register" }
-  | { name: "settings"; section?: SettingsSection }
-  | { name: "edit"; templateId: string | null };
+export type View = { name: "register" } | { name: "settings" } | { name: "edit"; templateId: string | null };
 
 export interface UpdateState {
   checking: boolean;

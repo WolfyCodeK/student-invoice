@@ -1,5 +1,8 @@
-/* App layout: title bar, band, register, pupil's page, pages, tour.
-   The approved reference is the Register mock (docs/ui.md). */
+/* App layout: title bar, band, register, pupil's page and small dialogs.
+   The approved reference is the Register mock (docs/ui.md). Screens that
+   load on demand bring their own stylesheet, which lands after this one:
+   features/settings/settings.css, features/family/family-editor.css and
+   features/onboarding/tour.css. */
 
 .app {
   height: 100%;
@@ -109,16 +112,6 @@
 }
 .tb-btn--pill:hover:not(:disabled) {
   background: var(--band-btn-hover);
-}
-.tb-dot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--cover-ok);
-  box-shadow: 0 0 0 2px var(--cover);
 }
 .tb-actions {
   display: flex;
@@ -406,8 +399,11 @@
 .wk:last-child {
   border-right: 0;
 }
-.wk.is-holiday {
-  background: repeating-linear-gradient(-45deg, var(--holiday-hatch) 0 1.5px, transparent 1.5px 7px), var(--holiday);
+/* The Holiday Hatch: weeks after the half-term ends, and the legend's
+   swatch (with a tighter step). */
+.wk.is-holiday,
+.legend-hol {
+  background: repeating-linear-gradient(-45deg, var(--holiday-hatch) 0 1.5px, transparent 1.5px var(--hatch-step, 7px)), var(--holiday);
 }
 .wk-h {
   display: flex;
@@ -441,23 +437,20 @@
   cursor: pointer;
 }
 .mark::before {
+  --mk-size: 24px;
   content: "";
-  width: 24px;
-  height: 24px;
   background-color: var(--mark-soft);
-  -webkit-mask: var(--mk) center / 24px 24px no-repeat;
-  mask: var(--mk) center / 24px 24px no-repeat;
 }
 .mark:hover {
   background: var(--sec-hover);
 }
+/* A selected row lights its ticked marks. Unticked marks stay off marks,
+   lifted only enough to keep their contrast on the selection wash. */
 .row.is-selected .mark::before {
   background-color: var(--mark);
 }
-.mark[aria-pressed="false"]::before {
-  background-color: var(--mark-off);
-  -webkit-mask-image: var(--mk-off);
-  mask-image: var(--mk-off);
+.row.is-selected .mark[aria-pressed="false"]::before {
+  background-color: color-mix(in srgb, var(--mark-off) 85%, var(--mark));
 }
 .mark:focus-visible {
   outline-offset: -3px;
@@ -512,7 +505,7 @@
   color: var(--heading);
 }
 .row.is-selected .wk.is-holiday {
-  background: repeating-linear-gradient(-45deg, var(--holiday-hatch) 0 1.5px, transparent 1.5px 7px), color-mix(in srgb, var(--holiday) 55%, var(--selected));
+  background-color: color-mix(in srgb, var(--holiday) 55%, var(--selected));
 }
 .row.is-invalid .who::after {
   content: " · lesson day needs setting";
@@ -566,41 +559,6 @@
   background: var(--danger-bg2);
 }
 
-/* Compact register: fold the day into the family line, drop "Per lesson". */
-@container reg (max-width: 880px) {
-  .sheet {
-    --day: 0px;
-    --per: 0px;
-    --wk: 36px;
-  }
-  /* Keep these cells in their (now 0 px) tracks: display:none would take
-     them out of the grid and shift every later cell one column left. */
-  .sheet .c-day,
-  .sheet .c-per {
-    visibility: hidden;
-    overflow: hidden;
-    padding: 0;
-    border: 0;
-  }
-  .what .day-inline {
-    display: inline;
-  }
-  .what {
-    white-space: normal;
-  }
-}
-@container reg (max-width: 640px) {
-  .sheet {
-    --wk: 32px;
-    --les: 70px;
-    --tot: 92px;
-    --fam: minmax(130px, 1fr);
-  }
-  .fam {
-    padding-left: 14px;
-  }
-}
-
 /* Under the register. */
 .acts {
   flex: none;
@@ -629,22 +587,129 @@
 }
 .legend-mk,
 .legend-off {
-  width: 16px;
-  height: 16px;
+  --mk-size: 16px;
   background-color: var(--mark);
-  -webkit-mask: var(--mk) center / 16px 16px no-repeat;
-  mask: var(--mk) center / 16px 16px no-repeat;
 }
-.legend-off {
+.legend-hol {
+  --hatch-step: 5px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--rule-strong);
+}
+
+/* The lesson mark glyph, shared by the register, its legend and the family
+   editor's lesson strip (family-editor.css); each sets its --mk-size. A mask
+   (tokens.css), so it takes any colour. An unticked lesson is a dashed
+   circle in mark-off. */
+.mark::before,
+.legend-mk,
+.legend-off,
+.fe-mk::before {
+  width: var(--mk-size);
+  height: var(--mk-size);
+  -webkit-mask: var(--mk) center / var(--mk-size) var(--mk-size) no-repeat;
+  mask: var(--mk) center / var(--mk-size) var(--mk-size) no-repeat;
+}
+.mark[aria-pressed="false"]::before,
+.legend-off,
+.fe-mk.is-off::before {
   background-color: var(--mark-off);
   -webkit-mask-image: var(--mk-off);
   mask-image: var(--mk-off);
 }
-.legend-hol {
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--rule-strong);
-  background: repeating-linear-gradient(-45deg, var(--holiday-hatch) 0 1.5px, transparent 1.5px 5px), var(--holiday);
+
+/* Empty register (first run). */
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.intro-h {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.intro-h h2 {
+  font-size: 20px;
+  line-height: 26px;
+}
+.intro-h p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--fs-m);
+}
+.step {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  min-height: 82px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 4px double var(--margin);
+}
+.step-t {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.step-n {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--head-ink);
+  border-radius: 50%;
+  color: var(--head-ink);
+  font-weight: 700;
+}
+.step-t strong {
+  font-size: var(--fs-m);
+  color: var(--heading);
+}
+.step-d {
+  font-size: var(--fs-m);
+}
+
+/* Compact register: fold the day into the family line, drop "Per lesson". */
+@container reg (max-width: 880px) {
+  .sheet {
+    --day: 0px;
+    --per: 0px;
+    --wk: 36px;
+  }
+  /* Keep these cells in their (now 0 px) tracks: display:none would take
+     them out of the grid and shift every later cell one column left. */
+  .sheet .c-day,
+  .sheet .c-per {
+    visibility: hidden;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+  }
+  .what .day-inline {
+    display: inline;
+  }
+  .what {
+    white-space: normal;
+  }
+  .step {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .step-d {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+@container reg (max-width: 640px) {
+  .sheet {
+    --wk: 32px;
+    --tot: 92px;
+    --fam: minmax(130px, 1fr);
+  }
+  .fam {
+    padding-left: 14px;
+  }
 }
 
 /* ---- The pupil's page ------------------------------------------------ */
@@ -753,170 +818,7 @@
   max-width: 30ch;
 }
 
-/* Empty register (first run). */
-.intro {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-.intro-h {
-  padding: 22px 24px 18px;
-  border-bottom: 1px solid var(--rule-strong);
-}
-.intro-h h2 {
-  font-size: 20px;
-  line-height: 26px;
-}
-.intro-h p {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: var(--fs-m);
-}
-.step {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 20px;
-  min-height: 82px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--rule);
-  border-left: 4px double var(--margin);
-}
-.step-t {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.step-n {
-  width: 30px;
-  height: 30px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid var(--head-ink);
-  border-radius: 50%;
-  color: var(--head-ink);
-  font-weight: 700;
-}
-.step-t strong {
-  font-size: var(--fs-m);
-  color: var(--heading);
-}
-.step-d {
-  font-size: var(--fs-m);
-}
-@container reg (max-width: 880px) {
-  .step {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .step-d {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-}
-
-/* ---- Pages (Settings, family editor) ---------------------------------- */
-.page-work {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-}
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 16px 12px;
-  background: var(--ground);
-  border-right: 1px solid var(--rule-strong);
-}
-.nav button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: var(--r-field);
-  background: transparent;
-  color: var(--ink);
-  font-weight: 600;
-  text-align: left;
-}
-.nav button .lucide {
-  width: 18px;
-  height: 18px;
-  color: var(--head-ink);
-}
-.nav button:hover {
-  background: var(--sec-hover);
-}
-.nav button[aria-current="true"] {
-  background: var(--selected);
-  color: var(--heading);
-  box-shadow: inset 0 0 0 1px var(--sel-line);
-}
-.nav-foot {
-  margin-top: auto;
-  padding: 12px;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.set {
-  background: var(--page);
-  padding: 28px 44px 64px;
-  display: flex;
-  flex-direction: column;
-  gap: 44px;
-}
-.grp {
-  display: flex;
-  flex-direction: column;
-  max-width: 880px;
-  scroll-margin-top: 20px;
-}
-.grp > h2 {
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--rule-strong);
-  font-size: var(--fs-l);
-  line-height: 24px;
-}
-.srow {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  align-items: center;
-  gap: 24px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--rule);
-}
-.srow--top {
-  align-items: start;
-}
-.slab {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.slab strong {
-  font-weight: 600;
-}
-.slab span {
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.sctl {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-.shint {
-  flex-basis: 100%;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
+/* A done tick (the first-run steps and Settings). */
 .ok {
   display: inline-flex;
   align-items: center;
@@ -930,312 +832,9 @@
 .ok strong {
   font-weight: 600;
 }
-.msg-ok {
-  color: var(--success);
-}
-.msg-bad {
-  color: var(--danger);
-}
-.choice {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 240px;
-  padding: 10px 14px;
-  border: 1px solid var(--field-line);
-  border-radius: var(--r-field);
-  background: var(--field-bg);
-  text-align: left;
-}
-.choice[aria-checked="true"] {
-  border-color: var(--accent-line);
-  background: var(--selected);
-  box-shadow: inset 0 0 0 1px var(--accent-line);
-}
-.choice > span:last-child {
-  display: flex;
-  flex-direction: column;
-}
-.choice strong {
-  font-weight: 600;
-}
-.choice small {
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.swatch {
-  width: 36px;
-  height: 26px;
-  flex: none;
-  display: grid;
-  grid-template-rows: 9px 1fr;
-  overflow: hidden;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r-block);
-}
-.swatch--si i:first-child {
-  background: #1d3f8a;
-}
-.swatch--si i:last-child {
-  background: linear-gradient(to right, #ffffff 9px, #d0453a 9px 10px, #ffffff 10px 12px, #d0453a 12px 13px, #ffffff 13px);
-}
-.swatch--na i:first-child {
-  background: #2e4c6d;
-}
-.swatch--na i:last-child {
-  background: linear-gradient(to right, #eff3f7 18px, #c98a34 18px);
-}
-.corner-demo {
-  width: 36px;
-  height: 22px;
-  flex: none;
-  border: 2px solid var(--head-ink);
-}
-.corner-demo--square {
-  border-radius: 3px;
-}
-.corner-demo--rounded {
-  border-radius: 999px;
-}
-.tpl {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 24px;
-  padding: 16px 0 18px;
-  border-bottom: 1px solid var(--rule);
-}
-.tpl-col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-.phlist li {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--rule);
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.phlist code {
-  align-self: flex-start;
-  padding: 0 4px;
-  border-radius: var(--r-chip);
-  background: var(--selected);
-  color: var(--head-ink);
-  font-family: inherit;
-  font-weight: 700;
-}
-.trow {
-  display: grid;
-  grid-template-columns: 110px 200px minmax(0, 1fr);
-  align-items: center;
-  min-height: 44px;
-  border-bottom: 1px solid var(--rule);
-  font-variant-numeric: tabular-nums;
-}
-.trow > * {
-  padding: 0 12px;
-}
-.trow.is-now {
-  background: var(--selected);
-}
-.trow.is-split {
-  border-top: 1px solid var(--rule-strong);
-}
-.tag {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: var(--r-chip);
-  background: var(--primary);
-  color: var(--primary-ink);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-}
-.bk {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  border-bottom: 1px solid var(--rule);
-  font-variant-numeric: tabular-nums;
-}
-.bk span {
-  color: var(--muted);
-}
-details.adv summary {
-  cursor: pointer;
-  color: var(--head-ink);
-  font-weight: 600;
-}
-details.adv[open] summary {
-  margin-bottom: 12px;
-}
-
-/* Family editor. */
-.edit {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 24px 32px 48px;
-  background: var(--ground);
-}
-.edit-main {
-  width: min(664px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.record {
-  background: var(--page);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r-panel);
-  box-shadow: var(--shadow-2);
-  overflow: hidden;
-}
-.record-head {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 16px 24px 14px;
-  border-bottom: 1px solid var(--rule-strong);
-}
-.record-head h2 {
-  font-size: var(--fs-l);
-  line-height: 24px;
-}
-.record-head p {
-  color: var(--muted);
-}
-.frow {
-  display: grid;
-  grid-template-columns: 212px minmax(0, 1fr);
-  align-items: center;
-  gap: 20px;
-  min-height: 66px;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--rule);
-}
-.flab {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.flab label,
-.flab strong {
-  font-size: var(--fs-m);
-  font-weight: 600;
-}
-.flab span {
-  font-size: var(--fs-xs);
-  line-height: 1.35;
-  color: var(--muted);
-}
-.duo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.record-bar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 14px 24px;
-}
-.danger-zone {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 20px;
-  border: 1px solid var(--danger-line);
-  border-radius: var(--r-panel);
-  background: var(--page);
-}
-.danger-zone div {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex: 1;
-}
-.danger-zone strong {
-  font-weight: 600;
-}
-.danger-zone span {
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.edit-side {
-  width: 360px;
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 4px;
-}
-.edit-side h2 {
-  font-size: var(--fs-l);
-}
-.edit-side p {
-  color: var(--muted);
-}
-.mini {
-  background: var(--page);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r-panel);
-  overflow: hidden;
-  box-shadow: var(--shadow-1);
-}
-.mini-id {
-  padding: 12px 16px;
-  background: var(--selected);
-  border-bottom: 1px solid var(--sel-line);
-}
-.mini-id span {
-  display: block;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-}
-.mini-sum {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-}
-.mini-sum .sum {
-  font-size: 20px;
-  line-height: 26px;
-}
-@media (max-width: 1100px) {
-  .edit-side {
-    display: none;
-  }
-}
-@media (max-width: 1020px) {
-  .page-work {
-    grid-template-columns: 200px minmax(0, 1fr);
-  }
-  .set {
-    padding: 24px 28px 56px;
-  }
-  .srow,
-  .frow {
-    grid-template-columns: 170px minmax(0, 1fr);
-  }
-  .tpl {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 
 /* ---- What's new: a letter -------------------------------------------- */
 .letter {
-  width: min(560px, calc(100vw - 48px));
   gap: 0;
   padding: 26px 34px 24px;
 }
@@ -1289,82 +888,22 @@ details.adv[open] summary {
   border-top: 1px solid var(--rule-strong);
 }
 
-/* ---- Guided tour ----------------------------------------------------- */
-.tour-block {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-}
-.tour-spot {
-  position: fixed;
-  z-index: 91;
-  border-radius: var(--r-panel);
-  box-shadow: 0 0 0 3px var(--focus-on-cover), 0 0 0 200vmax var(--tour-scrim);
-  pointer-events: none;
-}
-.tour-card {
-  position: fixed;
-  z-index: 92;
-  width: 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 18px 20px 16px;
-  background: var(--page);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r-panel);
-  box-shadow: var(--shadow-3);
-  animation: fade-in 0.18s ease-out;
-}
-.tour-step {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--head-ink);
-  font-variant-numeric: tabular-nums;
-}
-.tour-card h2 {
-  font-size: var(--fs-l);
-  line-height: 24px;
-}
-.tour-card p {
-  font-size: var(--fs-m);
-  line-height: 1.5;
-}
-.tour-dots {
-  display: flex;
-  gap: 5px;
-}
-.tour-dots i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--rule-strong);
-}
-.tour-dots i.is-on {
-  background: var(--head-ink);
-}
-.tour-bar {
+/* Holiday / outside term: the register's note, and the one in Settings'
+   term dates (settings.css gives it its own shape). */
+.holiday-note,
+.st-holiday {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 6px;
+  gap: 10px;
+  background: var(--warning-bg);
 }
-.tour-bar .btn--link {
-  margin-right: auto;
-  font-size: var(--fs-s);
-}
-
-/* Holiday / outside term. */
 .holiday-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--rule-strong);
-  background: var(--warning-bg);
   color: var(--ink);
 }
-.holiday-note .lucide {
+.holiday-note .lucide,
+.st-holiday .lucide {
   width: 18px;
   height: 18px;
   color: var(--warning);
@@ -1388,6 +927,11 @@ details.adv[open] summary {
   padding: 10px 12px;
   border-radius: var(--r-field);
   background: var(--ground);
+}
+.update-important {
+  padding: 10px 12px;
+  border-radius: var(--r-field);
+  background: var(--warning-bg);
 }
 .update-progress {
   display: flex;

@@ -49,6 +49,21 @@ struct AccessToken {
     expires: Instant,
 }
 
+impl AccessToken {
+    /// The access token from a token response. Its lifetime is clamped to
+    /// between 1 minute and 24 hours (1 hour if Google doesn't say).
+    fn from_response(token: &impl TokenResponse) -> Self {
+        let lifetime = token
+            .expires_in()
+            .unwrap_or(Duration::from_secs(3600))
+            .clamp(Duration::from_secs(60), Duration::from_secs(86_400));
+        Self {
+            secret: token.access_token().secret().clone(),
+            expires: Instant::now() + lifetime,
+        }
+    }
+}
+
 pub struct GoogleAuth {
     http: reqwest::Client,
     /// Cancels the sign-in currently waiting for the browser, if any.
@@ -179,32 +194,20 @@ impl GoogleAuth {
             })?
             .secret()
             .clone();
-        let access = token.access_token().secret().clone();
-        let lifetime = token
-            .expires_in()
-            .unwrap_or(Duration::from_secs(3600))
-            .clamp(Duration::from_secs(60), Duration::from_secs(86_400));
-        let email = super::gmail::profile_email(&self.http, &access).await.ok();
+        let email = super::gmail::profile_email(&self.http, token.access_token().secret())
+            .await
+            .ok();
 
         // Replace any previous account; revoke its token best-effort.
-        if let Some(old) = store::load_account()? {
-            if old.refresh_token != refresh {
-                if let Some((old_creds, _)) =
-                    client::active()?.filter(|(c, _)| c.client_id == old.client_id)
-                {
-                    let _ = self.revoke(&old_creds, &old.refresh_token).await;
-                }
-            }
+        if let Some(old) = store::load_account()?.filter(|old| old.refresh_token != refresh) {
+            self.revoke_account(&old).await?;
         }
         store::save_account(&StoredAccount {
             refresh_token: refresh,
             email,
             client_id: creds.client_id.clone(),
         })?;
-        *self.access.lock().await = Some(AccessToken {
-            secret: access,
-            expires: Instant::now() + lifetime,
-        });
+        *self.access.lock().await = Some(AccessToken::from_response(&token));
         Ok(())
     }
 
@@ -251,33 +254,41 @@ impl GoogleAuth {
                 })?;
             }
         }
-        let lifetime = token
-            .expires_in()
-            .unwrap_or(Duration::from_secs(3600))
-            .clamp(Duration::from_secs(60), Duration::from_secs(86_400));
-        let secret = token.access_token().secret().clone();
-        *cached = Some(AccessToken {
-            secret: secret.clone(),
-            expires: Instant::now() + lifetime,
-        });
+        let access = AccessToken::from_response(&token);
+        let secret = access.secret.clone();
+        *cached = Some(access);
         Ok(secret)
     }
 
-    /// Forgets the account on this PC and revokes its access at Google
-    /// (best effort: the local copy is removed even if Google can't be reached).
+    /// Signs out (see `forget_account`) and returns the new status.
     pub async fn disconnect(&self) -> AppResult<GmailStatus> {
+        self.forget_account().await?;
+        self.status()
+    }
+
+    /// Cancels any pending sign-in, forgets the account on this PC and
+    /// revokes its access at Google (best effort: the local copy is removed
+    /// even if Google can't be reached).
+    async fn forget_account(&self) -> AppResult<()> {
         self.cancel_connect();
         if let Some(account) = store::load_account()? {
-            let creds = client::active()?
-                .map(|(c, _)| c)
-                .filter(|c| c.client_id == account.client_id);
-            if let Some(creds) = creds {
-                let _ = self.revoke(&creds, &account.refresh_token).await;
-            }
+            self.revoke_account(&account).await?;
         }
         store::delete_account()?;
         *self.access.lock().await = None;
-        self.status()
+        Ok(())
+    }
+
+    /// Revokes a stored account's refresh token, best effort. Only the client
+    /// that issued a token can revoke it, so nothing is sent if that client
+    /// is no longer the active one.
+    async fn revoke_account(&self, account: &StoredAccount) -> AppResult<()> {
+        if let Some((creds, _)) =
+            client::active()?.filter(|(c, _)| c.client_id == account.client_id)
+        {
+            let _ = self.revoke(&creds, &account.refresh_token).await;
+        }
+        Ok(())
     }
 
     async fn revoke(&self, creds: &ClientCredentials, refresh_token: &str) -> AppResult<()> {
@@ -298,7 +309,7 @@ impl GoogleAuth {
         &self,
         creds: Option<ClientCredentials>,
     ) -> AppResult<GmailStatus> {
-        self.disconnect().await?;
+        self.forget_account().await?;
         match creds {
             Some(c) => store::save_client_override(&c)?,
             None => store::delete_client_override()?,

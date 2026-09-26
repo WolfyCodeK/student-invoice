@@ -469,9 +469,6 @@ textarea.field {
   box-shadow: var(--shadow-3);
   animation: dlg-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.dlg--wide {
-  width: min(680px, calc(100vw - 48px));
-}
 .dlg-title {
   font-size: var(--fs-xl);
   line-height: 28px;

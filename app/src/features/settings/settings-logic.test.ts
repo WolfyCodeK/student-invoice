@@ -1,29 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { getDefaultTemplateString } from '../../utils/invoice-generator'
-import {
-  academicYearStart,
-  activeSectionIndex,
-  isSameTerm,
-  nextRadioIndex,
-  nextTermAfter,
-  schoolYearLabel,
-  termRange,
-  termsBySeason,
-  unknownPlaceholders,
-  wordingToSave,
-} from './settings-logic'
-import { calculateTermData } from '../../utils/terms'
+import { activeSectionIndex, nextRadioIndex, termsBySeason, unknownPlaceholders, wordingToSave } from './settings-logic'
+import { termRange } from '../../lib/term-display'
 
+// The school-year helpers themselves are tested in lib/term-display.test.ts.
 describe('school year', () => {
-  it('starts in September', () => {
-    expect(academicYearStart(new Date(2026, 8, 1))).toBe(2026)
-    expect(academicYearStart(new Date(2026, 11, 31))).toBe(2026)
-    expect(academicYearStart(new Date(2027, 0, 5))).toBe(2026)
-    expect(academicYearStart(new Date(2027, 7, 31))).toBe(2026)
-    expect(schoolYearLabel(2026)).toBe('2026/27')
-    expect(schoolYearLabel(2099)).toBe('2099/00')
-  })
-
   it('groups the six half-terms by season, 1st half first', () => {
     const seasons = termsBySeason(2026)
     expect(seasons.map((s) => s.label)).toEqual(['Autumn', 'Spring', 'Summer'])
@@ -37,32 +18,6 @@ describe('school year', () => {
       ['5 Jan – 14 Feb 2027', '23 Feb – 28 Mar 2027'],
       ['13 Apr – 23 May 2027', '1 Jun – 18 Jul 2027'],
     ])
-  })
-
-  it('writes the year on both dates when a range crosses a new year', () => {
-    expect(termRange(new Date(2026, 11, 14), new Date(2027, 0, 8))).toBe('14 Dec 2026 – 8 Jan 2027')
-  })
-
-  it('recognises the current half-term', () => {
-    const now = calculateTermData(new Date(2026, 8, 26))!.term
-    const [autumn] = termsBySeason(2026)
-    expect(isSameTerm(now, autumn.halves[0])).toBe(true)
-    expect(isSameTerm(now, autumn.halves[1])).toBe(false)
-    expect(isSameTerm(null, autumn.halves[0])).toBe(false)
-    // Same half and season, a different year.
-    expect(isSameTerm(now, termsBySeason(2025)[0].halves[0])).toBe(false)
-  })
-
-  it('finds the next half-term during a holiday', () => {
-    expect(termRange(nextTermAfter(new Date(2026, 9, 28))!.startDate, nextTermAfter(new Date(2026, 9, 28))!.endDate)).toBe(
-      '3 Nov – 20 Dec 2026',
-    )
-    // Summer holiday: the next school year's first half-term.
-    const next = nextTermAfter(new Date(2027, 7, 10))!
-    expect([next.half, next.season, next.startDate.getFullYear()]).toEqual(['1st', 'autumn', 2027])
-    // Christmas holiday.
-    const spring = nextTermAfter(new Date(2026, 11, 28))!
-    expect([spring.half, spring.season, spring.startDate.getFullYear()]).toEqual(['1st', 'spring', 2027])
   })
 })
 

@@ -99,8 +99,8 @@ Codes and tokens are never logged or sent to the webview.
 
 The code is in `app/src-tauri/src/google/gmail.rs` and `app/src-tauri/src/google/mime.rs`.
 
-- `gmail_create_draft(subject, body, to?)` validates lengths, and `to` if
-  given, then builds an RFC 5322 message:
+- `gmail_create_draft(subject, body)` validates lengths, then builds an
+  RFC 5322 message with no recipient (the teacher adds it in Gmail):
   - line breaks and control characters in headers are replaced (this stops
     header injection);
   - a non-ASCII subject is RFC 2047 encoded;

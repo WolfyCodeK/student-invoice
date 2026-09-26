@@ -1,7 +1,7 @@
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
 import { Loader2, Send } from "lucide-react";
-import { useToast } from "../hooks/use-toast";
+import { toast } from "../hooks/use-toast";
 import { DialogActions } from "./ui/dialog";
 
 // EmailJS IDs are public by design; v1.0.1 uses the same service and template.
@@ -16,7 +16,6 @@ export function FeedbackForm({ onClose }: { onClose: () => void }) {
   const [feedback, setFeedback] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const send = async () => {
     if (!feedback.trim()) {

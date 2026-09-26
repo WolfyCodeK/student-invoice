@@ -30,7 +30,7 @@ const args = process.argv.slice(2)
 const flag = (f) => args.includes(f)
 const value = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : undefined)
 
-const map = JSON.parse(readRepoFile('docs/docs-map.json'))
+const map = JSON.parse(readRepoFile('docs/docs-map.json', root))
 const docs = map.docs
 const problems = []
 

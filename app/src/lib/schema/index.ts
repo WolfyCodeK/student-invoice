@@ -5,7 +5,7 @@
 import { z } from 'zod'
 import { WEEKDAYS } from './constants.ts'
 
-export { BACKUP_FORMAT_VERSION, WEEKDAYS } from './constants.ts'
+export { BACKUP_FORMAT_VERSION } from './constants.ts'
 
 const text = (max: number) => z.string().max(max)
 
@@ -13,7 +13,7 @@ const text = (max: number) => z.string().max(max)
  * A template as stored (lenient: unknown fields from newer versions are kept,
  * see docs/data-model.md). Used to read localStorage.
  */
-export const storedTemplateSchema = z.looseObject({
+const storedTemplateSchema = z.looseObject({
   id: z.string(),
   recipient: z.string(),
   cost: z.number(),
@@ -25,7 +25,7 @@ export const storedTemplateSchema = z.looseObject({
   updatedAt: z.unknown().optional(),
 })
 
-export const storedSettingsSchema = z.looseObject({
+const storedSettingsSchema = z.looseObject({
   theme: z.enum(['light', 'dark']).optional(),
   customEmailBodyTemplate: z.string().optional(),
   gmailClientId: z.string().optional(),
@@ -46,7 +46,7 @@ export const persistedStateSchema = z.looseObject({
  * Length limits are generous on purpose: the app itself doesn't limit these
  * fields, and every export must be importable again.
  */
-export const backupTemplateSchema = z.looseObject({
+const backupTemplateSchema = z.looseObject({
   id: text(100).min(1),
   recipient: text(5_000),
   cost: z.number().finite().min(0),
@@ -59,7 +59,7 @@ export const backupTemplateSchema = z.looseObject({
 })
 
 /** Settings inside an imported file. Google credentials are never included. */
-export const backupSettingsSchema = z.looseObject({
+const backupSettingsSchema = z.looseObject({
   theme: z.enum(['light', 'dark']).optional(),
   customEmailBodyTemplate: text(200_000).optional(),
   // Strings, not enums: a file from a newer version may name a newer choice.

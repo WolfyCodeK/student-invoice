@@ -40,7 +40,8 @@ You also need the GitHub CLI signed in (`gh auth login`) with push rights.
    - Runs every check: invariants, secret scan, docs, and `pnpm check`,
      `cargo fmt/clippy/test`.
    - Bumps the version in `app/package.json`, `tauri.conf.json`, `Cargo.toml`
-     and `Cargo.lock`, and regenerates the docs.
+     and `Cargo.lock` (all four are checked before any is written, so a
+     failed bump changes nothing), and regenerates the docs.
    - Builds the signed MSI (the key and password are passed to Tauri as
      environment variables, never as arguments) and copies it and its `.sig`
      to `release-artifacts/vx.y.z/` (git-ignored).
@@ -86,12 +87,17 @@ against a build of the current checkout, entirely on this PC.
 
 1. **Build the harness:** `node scripts/release/update-test.mjs harness`
    builds *v1.0.1-localtest*. This is the exact v1.0.1 source, except that its
-   updater asks `http://127.0.0.1:8765/latest.json` instead of GitHub.
+   updater asks `http://127.0.0.1:8765/latest.json` instead of GitHub. Pass a
+   tag (`harness v1.1.0`) to build that release instead, for example to test
+   updating from 1.1.0 once it exists.
 2. **Build the target:** `node scripts/release/update-test.mjs target 1.1.0`
    builds a signed MSI of the current checkout labelled 1.1.0, plus a
    `latest.json` for the local server. It asks for the signing key password
-   first. The version bump is reverted
-   afterwards and nothing is committed.
+   first. The version bump is reverted afterwards, even if the build fails or
+   is stopped with Ctrl+C, and nothing is committed. Add a minimum version
+   (`target 1.1.1 1.1.1`) to put `minimumSupportedVersion` in `latest.json`
+   and check the "important update" prompt; this needs a harness from v1.1.0
+   or later, since v1.0.1 doesn't know the field.
 3. **Serve:** `node scripts/release/update-test.mjs serve`, and leave it
    running.
 4. **Install the harness:**
@@ -142,6 +148,27 @@ next to the key.
   a throwaway key against `tauri signer sign` (which rejects the old password
   and accepts the new one) and against `minisign-verify` 0.2.5, the verifier
   the updater uses.
+
+## Emergency: mark old versions as unsupported
+
+Only for a security problem that makes older versions unsafe to keep using
+([decision 0002](decisions/0002-no-forced-updates.md)).
+
+1. In the fixed version's changelog section, next to the summary line, add
+   `<!-- minimum-supported-version: x.y.z -->`, where `x.y.z` is the oldest
+   version that is still safe (at most the version being released).
+2. Release as usual. `release.mjs prepare` copies it into `latest.json` as
+   `minimumSupportedVersion` and checks it is a plain `x.y.z` no higher than
+   the release.
+3. Installed copies from v1.1.0 on that are older than `x.y.z` open the
+   update dialog at every start, saying it's an important update. "Not now"
+   still works: nothing is forced, and nothing else changes. v1.0.1 ignores
+   the field and shows its normal update prompt.
+4. Tell users directly as well; the prompt only reaches people who open the
+   app.
+
+Leave the line out of the next release's section once users have moved on;
+each `latest.json` only carries what its own section says.
 
 ## If something goes wrong after publishing
 

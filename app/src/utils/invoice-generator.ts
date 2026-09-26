@@ -138,7 +138,3 @@ Lessons: {{weeksCount}}, from {{dateRange}}
 Many thanks,
 the teacher`
 }
-
-export function generateAllInvoices(templates: InvoiceTemplate[], termData: TermData, customBodyTemplate?: string): InvoiceData[] {
-  return templates.map(template => generateInvoice(template, termData, customBodyTemplate))
-}

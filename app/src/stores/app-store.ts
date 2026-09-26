@@ -1,37 +1,19 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { InvoiceTemplate, AppSettings, TermData } from '../types'
-import { generateInvoice, generateAllInvoices, InvoiceData, lessonDateKey, lessonDates } from '../utils/invoice-generator'
-import { calculateTermData, getTermsForAcademicYear } from '../utils/terms'
-import { backend, isBackendError, errorMessage, type BackupReason, type GmailStatus, type UpdateInfo } from '../lib/backend'
+import type { InvoiceTemplate, AppSettings, TermData } from '../types'
+import { generateInvoice, lessonDateKey, lessonDates, type InvoiceData } from '../utils/invoice-generator'
+import { calculateTermData } from '../utils/terms'
+import { backend, getAppVersion, isBackendError, errorMessage, type BackupReason, type GmailStatus } from '../lib/backend'
 import { buildBackup, suggestedBackupName } from '../lib/backup'
-import type { ParseResult } from '../lib/backup-parse'
 import type { BackupFile } from '../lib/schema'
-import { WEEKDAYS } from '../lib/schema/constants'
-import { getVersion } from '@tauri-apps/api/app'
-import { applyAppearance, appearanceFrom, saveMode, THEME_STORAGE_KEY, type Appearance } from '../lib/appearance'
-
-/** One template's result from "Draft all". */
-export interface DraftFailure {
-  label: string
-  message: string
-}
+import { isWeekday } from '../lib/schema/constants'
+import { applyAppearance, appearanceFrom, saveMode, storedMode, type Appearance } from '../lib/appearance'
 
 /** What happened to one family during "Draft all" (for the register's status column). */
 export interface DraftOutcome {
   templateId: string
   status: 'saving' | 'saved' | 'failed' | 'nothing' | 'skipped'
   message?: string
-}
-
-export interface DraftAllResult {
-  outcomes: DraftOutcome[]
-  success: number
-  failures: DraftFailure[]
-  /** Not attempted, because an earlier failure means every draft would fail. */
-  skipped: number
-  /** Families with every lesson unticked: there is nothing to invoice. */
-  nothingToInvoice: string[]
 }
 
 const NOTHING_TO_INVOICE = 'Every lesson is unticked for this family, so there is nothing to invoice.'
@@ -55,14 +37,8 @@ interface AppState {
   settings: AppSettings
   updateSettings: (updates: Partial<AppSettings>) => void
 
-  // Terms
+  /** The half-term today is in, worked out once at start-up; null outside term time. */
   currentTerm: TermData | null
-  calculateCurrentTerm: (date?: Date) => void
-
-  // Invoice Generation
-  currentInvoice: InvoiceData | null
-  generateCurrentInvoice: () => void
-  generateAllInvoicesAction: () => InvoiceData[]
 
   // Gmail (tokens live in Rust / Windows Credential Manager, never here)
   gmailConnected: boolean // persisted only for v1.0.1 compatibility
@@ -75,21 +51,18 @@ interface AppState {
   disconnectGmail: () => Promise<void>
   setCustomGmailClient: (clientId: string, clientSecret: string) => Promise<void>
   clearCustomGmailClient: () => Promise<void>
-  createCurrentInvoiceDraft: () => Promise<void>
-  createAllInvoiceDrafts: (onProgress?: (outcome: DraftOutcome) => void) => Promise<DraftAllResult>
-  /** Save one family's invoice as a draft ("Try again" after Draft all). */
+  /** Saves every family's invoice as a draft, one at a time, reporting each family as it goes. */
+  createAllInvoiceDrafts: (onProgress: (outcome: DraftOutcome) => void) => Promise<void>
+  /** Save one family's invoice as a draft (the pupil's page, and "Try again" after Draft all). */
   draftTemplate: (templateId: string) => Promise<void>
 
   // Updates
-  checkForUpdates: () => Promise<UpdateInfo>
   installUpdate: () => Promise<void>
 
   // Data transfer and backups (docs/backup.md)
   exportData: () => Promise<string | null>
-  pickImportFile: () => Promise<ParseResult | null>
   replaceAllData: (backup: BackupFile, safetyBackup: 'pre-import' | 'pre-restore') => Promise<void>
   backupNow: (reason: BackupReason) => Promise<void>
-
 }
 
 const defaultSettings: AppSettings = {
@@ -103,14 +76,18 @@ const defaultSettings: AppSettings = {
   customEmailBodyTemplate: undefined
 }
 
-export { THEME_STORAGE_KEY }
+/**
+ * A family's invoice this half-term, exactly as the email says it (the
+ * register's figures and every draft come from here). Null outside term time,
+ * or when the lesson day isn't a weekday, which the invoice generator needs.
+ */
+export function invoiceFor(template: InvoiceTemplate, term: TermData | null, customBody?: string): InvoiceData | null {
+  return term && isWeekday(template.day) ? generateInvoice(template, term, customBody) : null
+}
 
 async function currentBackupText(): Promise<string> {
   const { templates, currentTemplateId, settings } = useAppStore.getState()
-  const stored = localStorage.getItem(THEME_STORAGE_KEY)
-  const theme = stored === 'light' || stored === 'dark' ? stored : null
-  const version = await getVersion().catch(() => 'unknown')
-  return buildBackup({ templates, currentTemplateId, settings, theme }, version)
+  return buildBackup({ templates, currentTemplateId, settings, theme: storedMode() }, await getAppVersion())
 }
 
 /**
@@ -139,13 +116,6 @@ export async function migrateStoredData(): Promise<void> {
   updateSettings(updates)
 }
 
-const VALID_DAYS: readonly string[] = WEEKDAYS
-
-/** Guards the invoice generator, which needs a real weekday name. */
-function hasValidLessonDay(template: InvoiceTemplate): boolean {
-  return VALID_DAYS.includes(template.day)
-}
-
 /** Takes the daily automatic backup if there isn't one from today yet. */
 export async function ensureDailyBackup(): Promise<void> {
   if (useAppStore.getState().templates.length === 0) return
@@ -156,8 +126,8 @@ export async function ensureDailyBackup(): Promise<void> {
   }
 }
 
-// Re-exported for existing importers (settings dialog).
-export { getTermsForAcademicYear }
+/** Stores the status Rust reported (`gmailConnected` is kept in step for v1.0.1). */
+const setGmail = (gmail: GmailStatus) => useAppStore.setState({ gmail, gmailConnected: gmail.connected })
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -170,8 +140,7 @@ export const useAppStore = create<AppState>()(
 
       refreshGmailStatus: async () => {
         try {
-          const gmail = await backend.gmailStatus()
-          set({ gmail, gmailConnected: gmail.connected })
+          setGmail(await backend.gmailStatus())
         } catch (error) {
           console.error('Failed to read Gmail status:', errorMessage(error))
         }
@@ -181,11 +150,13 @@ export const useAppStore = create<AppState>()(
         set({ gmailConnecting: true })
         try {
           const gmail = await backend.gmailConnect()
-          set({ gmail, gmailConnected: gmail.connected })
+          set({ gmail, gmailConnected: gmail.connected, gmailConnecting: false })
           return gmail
-        } finally {
+        } catch (error) {
+          // Failed or cancelled: there is no new status, so ask for it.
           set({ gmailConnecting: false })
           await get().refreshGmailStatus()
+          throw error
         }
       },
 
@@ -194,82 +165,45 @@ export const useAppStore = create<AppState>()(
       },
 
       disconnectGmail: async () => {
-        const gmail = await backend.gmailDisconnect()
-        set({ gmail, gmailConnected: gmail.connected })
+        setGmail(await backend.gmailDisconnect())
       },
 
       setCustomGmailClient: async (clientId, clientSecret) => {
-        const gmail = await backend.gmailSetCustomClient(clientId, clientSecret)
-        set({ gmail, gmailConnected: gmail.connected })
+        setGmail(await backend.gmailSetCustomClient(clientId, clientSecret))
       },
 
       clearCustomGmailClient: async () => {
-        const gmail = await backend.gmailClearCustomClient()
-        set({ gmail, gmailConnected: gmail.connected })
-      },
-
-      createCurrentInvoiceDraft: async () => {
-        const { currentInvoice, drafting } = get()
-        if (drafting) return
-        if (!currentInvoice) throw new Error('There is no invoice to save for this template right now.')
-        if (currentInvoice.lessonCount === 0) throw new Error(NOTHING_TO_INVOICE)
-        set({ drafting: true })
-        try {
-          await backend.gmailCreateDraft(currentInvoice.subject, currentInvoice.body)
-        } catch (error) {
-          if (isBackendError(error) && (error.kind === 'ReauthRequired' || error.kind === 'NotConnected')) {
-            await get().refreshGmailStatus()
-          }
-          throw error
-        } finally {
-          set({ drafting: false })
-        }
+        setGmail(await backend.gmailClearCustomClient())
       },
 
       createAllInvoiceDrafts: async (onProgress) => {
-        const state = get()
-        if (state.drafting) return { outcomes: [], success: 0, failures: [], skipped: 0, nothingToInvoice: [] }
-        const term = state.currentTerm
+        const { drafting, currentTerm: term, templates, settings } = get()
+        if (drafting) return
         if (!term) throw new Error('It is outside term time, so there are no invoices to create.')
-        if (state.templates.length === 0) throw new Error('There are no templates yet.')
+        if (templates.length === 0) throw new Error('There are no templates yet.')
         set({ drafting: true })
-        let success = 0
-        let skipped = 0
-        const failures: DraftFailure[] = []
-        const nothingToInvoice: string[] = []
-        const outcomes: DraftOutcome[] = []
-        const report = (outcome: DraftOutcome) => {
-          if (outcome.status !== 'saving') outcomes.push(outcome)
-          onProgress?.(outcome)
-        }
         try {
-          for (const [i, template] of state.templates.entries()) {
-            const label = `${template.students} (${template.recipient})`
-            if (!hasValidLessonDay(template)) {
-              const message = 'The lesson day is not set correctly. Edit the family and choose a day.'
-              failures.push({ label, message })
-              report({ templateId: template.id, status: 'failed', message })
+          for (const [i, template] of templates.entries()) {
+            const templateId = template.id
+            if (!isWeekday(template.day)) {
+              onProgress({ templateId, status: 'failed', message: 'The lesson day is not set correctly. Edit the family and choose a day.' })
               continue
             }
-            const invoice = generateInvoice(template, term, state.settings.customEmailBodyTemplate)
+            const invoice = generateInvoice(template, term, settings.customEmailBodyTemplate)
             if (invoice.lessonCount === 0) {
-              nothingToInvoice.push(label)
-              report({ templateId: template.id, status: 'nothing', message: NOTHING_TO_INVOICE })
+              onProgress({ templateId, status: 'nothing' })
               continue
             }
-            report({ templateId: template.id, status: 'saving' })
+            onProgress({ templateId, status: 'saving' })
             try {
               await backend.gmailCreateDraft(invoice.subject, invoice.body)
-              success++
-              report({ templateId: template.id, status: 'saved' })
+              onProgress({ templateId, status: 'saved' })
             } catch (error) {
-              failures.push({ label, message: errorMessage(error) })
-              report({ templateId: template.id, status: 'failed', message: errorMessage(error) })
+              onProgress({ templateId, status: 'failed', message: errorMessage(error) })
               // Without a working connection every remaining draft would fail too.
               if (isBackendError(error) && ['ReauthRequired', 'NotConnected', 'NotConfigured'].includes(error.kind)) {
-                skipped = state.templates.length - i - 1
-                for (const rest of state.templates.slice(i + 1)) {
-                  report({ templateId: rest.id, status: 'skipped', message: 'Not tried: fix the Gmail connection, then try again.' })
+                for (const rest of templates.slice(i + 1)) {
+                  onProgress({ templateId: rest.id, status: 'skipped', message: 'Not tried: fix the Gmail connection, then try again.' })
                 }
                 await get().refreshGmailStatus()
                 break
@@ -279,17 +213,14 @@ export const useAppStore = create<AppState>()(
         } finally {
           set({ drafting: false })
         }
-        return { outcomes, success, failures, skipped, nothingToInvoice }
       },
 
       draftTemplate: async (templateId) => {
-        const state = get()
-        if (state.drafting) return
-        const template = state.templates.find((t) => t.id === templateId)
-        if (!template || !state.currentTerm || !hasValidLessonDay(template)) {
-          throw new Error('There is no invoice to save for this family right now.')
-        }
-        const invoice = generateInvoice(template, state.currentTerm, state.settings.customEmailBodyTemplate)
+        const { drafting, templates, currentTerm, settings } = get()
+        if (drafting) return
+        const template = templates.find((t) => t.id === templateId)
+        const invoice = template && invoiceFor(template, currentTerm, settings.customEmailBodyTemplate)
+        if (!invoice) throw new Error('There is no invoice to save for this family right now.')
         if (invoice.lessonCount === 0) throw new Error(NOTHING_TO_INVOICE)
         set({ drafting: true })
         try {
@@ -305,7 +236,6 @@ export const useAppStore = create<AppState>()(
       },
 
       // Updates
-      checkForUpdates: () => backend.checkForUpdates(),
       installUpdate: async () => {
         // Best effort: an update never touches data, so don't block it.
         await get().backupNow('pre-update').catch((e) => console.warn('Pre-update backup failed:', errorMessage(e)))
@@ -315,13 +245,6 @@ export const useAppStore = create<AppState>()(
       // Data transfer and backups
       exportData: async () => {
         return backend.exportBackup(await currentBackupText(), suggestedBackupName())
-      },
-
-      pickImportFile: async () => {
-        const text = await backend.importBackup()
-        if (text === null) return null
-        const { parseBackup } = await import('../lib/backup-parse')
-        return parseBackup(text)
       },
 
       replaceAllData: async (backup, safetyBackup) => {
@@ -334,8 +257,9 @@ export const useAppStore = create<AppState>()(
           currentTemplateId: templates.some((t) => t.id === store.currentTemplateId) ? store.currentTemplateId : (templates[0]?.id ?? null),
           settings: { ...defaultSettings, ...(store.settings as Partial<AppSettings>), gmailClientId: '', gmailClientSecret: '' },
         })
-        if (theme) localStorage.setItem(THEME_STORAGE_KEY, theme)
-        get().generateCurrentInvoice()
+        if (theme) saveMode(theme)
+        // The caller reloads the app, but the old colours shouldn't show meanwhile.
+        applyAppearance(appearanceFrom(get().settings))
       },
 
       backupNow: async (reason) => {
@@ -357,7 +281,6 @@ export const useAppStore = create<AppState>()(
           templates: [...state.templates, newTemplate],
           currentTemplateId: newTemplate.id
         }))
-        get().generateCurrentInvoice()
       },
 
       updateTemplate: (id, updates) => {
@@ -368,7 +291,6 @@ export const useAppStore = create<AppState>()(
               : template
           )
         }))
-        get().generateCurrentInvoice()
       },
 
       deleteTemplate: (id) => {
@@ -376,18 +298,16 @@ export const useAppStore = create<AppState>()(
           templates: state.templates.filter(template => template.id !== id),
           currentTemplateId: state.currentTemplateId === id ? null : state.currentTemplateId
         }))
-        get().generateCurrentInvoice()
       },
 
       setCurrentTemplate: (id) => {
         set({ currentTemplateId: id })
-        get().generateCurrentInvoice()
       },
 
       toggleLesson: (templateId, date) => {
         const { currentTerm, templates } = get()
         const template = templates.find((t) => t.id === templateId)
-        if (!currentTerm || !template || !hasValidLessonDay(template)) return
+        if (!currentTerm || !template || !isWeekday(template.day)) return
         // Only this half-term's lesson dates are kept, so unticks from past
         // half-terms (or an old lesson day) are dropped here.
         const lessons = new Set(lessonDates(template, currentTerm).map(lessonDateKey))
@@ -398,7 +318,8 @@ export const useAppStore = create<AppState>()(
         get().updateTemplate(templateId, { skippedLessonDates: [...skipped].sort() })
       },
 
-      // Appearance
+      // Appearance: applied where it changes, here and in replaceAllData
+      // (index.html applies the saved one at start-up).
       setAppearance: (update) => {
         const settings = { ...get().settings }
         if (update.mode) {
@@ -419,47 +340,11 @@ export const useAppStore = create<AppState>()(
       settings: defaultSettings,
 
       updateSettings: (updates) => {
-        set((state) => ({
-          settings: { ...state.settings, ...updates }
-        }))
-        get().generateCurrentInvoice()
+        set((state) => ({ settings: { ...state.settings, ...updates } }))
       },
 
       // Terms
-      currentTerm: null,
-
-      calculateCurrentTerm: (date = new Date()) => {
-        const termData = calculateTermData(date)
-        set({ currentTerm: termData })
-        get().generateCurrentInvoice()
-      },
-
-      // Invoice Generation
-      currentInvoice: null,
-
-      generateCurrentInvoice: () => {
-        const state = get()
-        const template = state.templates.find(t => t.id === state.currentTemplateId)
-        const termData = state.currentTerm
-
-        // No template selected, outside term time, or an unusable lesson day:
-        // nothing to show (a stale invoice must never be displayed or copied).
-        const invoice =
-          template && termData && hasValidLessonDay(template)
-            ? generateInvoice(template, termData, state.settings.customEmailBodyTemplate)
-            : null
-        set({ currentInvoice: invoice })
-      },
-
-      generateAllInvoicesAction: () => {
-        const state = get()
-        if (state.currentTerm) {
-          return generateAllInvoices(state.templates.filter(hasValidLessonDay), state.currentTerm, state.settings.customEmailBodyTemplate)
-        }
-        return []
-      },
-
-
+      currentTerm: calculateTermData(new Date()),
     }),
     {
       name: 'student-invoice-store',
@@ -479,6 +364,5 @@ export const useAppStore = create<AppState>()(
   )
 )
 
-// Initialize term calculation and Gmail status on app start
-useAppStore.getState().calculateCurrentTerm()
+// Ask Rust for the Gmail status as the app starts.
 void useAppStore.getState().refreshGmailStatus()

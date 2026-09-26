@@ -1,4 +1,5 @@
 //! Gmail API calls: create a draft, and read the signed-in address.
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
 
 use super::auth::GoogleAuth;
@@ -8,15 +9,11 @@ use crate::error::{AppError, AppResult};
 const DRAFTS_URL: &str = "https://gmail.googleapis.com/gmail/v1/users/me/drafts";
 const PROFILE_URL: &str = "https://gmail.googleapis.com/gmail/v1/users/me/profile";
 
-#[derive(Debug, serde::Serialize)]
+/// The saved draft, read straight from Gmail's response (only `id` is used).
+#[derive(Debug, Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DraftCreated {
     pub id: String,
-}
-
-#[derive(Deserialize)]
-struct DraftResponse {
-    id: String,
 }
 
 #[derive(Deserialize)]
@@ -29,48 +26,40 @@ struct GoogleErrorDetail {
     message: String,
 }
 
-async fn google_error(response: reqwest::Response) -> AppError {
+/// The JSON body of a successful response, or Google's error message
+/// (trimmed to 300 characters).
+async fn json_body<T: DeserializeOwned>(response: reqwest::Response) -> AppResult<T> {
     let status = response.status();
-    let message = response
-        .json::<GoogleErrorBody>()
+    if !status.is_success() {
+        let message = response
+            .json::<GoogleErrorBody>()
+            .await
+            .map(|b| b.error.message)
+            .unwrap_or_else(|_| status.to_string());
+        return Err(AppError::Google(message.chars().take(300).collect()));
+    }
+    response
+        .json()
         .await
-        .map(|b| b.error.message)
-        .unwrap_or_else(|_| status.to_string());
-    AppError::Google(message.chars().take(300).collect())
+        .map_err(|_| AppError::Google("unexpected response from Gmail".into()))
 }
 
 /// Saves one invoice as a Gmail draft. On a 401 the access token is refreshed
 /// and the request retried once.
-pub async fn create_draft(
-    auth: &GoogleAuth,
-    to: Option<&str>,
-    subject: &str,
-    body: &str,
-) -> AppResult<DraftCreated> {
-    let payload = serde_json::json!({ "message": { "raw": mime::raw_message(to, subject, body) } });
-    let mut token = auth.access_token(false).await?;
-    for attempt in 0..2 {
-        let response = auth
-            .http()
+pub async fn create_draft(auth: &GoogleAuth, subject: &str, body: &str) -> AppResult<DraftCreated> {
+    let payload = serde_json::json!({ "message": { "raw": mime::raw_message(subject, body) } });
+    let send = |token: String| {
+        auth.http()
             .post(DRAFTS_URL)
-            .bearer_auth(&token)
+            .bearer_auth(token)
             .json(&payload)
             .send()
-            .await?;
-        if response.status() == reqwest::StatusCode::UNAUTHORIZED && attempt == 0 {
-            token = auth.access_token(true).await?;
-            continue;
-        }
-        if !response.status().is_success() {
-            return Err(google_error(response).await);
-        }
-        let draft: DraftResponse = response
-            .json()
-            .await
-            .map_err(|_| AppError::Google("unexpected response from Gmail".into()))?;
-        return Ok(DraftCreated { id: draft.id });
+    };
+    let mut response = send(auth.access_token(false).await?).await?;
+    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+        response = send(auth.access_token(true).await?).await?;
     }
-    Err(AppError::ReauthRequired)
+    json_body(response).await
 }
 
 /// The Gmail address of the signed-in account (shown as "Connected as …").
@@ -85,12 +74,5 @@ pub async fn profile_email(http: &reqwest::Client, access_token: &str) -> AppRes
         .bearer_auth(access_token)
         .send()
         .await?;
-    if !response.status().is_success() {
-        return Err(google_error(response).await);
-    }
-    Ok(response
-        .json::<Profile>()
-        .await
-        .map_err(|_| AppError::Google("unexpected response from Gmail".into()))?
-        .email_address)
+    Ok(json_body::<Profile>(response).await?.email_address)
 }

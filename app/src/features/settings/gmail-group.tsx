@@ -4,29 +4,16 @@
 import { useState, type ReactNode } from "react";
 import { CircleCheck, Loader2, Mail, MailX, Unlink } from "lucide-react";
 import { useAppStore } from "../../stores/app-store";
-import { errorMessage, isBackendError } from "../../lib/backend";
-import { useToast } from "../../hooks/use-toast";
+import { errorMessage } from "../../lib/backend";
+import { toast } from "../../hooks/use-toast";
+import { useConnectGmail } from "../gmail/use-connect-gmail";
 
 export function GmailGroup() {
   const gmail = useAppStore((s) => s.gmail);
   const connecting = useAppStore((s) => s.gmailConnecting);
-  const connectGmail = useAppStore((s) => s.connectGmail);
   const disconnectGmail = useAppStore((s) => s.disconnectGmail);
-  const { toast } = useToast();
+  const onConnect = useConnectGmail();
   const [disconnecting, setDisconnecting] = useState(false);
-
-  const onConnect = async () => {
-    try {
-      const status = await connectGmail();
-      toast({
-        title: "Gmail connected",
-        description: status.email ? `Drafts will be saved to ${status.email}.` : "Drafts will be saved to your Gmail account.",
-      });
-    } catch (error) {
-      if (isBackendError(error) && error.kind === "Cancelled") return;
-      toast({ title: "Gmail wasn't connected", description: errorMessage(error), variant: "destructive" });
-    }
-  };
 
   const onDisconnect = async () => {
     setDisconnecting(true);

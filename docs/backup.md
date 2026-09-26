@@ -26,7 +26,8 @@ The UI lives in Settings → **Your data** (`app/src/features/settings/data-grou
 1. `import_backup()` opens the native **Open** dialog from Rust, rejects files
    over 5 MB before reading them, strips a UTF-8 byte-order mark, requires
    valid UTF-8, and checks the envelope. It returns the file's text.
-2. `parseBackup` (`app/src/lib/backup-parse.ts`, loaded on demand) validates
+2. `parseBackup` (`app/src/lib/backup-parse.ts`, loaded with the Settings
+   screen, which is the only place that imports files) validates
    everything strictly with zod
    (`app/src/lib/schema/index.ts`):
    - it drops `__proto__`, `constructor` and `prototype` keys while parsing;
@@ -57,6 +58,9 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
 | `pre-migration` | Before stored data from an older version is upgraded (only if there is data to protect) |
 
 - **Retention:** the newest 10 of each reason are kept.
+- **One at a time:** writing a backup and pruning old ones is serialised in
+  Rust, so two backups started together (for example by React's development
+  double-run) can't collide. The work runs off the main thread.
 - **Development builds** use a separate `backups-dev` folder, so testing
   never mixes with the installed app's backups.
 - **Restoring:** Settings lists the backups, and **Restore** works like an

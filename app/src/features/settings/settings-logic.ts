@@ -1,21 +1,9 @@
 // Pure helpers for the Settings screen (docs/ui.md "Settings"). No side
 // effects, so they are unit-tested in settings-logic.test.ts. Term dates come
 // from utils/terms.ts and are only displayed here, never changed.
-import { format } from 'date-fns'
 import { getTermsForAcademicYear } from '../../utils/terms'
+import { capitalise } from '../../lib/format'
 import type { Term } from '../../types'
-
-export const SECTIONS = ['appearance', 'gmail', 'wording', 'terms', 'data', 'performance', 'about'] as const
-
-/** The year the school year containing `date` started in (it starts in September). */
-export function academicYearStart(date: Date): number {
-  return date.getMonth() >= 8 ? date.getFullYear() : date.getFullYear() - 1
-}
-
-/** "2026/27" for the school year starting in 2026. */
-export function schoolYearLabel(start: number): string {
-  return `${start}/${String(start + 1).slice(2)}`
-}
 
 export interface SeasonTerms {
   season: 'autumn' | 'spring' | 'summer'
@@ -28,52 +16,38 @@ export function termsBySeason(start: number): SeasonTerms[] {
   const terms = getTermsForAcademicYear(start)
   return (['autumn', 'spring', 'summer'] as const).map((season) => ({
     season,
-    label: season.charAt(0).toUpperCase() + season.slice(1),
+    label: capitalise(season),
     halves: terms.filter((t) => t.season === season),
   }))
 }
 
-/** "1 Sep – 25 Oct 2026" (the year is shown once unless the dates cross a new year). */
-export function termRange(start: Date, end: Date): string {
-  return start.getFullYear() === end.getFullYear()
-    ? `${format(start, 'd MMM')} – ${format(end, 'd MMM yyyy')}`
-    : `${format(start, 'd MMM yyyy')} – ${format(end, 'd MMM yyyy')}`
-}
+/**
+ * The words the invoice email fills in (utils/invoice-generator.ts), and what
+ * each becomes. The wording group adds an example to `termInfo`.
+ */
+export const PLACEHOLDERS = {
+  recipient: 'The name you greet',
+  students: 'Student name(s)',
+  instrument: 'The instrument, such as piano',
+  termInfo: 'The half-term',
+  weeksCount: 'Number of lessons',
+  lessonCountText: '"session" or "sessions"',
+  dateRange: 'First to last lesson',
+  cost: 'Cost per lesson',
+  totalCost: 'Total',
+  isAre: '"is" or "are"',
+} as const
 
-export function isSameTerm(a: Term | null | undefined, b: Term): boolean {
-  return !!a && a.season === b.season && a.half === b.half && a.startDate.getTime() === b.startDate.getTime()
-}
-
-/** The first half-term that starts after `date` (used outside term time). */
-export function nextTermAfter(date: Date): Term | null {
-  const start = academicYearStart(date)
-  const terms = [...getTermsForAcademicYear(start), ...getTermsForAcademicYear(start + 1)]
-  return terms.find((t) => t.startDate > date) ?? null
-}
-
-/** The words the invoice email fills in (utils/invoice-generator.ts). */
-export const PLACEHOLDERS = [
-  'recipient',
-  'students',
-  'instrument',
-  'termInfo',
-  'weeksCount',
-  'lessonCountText',
-  'dateRange',
-  'cost',
-  'totalCost',
-  'isAre',
-] as const
+const KNOWN_PLACEHOLDERS: ReadonlySet<string> = new Set(Object.keys(PLACEHOLDERS))
 
 /**
  * Anything in double curly brackets that the app won't fill in, such as a
  * misspelling. It would appear in the email exactly as typed.
  */
 export function unknownPlaceholders(text: string): string[] {
-  const known: readonly string[] = PLACEHOLDERS
   const found = new Set<string>()
   for (const m of text.matchAll(/{{([^{}]*)}}/g)) {
-    if (!known.includes(m[1])) found.add(m[0])
+    if (!KNOWN_PLACEHOLDERS.has(m[1])) found.add(m[0])
   }
   return [...found]
 }

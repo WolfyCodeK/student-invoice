@@ -1,41 +1,49 @@
 // The main screen: the register for the current half-term (docs/ui.md
 // "Register"). One row per family, one column per week, one mark per lesson;
 // clicking a mark unticks a lesson that didn't happen (docs/billing.md).
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { useShallow } from "zustand/react/shallow";
 import { CalendarOff, CircleCheck, Loader2, Mail, MailCheck, MailPlus, Mails, MailX, Pencil, RotateCcw, Trash2, UserPlus } from "lucide-react";
-import { useAppStore, type DraftOutcome } from "../../stores/app-store";
+import { invoiceFor, useAppStore, type DraftOutcome } from "../../stores/app-store";
 import { getTermsForAcademicYear } from "../../utils/terms";
-import { generateInvoice } from "../../utils/invoice-generator";
-import { errorMessage, isBackendError } from "../../lib/backend";
-import { useToast } from "../../hooks/use-toast";
+import type { InvoiceData } from "../../utils/invoice-generator";
+import { errorMessage } from "../../lib/backend";
+import { capitalise, money } from "../../lib/format";
+import { isWeekday } from "../../lib/schema/constants";
+import { academicYearStart, isSameTerm, nextTermAfter, schoolYearLabel, termRange } from "../../lib/term-display";
+import { toast } from "../../hooks/use-toast";
 import { useAppActions } from "../app-context";
-import { Dialog, DialogActions, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
-import { registerLessons, registerWeeks } from "./weeks";
+import { useConnectGmail } from "../gmail/use-connect-gmail";
+import { DeleteFamilyDialog } from "../family/delete-family-dialog";
+import { registerLessons, registerWeeks, type RegisterLesson } from "./weeks";
 import { PupilPage } from "./pupil-page";
 import type { InvoiceTemplate } from "../../types";
 
-const money = (n: number) => `£${n.toFixed(2)}`;
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const VALID_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-/** The six half-terms of the academic year that contains `date`. */
-function academicYear(date: Date) {
-  const start = date.getMonth() >= 8 ? date.getFullYear() : date.getFullYear() - 1;
-  return { start, terms: getTermsForAcademicYear(start) };
-}
-
 const SEASON_SHORT: Record<string, string> = { autumn: "Aut", spring: "Spr", summer: "Sum" };
-const rangeLabel = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() ? `${format(a, "d MMM")} – ${format(b, "d MMM yyyy")}` : `${format(a, "d MMM yyyy")} – ${format(b, "d MMM yyyy")}`;
 
-export function RegisterView() {
+export const RegisterView = memo(function RegisterView() {
   const { navigate } = useAppActions();
-  const { toast } = useToast();
   const {
-    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, deleteTemplate, settings,
-    gmail, gmailConnected, gmailConnecting, connectGmail, drafting, createAllInvoiceDrafts, draftTemplate, currentInvoice,
-  } = useAppStore();
+    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody,
+    gmail, gmailConnected, gmailConnecting, drafting, createAllInvoiceDrafts, draftTemplate,
+  } = useAppStore(
+    useShallow((s) => ({
+      templates: s.templates,
+      currentTemplateId: s.currentTemplateId,
+      setCurrentTemplate: s.setCurrentTemplate,
+      currentTerm: s.currentTerm,
+      toggleLesson: s.toggleLesson,
+      customBody: s.settings.customEmailBodyTemplate,
+      gmail: s.gmail,
+      gmailConnected: s.gmailConnected,
+      gmailConnecting: s.gmailConnecting,
+      drafting: s.drafting,
+      createAllInvoiceDrafts: s.createAllInvoiceDrafts,
+      draftTemplate: s.draftTemplate,
+    })),
+  );
+  const onConnect = useConnectGmail();
 
   const [outcomes, setOutcomes] = useState<Record<string, DraftOutcome> | null>(null);
   const [deleting, setDeleting] = useState<InvoiceTemplate | null>(null);
@@ -47,17 +55,26 @@ export function RegisterView() {
   }, [templates, currentTemplateId, setCurrentTemplate]);
 
   const now = new Date();
-  const year = academicYear(now);
-  const weeks = useMemo(() => (currentTerm ? registerWeeks(currentTerm, templates.filter((t) => VALID_DAYS.includes(t.day))) : []), [currentTerm, templates]);
+  const yearStart = academicYearStart(now);
+  const yearLabel = schoolYearLabel(yearStart);
+  const weeks = useMemo(() => (currentTerm ? registerWeeks(currentTerm, templates.filter((t) => isWeekday(t.day))) : []), [currentTerm, templates]);
   const current = templates.find((t) => t.id === currentTemplateId) ?? null;
-  const nextTerm = [...year.terms, ...getTermsForAcademicYear(year.start + 1)].find((t) => t.startDate > now);
+  const nextTerm = nextTermAfter(now);
 
   // Figures always come from the billing code, so the register matches the email exactly.
   const invoices = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof generateInvoice>>();
-    if (currentTerm) for (const t of templates) if (VALID_DAYS.includes(t.day)) map.set(t.id, generateInvoice(t, currentTerm, settings.customEmailBodyTemplate));
+    const map = new Map<string, InvoiceData>();
+    for (const t of templates) {
+      const invoice = invoiceFor(t, currentTerm, customBody);
+      if (invoice) map.set(t.id, invoice);
+    }
     return map;
-  }, [templates, currentTerm, settings.customEmailBodyTemplate]);
+  }, [templates, currentTerm, customBody]);
+  const lessonsById = useMemo(() => {
+    const map = new Map<string, RegisterLesson[]>();
+    if (currentTerm) for (const t of templates) if (isWeekday(t.day)) map.set(t.id, registerLessons(t, currentTerm));
+    return map;
+  }, [templates, currentTerm]);
   const chargeable = [...invoices.values()].filter((inv) => inv.lessonCount > 0).length;
   const draftWhy = !currentTerm
     ? "It's outside term time."
@@ -69,38 +86,34 @@ export function RegisterView() {
           ? "Every lesson is unticked."
           : null;
 
-  const onConnect = async () => {
-    try {
-      const status = await connectGmail();
-      toast({ title: "Gmail connected", description: status.email ? `Drafts will be saved to ${status.email}.` : "Drafts will be saved to your Gmail account." });
-    } catch (error) {
-      if (isBackendError(error) && error.kind === "Cancelled") return;
-      toast({ title: "Gmail wasn't connected", description: errorMessage(error), variant: "destructive" });
-    }
-  };
+  const setOutcome = (outcome: DraftOutcome) => setOutcomes((prev) => ({ ...prev, [outcome.templateId]: outcome }));
 
   const onDraftAll = async () => {
     setOutcomes({});
     try {
-      await createAllInvoiceDrafts((o) => setOutcomes((prev) => ({ ...(prev ?? {}), [o.templateId]: o })));
+      await createAllInvoiceDrafts(setOutcome);
     } catch (error) {
       setOutcomes(null);
       toast({ title: "Couldn't save the drafts", description: errorMessage(error), variant: "destructive" });
     }
   };
 
-  const onRetry = async (id: string) => {
-    setOutcomes((prev) => ({ ...(prev ?? {}), [id]: { templateId: id, status: "saving" } }));
+  const onRetry = async (templateId: string) => {
+    setOutcome({ templateId, status: "saving" });
     try {
-      await draftTemplate(id);
-      setOutcomes((prev) => ({ ...(prev ?? {}), [id]: { templateId: id, status: "saved" } }));
+      await draftTemplate(templateId);
+      setOutcome({ templateId, status: "saved" });
     } catch (error) {
-      setOutcomes((prev) => ({ ...(prev ?? {}), [id]: { templateId: id, status: "failed", message: errorMessage(error) } }));
+      setOutcome({ templateId, status: "failed", message: errorMessage(error) });
     }
   };
 
+  const select = (id: string) => {
+    if (id !== currentTemplateId) setCurrentTemplate(id);
+  };
+
   const onToggle = (t: InvoiceTemplate, key: string) => {
-    setCurrentTemplate(t.id);
+    select(t.id);
     toggleLesson(t.id, key);
     setChanged(`${t.id}:${key}`);
   };
@@ -116,29 +129,27 @@ export function RegisterView() {
         <div data-tour="term">
           <h1>
             {currentTerm
-              ? `Register · ${currentTerm.term.half} half ${cap(currentTerm.term.season)} term ${currentTerm.term.startDate.getFullYear()}`
+              ? `Register · ${currentTerm.term.half} half ${capitalise(currentTerm.term.season)} term ${currentTerm.term.startDate.getFullYear()}`
               : "Register · Holiday"}
           </h1>
           <div className="band-meta">
             <span>
               {currentTerm
-                ? `${rangeLabel(currentTerm.term.startDate, currentTerm.term.endDate)} · ${currentTerm.weeksCount} weeks`
+                ? `${termRange(currentTerm.term.startDate, currentTerm.term.endDate)} · ${currentTerm.weeksCount} weeks`
                 : nextTerm
                   ? `The next half-term starts on ${format(nextTerm.startDate, "EEEE d MMMM")}.`
                   : "It's outside term time."}
             </span>
-            <div className="terms" role="list" aria-label={`Half-terms in the ${year.start}/${String(year.start + 1).slice(2)} school year`}>
-              <span className="terms-yr">
-                {year.start}/{String(year.start + 1).slice(2)}
-              </span>
-              {year.terms.map((t) => {
-                const isNow = currentTerm?.term.season === t.season && currentTerm.term.half === t.half && currentTerm.term.startDate.getTime() === t.startDate.getTime();
+            <div className="terms" role="list" aria-label={`Half-terms in the ${yearLabel} school year`}>
+              <span className="terms-yr">{yearLabel}</span>
+              {getTermsForAcademicYear(yearStart).map((t) => {
+                const isNow = isSameTerm(currentTerm?.term, t);
                 return (
                   <span
                     key={`${t.season}-${t.half}`}
                     role="listitem"
                     className={`term${isNow ? " is-now" : ""}`}
-                    title={`${t.half} half ${cap(t.season)} term: ${rangeLabel(t.startDate, t.endDate)}`}
+                    title={`${t.half} half ${capitalise(t.season)} term: ${termRange(t.startDate, t.endDate)}`}
                     aria-current={isNow ? "true" : undefined}
                   >
                     {SEASON_SHORT[t.season]} {t.half === "1st" ? 1 : 2}
@@ -235,9 +246,9 @@ export function RegisterView() {
                 {results && <div className="c th status" role="columnheader">Gmail draft</div>}
               </div>
 
-              {templates.map((t, index) => {
-                const valid = VALID_DAYS.includes(t.day);
-                const lessons = currentTerm && valid ? registerLessons(t, currentTerm) : [];
+              {templates.map((t) => {
+                const valid = isWeekday(t.day);
+                const lessons = lessonsById.get(t.id) ?? [];
                 const inv = invoices.get(t.id);
                 const selected = t.id === currentTemplateId;
                 const outcome = outcomes?.[t.id];
@@ -254,13 +265,14 @@ export function RegisterView() {
                       outcome?.status === "saved" ? "is-drafted" : "",
                       outcome?.status === "failed" ? "is-failed" : "",
                     ].join(" ")}
-                    onClick={() => setCurrentTemplate(t.id)}
+                    onClick={() => select(t.id)}
                   >
                     <div className="c" role="cell" style={{ padding: 0 }}>
-                      <button type="button" className="fam fam-btn c" onClick={() => setCurrentTemplate(t.id)} aria-label={`${t.recipient}: ${t.students}, ${t.instrument}`}>
+                      {/* Selects the family through the row's click handler. */}
+                      <button type="button" className="fam fam-btn c" aria-label={`${t.recipient}: ${t.students}, ${t.instrument}`}>
                         <span className="who">{t.recipient}</span>
                         <span className="what">
-                          {t.students} · {cap(t.instrument)}
+                          {t.students} · {capitalise(t.instrument)}
                           <span className="day-inline"> · {t.day.slice(0, 3)}</span>
                         </span>
                       </button>
@@ -268,7 +280,7 @@ export function RegisterView() {
                     <div className="c c-day" role="cell">
                       {t.day}
                     </div>
-                    <div className="c weeks" role="cell" data-tour={index === templates.findIndex((x) => x.id === currentTemplateId) ? "marks" : undefined}>
+                    <div className="c weeks" role="cell" data-tour={selected ? "marks" : undefined}>
                       {weeks.map((w, wi) => {
                         const l = byWeek.get(wi);
                         if (!l) return <span key={wi} className={`wk${w.afterTerm ? " is-holiday" : ""}`} />;
@@ -361,42 +373,17 @@ export function RegisterView() {
         {!results && templates.length > 0 && (
           <PupilPage
             template={current}
-            invoice={current ? currentInvoice : null}
-            lessons={current && currentTerm && VALID_DAYS.includes(current.day) ? registerLessons(current, currentTerm) : []}
+            invoice={current ? (invoices.get(current.id) ?? null) : null}
+            lessons={current ? (lessonsById.get(current.id) ?? []) : []}
             nextTermStart={nextTerm?.startDate ?? null}
           />
         )}
       </div>
 
-      <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
-        <DialogContent>
-          <DialogTitle>Delete {deleting?.recipient}'s details?</DialogTitle>
-          <DialogDescription>
-            This removes {deleting?.recipient} ({deleting?.students}) from the register. It can't be undone here, but your automatic backups keep a copy.
-          </DialogDescription>
-          <DialogActions>
-            <button type="button" className="btn btn--secondary" onClick={() => setDeleting(null)}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn--danger-solid"
-              onClick={() => {
-                if (deleting) {
-                  deleteTemplate(deleting.id);
-                  toast({ title: "Deleted", description: `${deleting.recipient}'s details were removed.` });
-                }
-                setDeleting(null);
-              }}
-            >
-              <Trash2 /> Delete
-            </button>
-          </DialogActions>
-        </DialogContent>
-      </Dialog>
+      <DeleteFamilyDialog family={deleting} open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)} />
     </>
   );
-}
+});
 
 function StatusCell({ outcome, onRetry, busy }: { outcome?: DraftOutcome; onRetry: () => void; busy: boolean }) {
   if (!outcome) return <div className="c status" role="cell" />;

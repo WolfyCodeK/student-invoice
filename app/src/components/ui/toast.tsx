@@ -50,4 +50,3 @@ export const ToastClose = React.forwardRef<
 ToastClose.displayName = "ToastClose";
 
 export type ToastProps = ToastRootProps;
-export type ToastActionElement = React.ReactElement;

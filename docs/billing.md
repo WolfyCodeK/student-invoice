@@ -18,7 +18,8 @@ listed at the end; they are not fixed until a proposal is approved.
 | Term dates and "which term is it?" | `app/src/utils/terms.ts` (`getTermsForAcademicYear`, `calculateTermData`) |
 | Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`lessonDates`, `generateInvoice`) |
 | Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts`; tests in `app/src/utils/untick-lessons.test.ts` |
-| When the current term is computed | once at start-up (`calculateCurrentTerm` in `app/src/stores/app-store.ts`) |
+| When the current term is computed | once at start-up (the store's initial `currentTerm`, from `calculateTermData(new Date())` in `app/src/stores/app-store.ts`) |
+| Which invoice a screen or draft uses | `invoiceFor()` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term, or none outside term time or for an invalid lesson day |
 | Locked-in expected output | `app/src/utils/billing.characterization.test.ts` and its snapshots in `app/src/utils/__snapshots__/` |
 
 ## Term dates

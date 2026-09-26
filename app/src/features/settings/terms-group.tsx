@@ -3,7 +3,8 @@
 import { format } from "date-fns";
 import { CalendarOff } from "lucide-react";
 import { useAppStore } from "../../stores/app-store";
-import { academicYearStart, isSameTerm, nextTermAfter, schoolYearLabel, termRange, termsBySeason } from "./settings-logic";
+import { academicYearStart, isSameTerm, nextTermAfter, schoolYearLabel, termRange } from "../../lib/term-display";
+import { termsBySeason } from "./settings-logic";
 
 export function TermsGroup() {
   const currentTerm = useAppStore((s) => s.currentTerm);

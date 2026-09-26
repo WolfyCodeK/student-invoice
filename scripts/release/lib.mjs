@@ -1,6 +1,6 @@
 // Shared helpers for the release scripts. Node built-ins only.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { EOL, homedir } from 'node:os'
 import { join } from 'node:path'
 import { LATEST_JSON_NOTES_PATTERN } from '../invariants.config.mjs'
@@ -68,18 +68,88 @@ export function v101CompatError(version, notes) {
   return null
 }
 
+/** The files that carry the app version, as rewritten by bumpVersion. */
+export const VERSION_FILES = ['app/package.json', 'app/src-tauri/tauri.conf.json', 'app/src-tauri/Cargo.toml', 'app/src-tauri/Cargo.lock']
+
+/**
+ * Sets the app version in every VERSION_FILES entry under `root`. Exits
+ * without writing anything if the version can't be found in Cargo.toml or
+ * Cargo.lock.
+ */
+export function bumpVersion(root, version) {
+  const [pkgFile, confFile, tomlFile, lockFile] = VERSION_FILES
+  const json = (file) => {
+    const obj = JSON.parse(readFileSync(join(root, file), 'utf8'))
+    obj.version = version
+    return [file, JSON.stringify(obj, null, 2) + '\n']
+  }
+  const toml = (file, re) => {
+    const text = readFileSync(join(root, file), 'utf8')
+    if (!re.test(text)) die(`could not find the version in ${file}`)
+    return [file, text.replace(re, `$1${version}$2`)]
+  }
+  const updated = [
+    json(pkgFile),
+    json(confFile),
+    toml(tomlFile, /(\[package\][\s\S]*?\nversion = ")[^"]+(")/),
+    toml(lockFile, /(\[\[package\]\]\nname = "student-invoice-tauri"\nversion = ")[^"]+(")/),
+  ]
+  for (const [file, text] of updated) writeFileSync(join(root, file), text)
+}
+
+/** The MSI that `tauri build` made for `version`. Exits if it or its `.sig` is missing. */
+export function findSignedMsi(root, version) {
+  const bundleDir = join(root, 'app/src-tauri/target/release/bundle/msi')
+  const built = readdirSync(bundleDir).find((f) => f.endsWith(`_${version}_x64_en-US.msi`))
+  if (!built || !existsSync(join(bundleDir, `${built}.sig`))) die(`signed MSI for ${version} not found in ${bundleDir}`)
+  return join(bundleDir, built)
+}
+
+/**
+ * Copies a signed MSI (from findSignedMsi) and its signature into `outDir`
+ * under the release asset name, then writes the latest.json that installed
+ * copies read, offering the MSI at `url`. Its shape is compatibility-critical
+ * (docs/compatibility.md). Exits before writing it if v1.0.1 couldn't parse it.
+ */
+export function collectSignedMsi(msi, outDir, { version, notes, url, minimumSupportedVersion }) {
+  if (minimumSupportedVersion !== undefined && !(isSemver(minimumSupportedVersion) && compareSemver(minimumSupportedVersion, version) <= 0)) {
+    die(`minimum supported version must be x.y.z and no higher than ${version} (got ${JSON.stringify(minimumSupportedVersion)})`)
+  }
+  mkdirSync(outDir, { recursive: true })
+  copyFileSync(msi, join(outDir, msiName(version)))
+  copyFileSync(`${msi}.sig`, join(outDir, `${msiName(version)}.sig`))
+  const signature = readFileSync(join(outDir, `${msiName(version)}.sig`), 'utf8').trim()
+  const platform = { signature, url }
+  const latest = {
+    version,
+    notes,
+    pub_date: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    // Optional emergency safety net: older versions show the update as important
+    // (docs/decisions/0002-no-forced-updates.md). Updaters ignore unknown fields.
+    ...(minimumSupportedVersion && { minimumSupportedVersion }),
+    // updater ≤2.9 (v1.0.1) reads only the generic key; newer updaters prefer the -msi key.
+    platforms: { 'windows-x86_64': platform, 'windows-x86_64-msi': platform },
+  }
+  const err = v101CompatError(latest.version, latest.notes)
+  if (err) die(err)
+  writeFileSync(join(outDir, 'latest.json'), JSON.stringify(latest, null, 2) + '\n')
+}
+
 /**
  * Pulls a version's section out of CHANGELOG.md (Keep a Changelog format).
- * Returns { body, summary } where summary is the one-line latest.json notes
- * taken from `<!-- latest-json-summary: ... -->` inside the section.
+ * Returns { body, summary, minimumSupportedVersion } where summary is the
+ * one-line latest.json notes taken from `<!-- latest-json-summary: ... -->`
+ * inside the section, and minimumSupportedVersion comes from an optional
+ * `<!-- minimum-supported-version: x.y.z -->` (emergencies only).
  */
 export function changelogSection(changelog, version) {
   const re = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\][^\\n]*\\n([\\s\\S]*?)(?=^## \\[|(?![\\s\\S]))`, 'm')
   const m = changelog.match(re)
   if (!m) return null
   const summary = m[1].match(/<!--\s*latest-json-summary:\s*(.*?)\s*-->/)?.[1]
+  const minimumSupportedVersion = m[1].match(/<!--\s*minimum-supported-version:\s*(.*?)\s*-->/)?.[1]
   const body = m[1].replace(/<!--[\s\S]*?-->\n?/g, '').trim()
-  return { body, summary }
+  return { body, summary, minimumSupportedVersion }
 }
 
 /** Locations of the secrets the release build needs (never read into logs). */
@@ -135,7 +205,7 @@ export function askHidden(question) {
 }
 
 /** Asks for the signing key password and checks it at once. It is never stored. */
-export async function askSigningPassword(keyPath) {
+async function askSigningPassword(keyPath) {
   const keyText = readFileSync(keyPath, 'utf8')
   for (let attempt = 1; attempt <= 3; attempt++) {
     const password = await askHidden('Signing key password (from Bitwarden): ')

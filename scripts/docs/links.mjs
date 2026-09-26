@@ -3,26 +3,20 @@
 //  - relative markdown links: [text](../app/src/foo.ts)
 //  - backticked repo paths: `app/src/stores/app-store.ts` (optionally :line)
 // and checks that docs/README.md links to every doc listed in docs-map.json.
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { dirname, join, normalize } from 'node:path'
-import { repoRoot, readRepoFile } from '../lib/repo.mjs'
+import { repoRoot, readRepoFile, listFiles } from '../lib/repo.mjs'
 
 const root = repoRoot()
 const PATH_PREFIXES = /^(app|scripts|docs|\.github|\.githooks|\.claude)\//
 const problems = []
 
-function markdownFiles(dir) {
-  return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? markdownFiles(`${dir}/${e.name}`) : e.name.endsWith('.md') ? [`${dir}/${e.name}`] : [],
-  )
-}
-
-const files = [...markdownFiles('docs'), 'CLAUDE.md', 'AGENTS.md', 'README.md', 'CHANGELOG.md'].filter((f) => existsSync(join(root, f)))
+const files = [...listFiles('docs', '.md', root), 'CLAUDE.md', 'AGENTS.md', 'README.md', 'CHANGELOG.md'].filter((f) => existsSync(join(root, f)))
 
 for (const file of files) {
   // Invisible control characters (e.g. a stray backspace from an escaping
   // mistake) silently corrupt paths and commands shown in the docs.
-  const raw = readRepoFile(file)
+  const raw = readRepoFile(file, root)
   const control = raw.search(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F﻿]/)
   if (control !== -1) problems.push(`${file}: invisible control character at offset ${control}`)
   const text = raw
@@ -42,8 +36,8 @@ for (const file of files) {
   }
 }
 
-const map = JSON.parse(readRepoFile('docs/docs-map.json'))
-const index = readRepoFile('docs/README.md')
+const map = JSON.parse(readRepoFile('docs/docs-map.json', root))
+const index = readRepoFile('docs/README.md', root)
 for (const doc of Object.keys(map.docs)) {
   if (doc === 'docs/README.md') continue
   const rel = doc.replace(/^docs\//, '')

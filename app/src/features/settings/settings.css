@@ -1,10 +1,255 @@
-/* Settings screen: additions to app.css (.page-work, .nav, .set, .grp, .srow …).
-   Tokens only (styles/tokens.css). */
+/* Settings screen: all of its styles. Loaded with the screen, so after
+   styles/app.css (which keeps the band, .ok and the holiday note it shares
+   with the register). Tokens only (styles/tokens.css). */
 
 /* ---- Page frame ------------------------------------------------------ */
-.page-work.st-page {
+.page-work {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
 }
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 12px;
+  background: var(--ground);
+  border-right: 1px solid var(--rule-strong);
+}
+.nav button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-field);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+}
+.nav button .lucide {
+  width: 18px;
+  height: 18px;
+  color: var(--head-ink);
+}
+.nav button:hover {
+  background: var(--sec-hover);
+}
+.nav button[aria-current="true"] {
+  background: var(--selected);
+  color: var(--heading);
+  box-shadow: inset 0 0 0 1px var(--sel-line);
+}
+.nav-foot {
+  margin-top: auto;
+  padding: 12px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.set {
+  background: var(--page);
+  padding: 28px 44px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+.grp {
+  display: flex;
+  flex-direction: column;
+  max-width: 880px;
+  scroll-margin-top: 20px;
+}
+.grp > h2 {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-strong);
+  font-size: var(--fs-l);
+  line-height: 24px;
+}
+.srow {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.srow--top {
+  align-items: start;
+}
+.slab {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.slab strong {
+  font-weight: 600;
+}
+.slab span {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.sctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.shint {
+  flex-basis: 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.msg-ok {
+  color: var(--success);
+}
+.msg-bad {
+  color: var(--danger);
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+  padding: 10px 14px;
+  border: 1px solid var(--field-line);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
+  text-align: left;
+}
+.choice[aria-checked="true"] {
+  border-color: var(--accent-line);
+  background: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+.choice strong {
+  font-weight: 600;
+}
+.choice small {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.swatch {
+  width: 36px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  grid-template-rows: 9px 1fr;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-block);
+}
+.swatch--si i:first-child {
+  background: #1d3f8a;
+}
+.swatch--si i:last-child {
+  background: linear-gradient(to right, #ffffff 9px, #d0453a 9px 10px, #ffffff 10px 12px, #d0453a 12px 13px, #ffffff 13px);
+}
+.swatch--na i:first-child {
+  background: #2e4c6d;
+}
+.swatch--na i:last-child {
+  background: linear-gradient(to right, #eff3f7 18px, #c98a34 18px);
+}
+.corner-demo {
+  width: 36px;
+  height: 22px;
+  flex: none;
+  border: 2px solid var(--head-ink);
+}
+.corner-demo--square {
+  border-radius: 3px;
+}
+.corner-demo--rounded {
+  border-radius: 999px;
+}
+.tpl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  padding: 16px 0 18px;
+  border-bottom: 1px solid var(--rule);
+}
+.tpl-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.phlist li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.phlist code {
+  align-self: flex-start;
+  padding: 0 4px;
+  border-radius: var(--r-chip);
+  background: var(--selected);
+  color: var(--head-ink);
+  font-family: inherit;
+  font-weight: 700;
+}
+.trow {
+  display: grid;
+  grid-template-columns: 110px 200px minmax(0, 1fr);
+  align-items: center;
+  min-height: 44px;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+.trow > * {
+  padding: 0 12px;
+}
+.trow.is-now {
+  background: var(--selected);
+}
+.trow.is-split {
+  border-top: 1px solid var(--rule-strong);
+}
+.tag {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--r-chip);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.bk {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+.bk span {
+  color: var(--muted);
+}
+details.adv summary {
+  cursor: pointer;
+  color: var(--head-ink);
+  font-weight: 600;
+}
+details.adv[open] summary {
+  margin-bottom: 12px;
+}
+
+/* Order matters from here: these rules refine the ones above at the same
+   specificity (.st-nav after .nav, .st-choices and .st-perf after .sctl). */
 .st-nav {
   min-height: 0;
 }
@@ -57,7 +302,6 @@
 }
 .sctl > .choice {
   flex: 1 1 0;
-  min-width: 240px;
   max-width: 320px;
   min-height: 58px;
   transition: background-color 0.12s, border-color 0.12s;
@@ -162,20 +406,13 @@
 }
 
 /* ---- Term dates ------------------------------------------------------ */
+/* The holiday note's flex, colours and icon are shared with the register's
+   (styles/app.css). */
 .st-holiday {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   max-width: 600px;
   margin-bottom: 14px;
   padding: 10px 14px;
   border-radius: var(--r-panel);
-  background: var(--warning-bg);
-}
-.st-holiday .lucide {
-  width: 18px;
-  height: 18px;
-  color: var(--warning);
 }
 .st-terms {
   max-width: 600px;
@@ -272,6 +509,20 @@
 }
 
 /* ---- Narrow windows ---------------------------------------------------- */
+@media (max-width: 1020px) {
+  .page-work {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .set {
+    padding: 24px 28px 56px;
+  }
+  .srow {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  .tpl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 860px) {
   .page-work.st-page {
     grid-template-columns: 64px minmax(0, 1fr);

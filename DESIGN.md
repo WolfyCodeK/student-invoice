@@ -33,7 +33,6 @@ colors:
   holiday-hatch: "#d9ceb8"
   holiday-ink: "#6f6450"
   success: "#1f7a47"
-  success-bg: "#e8f4ed"
   warning: "#8a5a00"
   warning-bg: "#fdf3e1"
   danger: "#b42318"
@@ -298,7 +297,7 @@ The page is white, cool-ruled and near-neutral, under one saturated register-blu
 - **Soft and Off Marks** (mark-soft #7d93c4, mark-off #9aa6bd): marks at rest, and the dashed "untick" circle.
 - **Selection Wash** (selected #e6eefa, sel-line #9db5e3, totals-sel #d8e4f7): the selected row, the pupil's page header, the current Settings item and chosen appearance tiles. A 1px inset sel-line outlines them.
 - **Totals Tint** (totals, #f6f8fc): the block at the end of each row.
-- **Status** (success #1f7a47, warning #8a5a00, danger #b42318, each with a pale background): Gmail and draft outcomes, holiday notes, unsaved wording, destructive actions, and failed Draft all rows.
+- **Status** (success #1f7a47, warning #8a5a00, danger #b42318; warning and danger each with a pale background): Gmail and draft outcomes, holiday notes, unsaved wording, destructive actions, and failed Draft all rows.
 
 ### Named Rules
 **The One Band Rule.** The cover colour fills only the title bar and the header band beneath it. Everything below the band is page, ground or wash; there is no second saturated field.
@@ -395,11 +394,11 @@ Plain and confident: 600 weight, an icon on the left, never uppercase.
 - **Switch and segmented control:** the switch is a 42×24px pill that fills with primary when on. The segmented control is a 3px-padded field-line tray whose chosen segment is filled with primary.
 
 ### Navigation
-- **Title bar:** 40px high on the cover colour. The app name and icon sit on the left, the current place with an 18px muted icon in the centre, and icon buttons (help, updates, What's new, Settings) on the right. Each has a data-tip tooltip, with a mint dot (cover-ok) when an update is waiting. Windows 11 caption buttons are 46px wide, and close turns Windows red (#c42b1c) on hover.
+- **Title bar:** 40px high on the cover colour. The app name and icon sit on the left, the current place with an 18px muted icon in the centre, and icon buttons (the tour, updates, feedback, Settings) on the right. Each has a data-tip tooltip. When an update is waiting, the updates button becomes an "Update ready" pill in the band button colours. Windows 11 caption buttons are 46px wide, and close turns Windows red (#c42b1c) on hover.
 - **Settings rail:** on the Ground colour with 40px items, 18px head-ink icons and 600-weight labels. The current item takes the selection wash with a 1px inset sel-line outline. Below 860px it becomes a 64px icon-only rail with side tooltips.
 
 ### The Register Row (signature)
-A 58px row with the family name (15px/600) over its pupils and instrument (13px muted), then the day. The 4px double margin rule comes next, then one cell per week. Each cell holds a mark button of at least 44px. At rest the diagonal stroke is mark-soft. **Selecting a row lights its marks** to the full mark colour, washes the row in selected with a 1px inset sel-line, and deepens its totals block to totals-sel. Clicking a mark unticks the lesson: it becomes a dashed off-mark circle, with a 0.22s scale-in (0.6 to 1). Holiday weeks carry the Holiday Hatch. The totals block ends the row: the lesson count ("7 of 8" with a muted "of 8"), the per-lesson cost, and the total at 700 weight, all right-aligned and tabular. Blank ruled rows continue down to the bottom of the page.
+A 58px row with the family name (15px/600) over its pupils and instrument (13px muted), then the day. The 4px double margin rule comes next, then one cell per week. Each cell holds a mark button of at least 44px. At rest the diagonal stroke is mark-soft. **Selecting a row lights its marks**: ticked marks take the full mark colour, the row is washed in selected with a 1px inset sel-line, and its totals block deepens to totals-sel. Clicking a mark unticks the lesson: it becomes a dashed off-mark circle, with a 0.22s scale-in (0.6 to 1). Unticked marks stay off marks in a selected row too, mixed 15% towards the mark colour only to keep their contrast on the wash. Holiday weeks carry the Holiday Hatch. The totals block ends the row: the lesson count ("7 of 8" with a muted "of 8"), the per-lesson cost, and the total at 700 weight, all right-aligned and tabular. Blank ruled rows continue down to the bottom of the page.
 
 ### Draft All status
 During Draft all a status column opens at the end of each row. Each row's outcome fades in over 0.26s as its draft finishes. A success tick marks a saved row and dims its name and total to muted. A failed row is washed in danger-bg, its totals turn danger-bg2, and it carries a danger icon with a short reason. (The contract planned a choreographed sweep. The build shows each row's status as its draft completes, with no stagger added.)

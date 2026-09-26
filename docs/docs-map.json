@@ -76,7 +76,10 @@
         "app/index.html",
         "app/src/features/**",
         "app/src/styles/**",
-        "app/src/lib/appearance.ts"
+        "app/src/lib/appearance.ts",
+        "app/src/lib/format.ts",
+        "app/src/lib/term-display.ts",
+        "app/src/lib/term-display.test.ts"
       ]
     },
     "docs/compatibility.md": {

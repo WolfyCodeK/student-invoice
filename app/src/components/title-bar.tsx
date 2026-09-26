@@ -2,25 +2,51 @@
 // "Title bar"). Styled like part of the app, in the manner of Discord: a back
 // arrow, where you are, the app's own buttons, then minimise / maximise /
 // close. Empty areas drag the window; double-click maximises.
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ArrowLeft, CircleHelp, Download, MessageSquareText, NotebookText, PencilLine, RefreshCw, Settings, UserPlus } from "lucide-react";
 import appIcon from "../assets/app-icon.svg";
 import { useAppActions } from "../features/app-context";
 import { useAppStore } from "../stores/app-store";
 
-export function TitleBar() {
+/** Resizing sends many events; after the first, ask again only once they stop. */
+const RESIZE_SETTLE_MS = 100;
+
+export const TitleBar = memo(function TitleBar() {
   const { view, back, navigate, updates, checkForUpdates, startTour, openFeedback } = useAppActions();
   const templates = useAppStore((s) => s.templates);
   const [maximised, setMaximised] = useState(false);
 
   useEffect(() => {
     const win = getCurrentWindow();
+    let cancelled = false;
     let unlisten: (() => void) | undefined;
-    const refresh = () => void win.isMaximized().then(setMaximised, () => {});
+    let settle: number | undefined;
+    const refresh = () =>
+      void win.isMaximized().then(
+        (value) => !cancelled && setMaximised(value),
+        () => {},
+      );
     refresh();
-    void win.onResized(refresh).then((f) => (unlisten = f));
-    return () => unlisten?.();
+    void win
+      .onResized(() => {
+        if (settle === undefined) refresh();
+        window.clearTimeout(settle);
+        settle = window.setTimeout(() => {
+          settle = undefined;
+          refresh();
+        }, RESIZE_SETTLE_MS);
+      })
+      .then((f) => {
+        // Unmounted before the listener was ready: remove it straight away.
+        if (cancelled) f();
+        else unlisten = f;
+      });
+    return () => {
+      cancelled = true;
+      window.clearTimeout(settle);
+      unlisten?.();
+    };
   }, []);
 
   // Where you are, in a word or two (the band below has the full heading).
@@ -107,4 +133,4 @@ export function TitleBar() {
       </div>
     </header>
   );
-}
+});

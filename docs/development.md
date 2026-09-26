@@ -77,6 +77,10 @@ node scripts/docs/check.mjs              # all docs checks
 - **Billing characterization tests** (`app/src/utils/billing.characterization.test.ts`)
   pin today's exact money output. **Never update their snapshots** without an
   approved proposal (see [billing](billing.md)).
+- **Repo tooling tests** (`node --test "scripts/**/*.test.mjs"`) cover the
+  docs tooling, the version bump and the `latest.json` the release writes
+  (byte for byte, including the v1.0.1 compatibility check), and the secret
+  scan end to end in a temporary git repository.
 
 ## Git hooks and CI
 

@@ -38,7 +38,7 @@ pub enum AppError {
 }
 
 impl AppError {
-    pub fn kind(&self) -> &'static str {
+    fn kind(&self) -> &'static str {
         match self {
             AppError::NotConnected => "NotConnected",
             AppError::ReauthRequired => "ReauthRequired",

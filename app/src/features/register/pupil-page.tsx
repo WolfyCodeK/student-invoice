@@ -4,13 +4,11 @@ import { format } from "date-fns";
 import { Copy, Loader2, MailPlus } from "lucide-react";
 import { useAppStore } from "../../stores/app-store";
 import { errorMessage } from "../../lib/backend";
-import { useToast } from "../../hooks/use-toast";
+import { capitalise, lessonsWord, money } from "../../lib/format";
+import { toast } from "../../hooks/use-toast";
 import type { InvoiceTemplate } from "../../types";
 import type { InvoiceData } from "../../utils/invoice-generator";
 import type { RegisterLesson } from "./weeks";
-
-const money = (n: number) => `£${n.toFixed(2)}`;
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 interface Props {
   template: InvoiceTemplate | null;
@@ -20,8 +18,9 @@ interface Props {
 }
 
 export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) {
-  const { toast } = useToast();
-  const { gmailConnected, drafting, createCurrentInvoiceDraft } = useAppStore();
+  const gmailConnected = useAppStore((s) => s.gmailConnected);
+  const drafting = useAppStore((s) => s.drafting);
+  const draftTemplate = useAppStore((s) => s.draftTemplate);
 
   const copy = async (text: string, what: string) => {
     try {
@@ -32,9 +31,9 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
     }
   };
 
-  const onDraft = async () => {
+  const onDraft = async (templateId: string) => {
     try {
-      await createCurrentInvoiceDraft();
+      await draftTemplate(templateId);
       toast({ title: "Draft saved", description: "It's in your Gmail drafts, ready to check and send." });
     } catch (error) {
       toast({ title: "Couldn't save the draft", description: errorMessage(error), variant: "destructive" });
@@ -67,13 +66,13 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
         <div className="slip-id">
           <h2>{template.recipient}</h2>
           <span>
-            {template.students} · {cap(template.instrument)} · {template.day}
+            {template.students} · {capitalise(template.instrument)} · {template.day}
           </span>
         </div>
         {invoice ? (
           <>
             <p className="sum">
-              {invoice.lessonCount} {invoice.lessonCount === 1 ? "lesson" : "lessons"} × {money(template.cost)} = <b>{money(invoice.totalCost)}</b>
+              {invoice.lessonCount} {lessonsWord(invoice.lessonCount)} × {money(template.cost)} = <b>{money(invoice.totalCost)}</b>
             </p>
             {unticked.length > 0 && (
               <p className="sum-note">
@@ -104,7 +103,7 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
             <button type="button" className="btn btn--secondary" onClick={() => void copy(invoice.body, "email text")} disabled={nothing}>
               <Copy /> Copy email text
             </button>
-            <button type="button" className="btn btn--primary" onClick={() => void onDraft()} disabled={draftWhy !== null || drafting}>
+            <button type="button" className="btn btn--primary" onClick={() => void onDraft(template.id)} disabled={draftWhy !== null || drafting}>
               {drafting ? <Loader2 className="spin" /> : <MailPlus />} Save as Gmail draft
             </button>
             {draftWhy && <p className="slip-why">{draftWhy}</p>}

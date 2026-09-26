@@ -2,6 +2,7 @@
 // calls these instead of `invoke` so argument names and result shapes are
 // checked by TypeScript in one place.
 import { invoke } from '@tauri-apps/api/core'
+import { getVersion } from '@tauri-apps/api/app'
 
 /** Every command rejects with this shape (app/src-tauri/src/error.rs). */
 export interface BackendError {
@@ -51,6 +52,12 @@ export interface UpdateInfo {
   disabledInDev: boolean
 }
 
+/** Payload of the `update://progress` event sent while an update downloads. */
+export interface UpdateProgress {
+  downloaded: number
+  total: number | null
+}
+
 export type BackupReason = 'pre-migration' | 'pre-import' | 'pre-update' | 'pre-restore' | 'daily'
 
 export interface BackupInfo {
@@ -71,8 +78,8 @@ export const backend = {
   gmailConnect: () => invoke<GmailStatus>('gmail_connect'),
   gmailCancelConnect: () => invoke<void>('gmail_cancel_connect'),
   gmailDisconnect: () => invoke<GmailStatus>('gmail_disconnect'),
-  gmailCreateDraft: (subject: string, body: string, to?: string) =>
-    invoke<{ id: string }>('gmail_create_draft', { subject, body, to: to ?? null }),
+  gmailCreateDraft: (subject: string, body: string) =>
+    invoke<{ id: string }>('gmail_create_draft', { subject, body }),
   gmailSetCustomClient: (clientId: string, clientSecret: string) =>
     invoke<GmailStatus>('gmail_set_custom_client', { clientId, clientSecret }),
   gmailClearCustomClient: () => invoke<GmailStatus>('gmail_clear_custom_client'),
@@ -90,4 +97,12 @@ export const backend = {
   /** Takes effect after `restartApp`. */
   setLowMemoryMode: (enabled: boolean) => invoke<Preferences>('set_low_memory_mode', { enabled }),
   restartApp: () => invoke<void>('restart_app'),
+}
+
+let version: Promise<string> | undefined
+
+/** This build's version ("1.1.0"), or "unknown" if it can't be read. Asked for once. */
+export function getAppVersion(): Promise<string> {
+  version ??= getVersion().catch(() => 'unknown')
+  return version
 }

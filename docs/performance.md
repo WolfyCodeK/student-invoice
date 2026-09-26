@@ -73,9 +73,13 @@ scrolling and animations a little less smooth.
   `codegen-units = 1`, `opt-level = "s"`, `strip`. The exe went from
   15.6 MB to 10.0 MB. Panics still unwind, so a failure in a background task
   can't take the whole app down.
-- **One HTTP stack:** everything, including OAuth, uses the app's reqwest
-  client. The old oauth2 4.x dependency, which pulled in a second, older
-  stack, is gone.
+- **One HTTP client for the app's own traffic:** Gmail and Google sign-in
+  share one reqwest client using Windows' TLS. The old oauth2 4.x dependency,
+  which pulled in a second, older stack, is gone. The updater plugin still
+  brings its own rustls-based stack (and zip support it doesn't need). Trimming
+  its features would save a few hundred KB, but it changes how installed
+  copies download future updates, so it is left for a 1.1.x release with its
+  own update test.
 - **Code splitting** (`app/src/App.tsx`): these are loaded on first use:
   - Settings, and with it export/import and zod;
   - the family editor (react-hook-form, zod);
@@ -98,6 +102,14 @@ scrolling and animations a little less smooth.
   (`app/src/lib/backup-parse.ts`).
 - **Modern build target** (`es2022`), because WebView2 is an evergreen
   Chromium.
+- **Nothing slow on the main thread, no needless re-renders:**
+  - Rust commands that read or write files run on Tauri's thread pool, so
+    the daily backup's disk flush can't freeze the window.
+  - Update downloads send at most one progress event per whole percent, and
+    only the update dialog listens to them.
+  - The register and title bar are memoised and read the store through
+    selectors; a family's lessons and invoice are computed once per render.
+  - Firing a toast doesn't re-render the component that fired it.
 - **No artificial delay at start-up:** v1.0.1 showed a fixed 800 ms loading
   screen. The saved appearance (colour scheme, corners, light or dark) is now
   applied by a tiny inline script in `app/index.html` before the first paint.
@@ -115,8 +127,9 @@ scrolling and animations a little less smooth.
    ```
    - The perftest config gives the build its own identifier, so it never
      reads or upgrades real user data.
-   - "Usable" means the main screen is rendered. It is detected through the
-     WebView2 DevTools port, with nothing injected into the page.
+   - "Usable" means the register is rendered: its grid, or the empty state
+     when there are no families. It is detected through the WebView2 DevTools
+     port, with nothing injected into the page.
 3. **Errors and CSP:** while a build started with
    `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9229` is
    running, `node scripts/perf/cdp-check.mjs` reports CSP violations,
@@ -128,7 +141,8 @@ scrolling and animations a little less smooth.
 |---|---|---|
 | Installer (MSI) | 6.2 MB | 5.4 MB, before the release-profile tuning |
 | Exe | 15.6 MB | 10.0 MB |
-| Start-up JS (gzip) | 153 KiB (v1.0.1 build) | 137 KiB |
-| Time to usable UI | at least 1.3 s (including the fixed 800 ms loader) | ~0.5 s |
+| Start-up JS (gzip) | 153 KiB (v1.0.1 build) | 114 KiB (2026-09-27) |
+| CSS (gzip) | | 10.9 KiB in all, 7.6 KiB of it at start-up (2026-09-27) |
+| Time to usable UI | at least 1.3 s (including the fixed 800 ms loader) | ~0.5 s, measured before the register redesign; re-measure before release |
 | Idle memory (total) | ~225 MB | ~210 MB |
 | Idle CPU | ~0 | ~0 |

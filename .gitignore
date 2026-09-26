@@ -10,6 +10,9 @@ google-oauth*.json
 # Release build output (scripts/release)
 /release-artifacts/
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # Local Claude Code overrides
 .claude/settings.local.json
 
@@ -19,3 +22,9 @@ Thumbs.db
 
 # Impeccable review captures (screenshots)
 .impeccable/review/
+
+# Claude Code agent worktrees
+.claude/worktrees/
+
+# Impeccable design hook cache
+.impeccable/hook.cache.json

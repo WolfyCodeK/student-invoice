@@ -109,7 +109,7 @@ export const INVARIANTS = [
   {
     id: 'no-secrets-tracked',
     what: 'Tracked files',
-    expected: 'no `.env*`, `*.key`, `client_secret*.json`',
+    expected: 'no `.env*` (except `.env.example`), `*.key`, `*.key.pub`, `client_secret*.json`, `google-oauth*.json` (`scripts/lib/secret-files.mjs`)',
     why: 'Secrets live in `%USERPROFILE%\\.secrets\\student-invoice` (docs/security.md).',
   },
 ]

@@ -4,7 +4,8 @@ import { useAppStore } from "../../stores/app-store";
 import { Dialog, DialogActions, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
 
 export function GmailConnectDialog() {
-  const { gmailConnecting, cancelGmailConnect } = useAppStore();
+  const gmailConnecting = useAppStore((s) => s.gmailConnecting);
+  const cancelGmailConnect = useAppStore((s) => s.cancelGmailConnect);
   return (
     <Dialog open={gmailConnecting} onOpenChange={(open) => !open && void cancelGmailConnect()}>
       <DialogContent>

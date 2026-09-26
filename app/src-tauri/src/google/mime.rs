@@ -25,25 +25,9 @@ fn encode_header_text(value: &str) -> String {
     }
 }
 
-/// A plain address list for the To header: only characters valid in simple
-/// email addresses, commas and spaces. Anything else is rejected upstream.
-pub fn valid_recipients(to: &str) -> bool {
-    !to.is_empty()
-        && to.len() <= 320
-        && to.split(',').all(|a| {
-            let a = a.trim();
-            let mut parts = a.split('@');
-            matches!((parts.next(), parts.next(), parts.next()), (Some(l), Some(d), None) if !l.is_empty() && d.contains('.'))
-                && a.chars().all(|c| c.is_ascii_alphanumeric() || "@.+-_'".contains(c))
-        })
-}
-
 /// The whole message, base64url-encoded for `users.drafts.create`.
-pub fn raw_message(to: Option<&str>, subject: &str, body: &str) -> String {
+pub fn raw_message(subject: &str, body: &str) -> String {
     let mut msg = String::new();
-    if let Some(to) = to.map(header_safe).filter(|t| valid_recipients(t)) {
-        msg.push_str(&format!("To: {to}\r\n"));
-    }
     msg.push_str(&format!(
         "Subject: {}\r\n",
         encode_header_text(&header_safe(subject))
@@ -76,7 +60,6 @@ mod tests {
     #[test]
     fn plain_subject_and_utf8_body() {
         let m = decode(&raw_message(
-            None,
             "Invoice for Piano Lessons",
             "Hi Jo,\n\n8 x £20.00 = £160.00",
         ));
@@ -88,11 +71,7 @@ mod tests {
 
     #[test]
     fn subject_header_injection_is_neutralised() {
-        let m = decode(&raw_message(
-            None,
-            "Invoice\r\nBcc: attacker@example.com",
-            "x",
-        ));
+        let m = decode(&raw_message("Invoice\r\nBcc: attacker@example.com", "x"));
         let head = m.split("\r\n\r\n").next().unwrap();
         assert!(!head.lines().any(|l| l.starts_with("Bcc:")));
         assert!(head.contains("Subject: Invoice Bcc: attacker@example.com"));
@@ -100,7 +79,7 @@ mod tests {
 
     #[test]
     fn non_ascii_subject_is_rfc2047_encoded() {
-        let m = decode(&raw_message(None, "Zoë's lessons £", "x"));
+        let m = decode(&raw_message("Zoë's lessons £", "x"));
         let subject = m.lines().find(|l| l.starts_with("Subject:")).unwrap();
         assert!(subject.starts_with("Subject: =?UTF-8?B?"));
         let b64 = subject
@@ -113,22 +92,8 @@ mod tests {
     }
 
     #[test]
-    fn recipient_only_when_valid() {
-        let m = decode(&raw_message(Some("parent@example.com"), "s", "b"));
-        assert!(m.starts_with("To: parent@example.com\r\n"));
-        let m = decode(&raw_message(
-            Some("x@example.com\r\nBcc: y@evil.com"),
-            "s",
-            "b",
-        ));
-        assert!(!m.contains("To:") && !m.contains("Bcc"));
-        assert!(!valid_recipients("not-an-address"));
-        assert!(valid_recipients("a@b.co, c.d+e@f.org"));
-    }
-
-    #[test]
     fn raw_is_url_safe() {
-        let raw = raw_message(None, "?>?>?>", "ÿÿÿ~~~");
+        let raw = raw_message("?>?>?>", "ÿÿÿ~~~");
         assert!(!raw.contains('+') && !raw.contains('/'));
     }
 }

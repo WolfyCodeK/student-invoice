@@ -82,6 +82,13 @@ async function loadStore(stored: unknown = v101Data) {
 
 const stored = () => JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null')
 
+/** The selected family's invoice, as the register's pupil page shows it. */
+function selectedInvoice({ useAppStore, invoiceFor }: Awaited<ReturnType<typeof loadStore>>) {
+  const s = useAppStore.getState()
+  const template = s.templates.find((t) => t.id === s.currentTemplateId)
+  return template ? invoiceFor(template, s.currentTerm, s.settings.customEmailBodyTemplate) : null
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ now: new Date(2026, 8, 10, 12), toFake: ['Date'] }) // in autumn ½ 2026
   for (const fn of Object.values(backend)) fn.mockReset()
@@ -93,12 +100,12 @@ afterEach(() => vi.useRealTimers())
 
 describe('loading data written by v1.0.1', () => {
   it('keeps every template and setting', async () => {
-    const { useAppStore } = await loadStore()
-    const s = useAppStore.getState()
+    const store = await loadStore()
+    const s = store.useAppStore.getState()
     expect(s.templates).toEqual(v101Data.state.templates)
     expect(s.currentTemplateId).toBe('b2')
     expect(s.settings.customEmailBodyTemplate).toBe('Hi {{recipient}}')
-    expect(s.currentInvoice?.subject).toBe('Invoice for Drum Lessons 1st half autumn term 2026')
+    expect(selectedInvoice(store)?.subject).toBe('Invoice for Drum Lessons 1st half autumn term 2026')
   })
 
   it('fills in settings that did not exist in older versions (deep merge)', async () => {
@@ -168,28 +175,28 @@ describe('migrating older data', () => {
 
 describe('the preview never shows a stale invoice', () => {
   it('updates after the selected template is edited (B6)', async () => {
-    const { useAppStore } = await loadStore()
-    useAppStore.getState().updateTemplate('b2', { instrument: 'guitar' })
-    expect(useAppStore.getState().currentInvoice?.subject).toContain('Guitar')
+    const store = await loadStore()
+    store.useAppStore.getState().updateTemplate('b2', { instrument: 'guitar' })
+    expect(selectedInvoice(store)?.subject).toContain('Guitar')
   })
 
   it('updates after the email body changes (B6)', async () => {
-    const { useAppStore } = await loadStore()
-    useAppStore.getState().updateSettings({ customEmailBodyTemplate: 'Dear {{recipient}}' })
-    expect(useAppStore.getState().currentInvoice?.body).toBe('Dear Jo Parent')
+    const store = await loadStore()
+    store.useAppStore.getState().updateSettings({ customEmailBodyTemplate: 'Dear {{recipient}}' })
+    expect(selectedInvoice(store)?.body).toBe('Dear Jo Parent')
   })
 
   it('clears when the selected template is deleted (B35)', async () => {
-    const { useAppStore } = await loadStore()
-    useAppStore.getState().deleteTemplate('b2')
-    expect(useAppStore.getState().currentInvoice).toBeNull()
+    const store = await loadStore()
+    store.useAppStore.getState().deleteTemplate('b2')
+    expect(selectedInvoice(store)).toBeNull()
   })
 
   it('is empty for a template with an unusable lesson day instead of hanging (B5)', async () => {
     const bad = structuredClone(v101Data)
     bad.state.templates[1].day = 'thursday'
-    const { useAppStore } = await loadStore(bad)
-    expect(useAppStore.getState().currentInvoice).toBeNull()
+    const store = await loadStore(bad)
+    expect(selectedInvoice(store)).toBeNull()
   })
 })
 
@@ -233,40 +240,39 @@ describe('Draft all', () => {
   it('stops at the first connection problem and reports the rest as skipped', async () => {
     const { useAppStore } = await loadStore()
     backend.gmailCreateDraft.mockRejectedValue({ kind: 'ReauthRequired', message: 'Please reconnect Gmail.' })
-    const result = await useAppStore.getState().createAllInvoiceDrafts()
-    expect(result).toEqual({
-      outcomes: [
-        { templateId: 'a1', status: 'failed', message: 'Please reconnect Gmail.' },
-        { templateId: 'b2', status: 'skipped', message: 'Not tried: fix the Gmail connection, then try again.' },
-      ],
-      success: 0,
-      failures: [{ label: 'Sam (Alex Parent)', message: 'Please reconnect Gmail.' }],
-      skipped: 1,
-      nothingToInvoice: [],
-    })
+    const progress = vi.fn()
+    await useAppStore.getState().createAllInvoiceDrafts(progress)
+    expect(progress.mock.calls.map(([outcome]) => outcome)).toEqual([
+      { templateId: 'a1', status: 'saving' },
+      { templateId: 'a1', status: 'failed', message: 'Please reconnect Gmail.' },
+      { templateId: 'b2', status: 'skipped', message: 'Not tried: fix the Gmail connection, then try again.' },
+    ])
+    expect(backend.gmailCreateDraft).toHaveBeenCalledTimes(1)
     expect(useAppStore.getState().drafting).toBe(false)
   })
 
   it('creates one draft per template', async () => {
     const { useAppStore } = await loadStore()
     backend.gmailCreateDraft.mockResolvedValue({ id: 'd' })
-    const result = await useAppStore.getState().createAllInvoiceDrafts()
-    expect(result.success).toBe(2)
+    const progress = vi.fn()
+    await useAppStore.getState().createAllInvoiceDrafts(progress)
+    expect(progress.mock.calls.map(([outcome]) => outcome.status)).toEqual(['saving', 'saved', 'saving', 'saved'])
     expect(backend.gmailCreateDraft).toHaveBeenCalledTimes(2)
   })
 })
 
 describe('unticking a lesson that did not happen (docs/proposals/2026-09-untick-lessons.md)', () => {
   it('takes the lesson off the invoice, is saved, and can be ticked again', async () => {
-    const { useAppStore } = await loadStore()
+    const store = await loadStore()
+    const { useAppStore } = store
     useAppStore.getState().setCurrentTemplate('a1') // Monday, £20
-    expect(useAppStore.getState().currentInvoice?.totalCost).toBe(160)
+    expect(selectedInvoice(store)?.totalCost).toBe(160)
     useAppStore.getState().toggleLesson('a1', '2026-09-21')
-    expect(useAppStore.getState().currentInvoice?.lessonCount).toBe(7)
-    expect(useAppStore.getState().currentInvoice?.totalCost).toBe(140)
+    expect(selectedInvoice(store)?.lessonCount).toBe(7)
+    expect(selectedInvoice(store)?.totalCost).toBe(140)
     expect(stored().state.templates[0].skippedLessonDates).toEqual(['2026-09-21'])
     useAppStore.getState().toggleLesson('a1', '2026-09-21')
-    expect(useAppStore.getState().currentInvoice?.totalCost).toBe(160)
+    expect(selectedInvoice(store)?.totalCost).toBe(160)
     expect(stored().state.templates[0].skippedLessonDates).toEqual([])
   })
 
@@ -280,15 +286,20 @@ describe('unticking a lesson that did not happen (docs/proposals/2026-09-untick-
     expect(stored().state.templates[0].skippedLessonDates).toEqual(['2026-10-26'])
   })
 
-  it('Draft all skips a family with every lesson unticked and names it', async () => {
+  it('Draft all skips a family with every lesson unticked and says so', async () => {
     const { useAppStore } = await loadStore()
     const { lessonDates, lessonDateKey } = await import('../utils/invoice-generator')
     const term = useAppStore.getState().currentTerm!
     for (const d of lessonDates({ day: 'Thursday' }, term)) useAppStore.getState().toggleLesson('b2', lessonDateKey(d))
     backend.gmailCreateDraft.mockResolvedValue({ id: 'd' })
-    const result = await useAppStore.getState().createAllInvoiceDrafts()
-    expect(result).toMatchObject({ success: 1, failures: [], skipped: 0, nothingToInvoice: ['Kim (Jo Parent)'] })
-    expect(result.outcomes.map((o) => o.status)).toEqual(['saved', 'nothing'])
-    await expect(useAppStore.getState().createCurrentInvoiceDraft()).rejects.toThrow('nothing to invoice')
+    const progress = vi.fn()
+    await useAppStore.getState().createAllInvoiceDrafts(progress)
+    expect(progress.mock.calls.map(([outcome]) => outcome)).toEqual([
+      { templateId: 'a1', status: 'saving' },
+      { templateId: 'a1', status: 'saved' },
+      { templateId: 'b2', status: 'nothing' },
+    ])
+    expect(backend.gmailCreateDraft).toHaveBeenCalledTimes(1)
+    await expect(useAppStore.getState().draftTemplate('b2')).rejects.toThrow('nothing to invoice')
   })
 })

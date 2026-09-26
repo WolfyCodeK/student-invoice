@@ -19,10 +19,6 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      // Temporarily a warning: the only offenders are the settings dialogs'
-      // "reset local copy on open" effects, which are rewritten as part of the
-      // bug audit (docs/audits). Restore to 'error' once they are gone.
-      'react-hooks/set-state-in-effect': 'warn',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },

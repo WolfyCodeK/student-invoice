@@ -14,20 +14,21 @@ primitives for dialogs, selects, switches and toasts
 
 | Part | Where |
 |---|---|
-| Shell: title bar, current screen, app-wide dialogs, update checks, start-up data upgrade and backup | `app/src/App.tsx` |
+| Shell: title bar, current screen, app-wide dialogs, start-up data upgrade and backup | `app/src/App.tsx` |
+| Update checks (`useUpdates`) and the update dialog | `app/src/features/updates/` |
 | Navigation and shared actions (`useAppActions`) | `app/src/features/app-context.tsx` |
 | Title bar | `app/src/components/title-bar.tsx` |
 | Register (main screen) | `app/src/features/register/` |
 | Settings | `app/src/features/settings/` |
 | Adding or editing a family | `app/src/features/family/` |
 | What's new and the guided tour | `app/src/features/onboarding/` |
-| Gmail sign-in and update dialogs | `app/src/features/gmail/`, `app/src/features/updates/` |
+| Gmail sign-in dialog and the shared Connect Gmail action | `app/src/features/gmail/` |
 | Feedback form | `app/src/components/feedback-form.tsx` |
 | Crash screen | `app/src/components/error-boundary.tsx` |
-| Styles | `app/src/styles/`: `fonts.css`, `tokens.css`, `base.css`, `app.css` |
+| Styles | `app/src/styles/`: `fonts.css`, `tokens.css`, `base.css`, `app.css` (loaded at start-up); each screen loaded on demand has its own: `features/settings/settings.css`, `features/family/family-editor.css`, `features/onboarding/tour.css` |
+| Display helpers | `app/src/lib/format.ts` (money, lesson counts), `app/src/lib/term-display.ts` (half-term names, ranges and comparisons) |
 
-The screens are `register`, `settings` (optionally scrolled to a section)
-and `edit` (a family, or `null` for a new one). Settings, the editor, the
+The screens are `register`, `settings` and `edit` (a family, or `null` for a new one). Settings, the editor, the
 feedback form and the onboarding pieces load on first use, and are prefetched
 when the app is idle ([performance](performance.md)).
 
@@ -46,7 +47,9 @@ not as Windows chrome.
 - **Right:**
   - Help (starts the tour);
   - Check for updates (a refresh arrow; it becomes an "Update ready" pill
-    when one is available);
+    when one is available). An update the release marks as important opens
+    the update dialog at every start, with "This is an important update";
+    "Not now" still closes it ([architecture](architecture.md#updates));
   - Feedback;
   - Settings;
   - then a divider and thin minimise, maximise/restore and close buttons.
@@ -176,7 +179,9 @@ as an attribute on `<html>`, which `app/src/styles/tokens.css` reads.
 - **No flash:** `app/index.html` applies the saved values before the first
   paint.
 - **One place for all three:** `app/src/lib/appearance.ts` reads, applies
-  and saves them, and `setAppearance` in the store changes them.
+  and saves them. They are applied once per change: by `app/index.html` at
+  start-up, by `setAppearance` in the store when the user picks one, and by
+  `replaceAllData` after an import or restore.
 - **Fonts:** bundled in `app/src/assets/fonts/` (SIL OFL, Latin and Latin
   Extended only). A face downloads only when it's used, so the Navy and amber
   fonts load only with that scheme.
@@ -186,10 +191,11 @@ selection colour, focus rings and scrollbars are themed too.
 
 ## Toasts
 
-`app/src/hooks/use-toast.ts` is the toast store, showing one toast at a
-time. `App.tsx` renders it with the styled Radix toast in
-`components/ui/toast.tsx`. Toasts close after 5 seconds, which is Radix
-Toast's default. The store's own removal timer is disabled (bug audit B34).
+`app/src/hooks/use-toast.ts` holds the current toast: one at a time, a new
+one replacing the last. Code shows one by calling `toast()` directly, so
+firing a toast doesn't re-render the caller. `components/toaster.tsx`
+renders it with the styled Radix toast in `components/ui/toast.tsx`. Toasts
+close after 5 seconds, which is Radix Toast's default (bug audit B34).
 
 ## Errors
 

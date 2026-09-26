@@ -26,14 +26,15 @@ for ($i = 1; $i -le $Runs; $i++) {
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $p = Start-Process -FilePath $Exe -PassThru
   $usable = $null
-  # "Usable" = the main screen's text is on screen (read via DevTools, no injection).
+  # "Usable" = the register is on screen: its grid, or the empty state when
+  # there are no families yet (read via DevTools, no injection).
   while ($sw.Elapsed.TotalSeconds -lt 30 -and -not $usable) {
     try {
       $pages = Invoke-RestMethod http://127.0.0.1:9229/json -TimeoutSec 1 | Where-Object { $_.type -eq 'page' -and $_.url -like 'http://tauri.localhost*' }
       if ($pages) {
         $ws = New-Object System.Net.WebSockets.ClientWebSocket
         $ws.ConnectAsync([Uri]$pages[0].webSocketDebuggerUrl, [Threading.CancellationToken]::None).Wait()
-        $msg = [Text.Encoding]::UTF8.GetBytes('{"id":1,"method":"Runtime.evaluate","params":{"expression":"document.body.innerText.includes(''Email Preview'')","returnByValue":true}}')
+        $msg = [Text.Encoding]::UTF8.GetBytes('{"id":1,"method":"Runtime.evaluate","params":{"expression":"document.querySelector(''section[aria-label=Register] :is([role=table], h2)'') !== null","returnByValue":true}}')
         $ws.SendAsync([ArraySegment[byte]]$msg, 'Text', $true, [Threading.CancellationToken]::None).Wait()
         $buf = New-Object byte[] 4096
         $r = $ws.ReceiveAsync([ArraySegment[byte]]$buf, [Threading.CancellationToken]::None).Result

@@ -1,19 +1,17 @@
 #!/usr/bin/env node
 // Enforces scripts/invariants.config.mjs. Exit code 1 lists every violation.
 // Usage: node scripts/check-invariants.mjs
-import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { INVARIANTS, UPDATER_ENDPOINT, UPDATER_PUBKEY } from './invariants.config.mjs'
-import { repoRoot } from './lib/repo.mjs'
+import { gitLines, readRepoFile, repoRoot } from './lib/repo.mjs'
+import { secretFileKinds } from './lib/secret-files.mjs'
 
 const root = repoRoot()
-const read = (p) => readFileSync(join(root, p), 'utf8')
+const read = (p) => readRepoFile(p, root)
 const conf = JSON.parse(read('app/src-tauri/tauri.conf.json'))
 const cargo = read('app/src-tauri/Cargo.toml')
 const pkg = JSON.parse(read('app/package.json'))
 const store = read('app/src/stores/app-store.ts')
-const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
+const tracked = gitLines(['ls-files'], root)
 
 const cargoPackage = (key) => cargo.match(new RegExp(`^\\[package\\][\\s\\S]*?^${key}\\s*=\\s*"([^"]*)"`, 'm'))?.[1]
 
@@ -66,7 +64,7 @@ const checks = {
   },
   'theme-key': () => {
     const files = tracked.filter((f) => /^app\/src\/.*\.(ts|tsx)$/.test(f))
-    return files.some((f) => read(f).includes('"student-invoice-theme"') || read(f).includes("'student-invoice-theme'"))
+    return files.some((f) => /(["'])student-invoice-theme\1/.test(read(f)))
       ? null
       : 'theme storage key student-invoice-theme not found in app/src'
   },
@@ -75,12 +73,7 @@ const checks = {
     return new Set(Object.values(v)).size === 1 ? null : `versions differ: ${JSON.stringify(v)}`
   },
   'no-secrets-tracked': () => {
-    const bad = tracked.filter((f) => {
-      const base = f.split('/').pop()
-      return /^\.env(\..*)?$/.test(base) && base !== '.env.example'
-        ? true
-        : /\.key(\.pub)?$/.test(base) || /^client_secret.*\.json$/i.test(base) || /^google-oauth.*\.json$/i.test(base)
-    })
+    const bad = tracked.filter((f) => secretFileKinds(f).length > 0)
     return bad.length ? `secret-like files are tracked: ${bad.join(', ')}` : null
   },
 }

@@ -31,30 +31,35 @@ The feedback form calls api.emailjs.com directly from the webview.
   styles in `styles/`. See [UI](ui.md).
 - `features/app-context.tsx` gives every screen navigation and shared
   actions. `lib/appearance.ts` handles the colour scheme, corners and light
-  or dark.
+  or dark (and the reduced-motion check). `lib/format.ts` formats money and
+  lesson counts for display, and `lib/term-display.ts` names and compares
+  half-terms for the screens.
 - `stores/app-store.ts`: the single zustand store. It holds templates, settings,
-  the current term and invoice, Gmail connection state, and the update
+  the current term, Gmail connection state and the drafting and install
   actions, and it persists part of itself to localStorage. See
-  [data model](data-model.md).
+  [data model](data-model.md). Invoices are never stored: `invoiceFor()`
+  builds a family's invoice from its template and the current term whenever
+  a screen or a draft needs it (the register memoises them per render).
 - `utils/terms.ts` and `utils/invoice-generator.ts`: pure, tested billing logic.
   See [billing](billing.md).
 - `types/index.ts`: shared domain types.
 - **Loaded on first use:** Settings, the family editor, the feedback form,
   What's new and the tour are code-split (`React.lazy`), and the first three
   are prefetched when idle. Backup
-  parsing, which needs zod, is imported on demand. See
+  parsing, which needs zod, is only imported by the Settings screen's Data
+  section, so it loads with that screen. See
   [performance](performance.md).
 - `lib/backend.ts`: typed wrappers for every Rust command and the shared
   `{ kind, message }` error type. The UI calls these instead of `invoke`.
 
 **Start-up side effects:**
-- **When the store module loads** (bottom of `app/src/stores/app-store.ts`):
-  it loads the stored state, computes the current term (which also builds the
-  current invoice), and asks Rust for the Gmail status.
+- **When the store module loads** (`app/src/stores/app-store.ts`): it loads
+  the stored state, sets the current term from today's date, and asks Rust
+  for the Gmail status.
 - **When `App` mounts:** it upgrades data from older versions, after a backup
   if there is data to protect (`migrateStoredData`), takes the daily automatic backup
-  (`ensureDailyBackup`), starts listening for update progress, and checks for
-  updates. Once the data is ready, it shows What's new, and the tour after
+  (`ensureDailyBackup`) and checks for updates (`features/updates/use-updates.ts`).
+  Once the data is ready, it shows What's new, and the tour after
   1.1.0, if this PC hasn't seen them yet.
 
 ## Backend (`app/src-tauri`)
@@ -71,7 +76,10 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `src/preferences.rs` holds per-PC preferences read before the window
   exists (`preferences.json`).
 - `src/commands.rs` holds every command the UI can call. They validate input
-  and delegate.
+  and delegate. Commands that touch files are declared
+  `#[tauri::command(async)]`, so they run on Tauri's thread pool instead of
+  the main thread: a slow disk or antivirus scan can't freeze the window
+  (dragging, resizing) or hold up other calls.
 - `src/error.rs` defines `AppError`, which reaches the UI as `{ kind, message }`.
 - `src/google/` covers Google sign-in, token storage in Windows Credential
   Manager, and Gmail drafts. See [Gmail](gmail.md).
@@ -95,24 +103,24 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 
 | Command | Arguments | Returns | Purpose | Defined at |
 |---|---|---|---|---|
-| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:100` |
-| `create_auto_backup` | `reason: BackupReason`<br>`content: String` | `AppResult<BackupInfo>` | Saves an automatic backup in the app's backups folder. | `src/commands.rs:131` |
-| `export_backup` | `content: String`<br>`suggested_name: String` | `AppResult<Option<String>>` | Asks where to save and writes an export of all data; returns the file name, or null if cancelled. | `src/commands.rs:115` |
-| `get_preferences` | — | `Preferences` | Device preferences (e.g. low memory mode). | `src/commands.rs:159` |
-| `gmail_cancel_connect` | — | `()` | Cancels a sign-in that is waiting for the browser. | `src/commands.rs:31` |
-| `gmail_clear_custom_client` | — | `AppResult<GmailStatus>` | Goes back to the built-in Google OAuth client. | `src/commands.rs:94` |
-| `gmail_connect` | — | `AppResult<GmailStatus>` | Signs in with Google in the browser; resolves when finished, cancelled or timed out. | `src/commands.rs:25` |
-| `gmail_create_draft` | `subject: String`<br>`body: String`<br>`to: Option<String>` | `AppResult<DraftCreated>` | Saves one invoice as a Gmail draft (optionally addressed to `to`). | `src/commands.rs:43` |
-| `gmail_disconnect` | — | `AppResult<GmailStatus>` | Revokes Gmail access and forgets the account on this PC. | `src/commands.rs:37` |
-| `gmail_set_custom_client` | `client_id: String`<br>`client_secret: String` | `AppResult<GmailStatus>` | Uses the user's own Google OAuth client instead of the built-in one (advanced). | `src/commands.rs:67` |
-| `gmail_status` | — | `AppResult<GmailStatus>` | Gmail connection status (connected account, whether Gmail is set up). | `src/commands.rs:19` |
-| `import_backup` | — | `AppResult<Option<String>>` | Asks for a backup file and returns its contents, or null if cancelled. | `src/commands.rs:125` |
-| `install_update` | — | `AppResult<()>` | Downloads and installs the update found by the last check; the app then exits. | `src/commands.rs:109` |
-| `list_backups` | — | `AppResult<Vec<BackupInfo>>` | Lists automatic backups, newest first. | `src/commands.rs:141` |
-| `open_backups_folder` | — | `AppResult<()>` | Opens the automatic backups folder in File Explorer. | `src/commands.rs:153` |
-| `read_backup` | `name: String` | `AppResult<String>` | Reads one automatic backup by name. | `src/commands.rs:147` |
-| `restart_app` | — | `()` | Restarts the app (used to apply low memory mode). | `src/commands.rs:174` |
-| `set_low_memory_mode` | `enabled: bool` | `AppResult<Preferences>` | Turns low memory mode on or off; takes effect after a restart. | `src/commands.rs:165` |
+| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:90` |
+| `create_auto_backup` | `reason: BackupReason`<br>`content: String` | `AppResult<BackupInfo>` | Saves an automatic backup in the app's backups folder. | `src/commands.rs:121` |
+| `export_backup` | `content: String`<br>`suggested_name: String` | `AppResult<Option<String>>` | Asks where to save and writes an export of all data; returns the file name, or null if cancelled. | `src/commands.rs:105` |
+| `get_preferences` | — | `Preferences` | Device preferences (e.g. low memory mode). | `src/commands.rs:149` |
+| `gmail_cancel_connect` | — | `()` | Cancels a sign-in that is waiting for the browser. | `src/commands.rs:30` |
+| `gmail_clear_custom_client` | — | `AppResult<GmailStatus>` | Goes back to the built-in Google OAuth client. | `src/commands.rs:84` |
+| `gmail_connect` | — | `AppResult<GmailStatus>` | Signs in with Google in the browser; resolves when finished, cancelled or timed out. | `src/commands.rs:24` |
+| `gmail_create_draft` | `subject: String`<br>`body: String` | `AppResult<DraftCreated>` | Saves one invoice as a Gmail draft. | `src/commands.rs:42` |
+| `gmail_disconnect` | — | `AppResult<GmailStatus>` | Revokes Gmail access and forgets the account on this PC. | `src/commands.rs:36` |
+| `gmail_set_custom_client` | `client_id: String`<br>`client_secret: String` | `AppResult<GmailStatus>` | Uses the user's own Google OAuth client instead of the built-in one (advanced). | `src/commands.rs:57` |
+| `gmail_status` | — | `AppResult<GmailStatus>` | Gmail connection status (connected account, whether Gmail is set up). | `src/commands.rs:18` |
+| `import_backup` | — | `AppResult<Option<String>>` | Asks for a backup file and returns its contents, or null if cancelled. | `src/commands.rs:115` |
+| `install_update` | — | `AppResult<()>` | Downloads and installs the update found by the last check; the app then exits. | `src/commands.rs:99` |
+| `list_backups` | — | `AppResult<Vec<BackupInfo>>` | Lists automatic backups, newest first. | `src/commands.rs:131` |
+| `open_backups_folder` | — | `AppResult<()>` | Opens the automatic backups folder in File Explorer. | `src/commands.rs:143` |
+| `read_backup` | `name: String` | `AppResult<String>` | Reads one automatic backup by name. | `src/commands.rs:137` |
+| `restart_app` | — | `()` | Restarts the app (used to apply low memory mode). | `src/commands.rs:164` |
+| `set_low_memory_mode` | `enabled: bool` | `AppResult<Preferences>` | Turns low memory mode on or off; takes effect after a restart. | `src/commands.rs:155` |
 <!-- /GEN:tauri-commands -->
 
 ### Capabilities (permissions granted to the window)
@@ -155,21 +163,29 @@ These live in `app/src-tauri/src/updates.rs`.
 
 1. **On start-up** the UI calls `check_for_updates`. This asks GitHub for
    `latest.json`, with a 60-second timeout, and remembers the update it found.
-   If a newer version exists, the "Updates" button is highlighted.
-2. **When the user clicks it**, the dialog shows the version and notes.
-3. **"Install Update"** calls `install_update`, which installs exactly the
+   If a newer version exists, the title bar shows "Update ready".
+2. **When the user clicks it**, the dialog (`features/updates/update-dialog.tsx`)
+   shows the version and notes.
+3. **"Install update"** calls `install_update`, which installs exactly the
    update that was shown:
-   - it downloads the MSI and sends `update://progress` events for the
-     progress text;
+   - it downloads the MSI and sends `update://progress` events, which the
+     dialog shows as a progress bar. Events are throttled to one per whole
+     percent (or one per 100 ms when the size is unknown), plus the final
+     state, so a download doesn't flood the UI with hundreds of events;
    - it verifies the minisign signature against the public key in
      `tauri.conf.json`;
    - it runs the MSI with `msiexec /passive`, and the app exits.
 4. **Development builds** skip the check (`disabledInDev`), so they can
    never install a production MSI.
-5. **Minimum supported version:** if a future `latest.json` contains
-   `minimumSupportedVersion`, the check reports `required: true`. This is a
-   dormant safety net for security emergencies, see
-   [decision 0002](decisions/0002-no-forced-updates.md).
+5. **Minimum supported version:** if `latest.json` contains a
+   `minimumSupportedVersion` above the running version, the check reports
+   `required: true` (`below_minimum`, unit-tested; anything unreadable counts
+   as not required). The update dialog then opens at every start, saying it's
+   an important update. "Not now" still works, so nothing is forced. This is
+   a safety net for security emergencies only: see
+   [decision 0002](decisions/0002-no-forced-updates.md), and
+   [release](release.md#emergency-mark-old-versions-as-unsupported) for how
+   to set it.
 
 The release side is described in [release](release.md), and the rules that
 keep old installs updatable are in [compatibility](compatibility.md).

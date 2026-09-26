@@ -22,8 +22,13 @@ Rules:
 - Claude Code is denied read access to `~/.secrets/**` in the owner's user
   settings.
 - Commits are scanned by `scripts/check-secrets.mjs` in the pre-commit hook
-  and in CI, and by gitleaks in CI. GitHub secret scanning and push
-  protection are enabled on the repository.
+  and in CI, and by gitleaks in CI. The scan reads every file's committed or
+  staged content in one `git cat-file` call, with file names listed
+  NUL-separated so unusual names are scanned too. The file names that must
+  never be committed (`.env*`, key files, Google credential files) are one
+  list, `scripts/lib/secret-files.mjs`, shared with the `no-secrets-tracked`
+  invariant. GitHub secret scanning and push protection are enabled on the
+  repository.
 
 **If a secret leaks:**
 

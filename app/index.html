@@ -6,11 +6,17 @@
     <title>Student Invoice</title>
     <script>
       // Apply the saved appearance before the first paint, so there's no
-      // flash of the wrong colours (docs/ui.md "Appearance").
+      // flash of the wrong colours (docs/ui.md "Appearance"). This is the only
+      // place it is applied at start-up.
       try {
         var root = document.documentElement;
         var mode = localStorage.getItem("student-invoice-theme");
-        var settings = (JSON.parse(localStorage.getItem("student-invoice-store") || "{}").state || {}).settings || {};
+        var settings = {};
+        try {
+          settings = (JSON.parse(localStorage.getItem("student-invoice-store") || "{}").state || {}).settings || {};
+        } catch (e) {
+          // Unreadable stored data: the theme key still applies.
+        }
         root.dataset.mode = mode === "dark" || mode === "light" ? mode : settings.theme === "dark" ? "dark" : "light";
         root.dataset.scheme = settings.colourScheme === "navy-amber" ? "navy-amber" : "student-invoice";
         root.dataset.corners = settings.corners === "rounded" ? "rounded" : "square";

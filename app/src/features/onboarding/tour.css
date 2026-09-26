@@ -1,5 +1,52 @@
-/* Guided tour: small additions to the tour styles in styles/app.css. Tokens only. */
+/* Guided tour: all of its styles. Loaded with the tour, so after
+   styles/app.css. Tokens only (styles/tokens.css). */
 
+.tour-block {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+.tour-spot {
+  position: fixed;
+  z-index: 91;
+  border-radius: var(--r-panel);
+  box-shadow: 0 0 0 3px var(--focus-on-cover), 0 0 0 200vmax var(--tour-scrim);
+  pointer-events: none;
+}
+/* Nothing on screen to highlight: dim everything, draw no ring. */
+.tour-spot.is-empty {
+  box-shadow: 0 0 0 200vmax var(--tour-scrim);
+}
+.tour-card {
+  position: fixed;
+  z-index: 92;
+  width: 340px;
+  /* Never wider than the window (the layout keeps a 12 px margin). */
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px 16px;
+  background: var(--page);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-3);
+  animation: fade-in 0.18s ease-out;
+}
+.tour-step {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--head-ink);
+  font-variant-numeric: tabular-nums;
+}
+.tour-card h2 {
+  font-size: var(--fs-l);
+  line-height: 24px;
+}
+.tour-card p {
+  font-size: var(--fs-m);
+  line-height: 1.5;
+}
 /* The progress dots and "2 of 7" share one line, under the step text. */
 .tour-top {
   display: flex;
@@ -7,18 +54,28 @@
   justify-content: space-between;
   gap: 12px;
 }
-
-/* Never wider than the window (the layout keeps a 12 px margin). */
-.tour-card {
-  max-width: calc(100vw - 24px);
+.tour-dots {
+  display: flex;
+  gap: 5px;
 }
-
-/* Nothing on screen to highlight: dim everything, draw no ring. */
-.tour-spot.is-empty {
-  box-shadow: 0 0 0 200vmax var(--tour-scrim);
+.tour-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rule-strong);
 }
-
+.tour-dots i.is-on {
+  background: var(--head-ink);
+}
+.tour-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+}
 /* "Skip tour" is a link, but still an easy target. */
 .tour-bar .btn--link {
   min-height: 32px;
+  margin-right: auto;
+  font-size: var(--fs-s);
 }

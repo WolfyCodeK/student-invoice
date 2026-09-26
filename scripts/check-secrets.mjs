@@ -4,8 +4,8 @@
 // Matches are reported by file and line with the value masked, never printed.
 //
 // Usage: node scripts/check-secrets.mjs --staged | --all
-import { execFileSync } from 'node:child_process'
-import { repoRoot, gitLines } from './lib/repo.mjs'
+import { repoRoot, gitObjects, gitPaths } from './lib/repo.mjs'
+import { secretFileKinds } from './lib/secret-files.mjs'
 
 const PATTERNS = [
   ['Google OAuth client secret', /GOCSPX-[A-Za-z0-9_-]{10,}/],
@@ -21,14 +21,7 @@ const PATTERNS = [
   ['Hard-coded client secret', /client_?secret["']?\s*[:=]\s*["'][A-Za-z0-9_-]{16,}["']/i],
 ]
 
-const BLOCKED_FILES = [
-  [/(^|\/)\.env(\.(?!example$)[^/]*)?$/, '.env file'],
-  [/\.key(\.pub)?$/, 'key file'],
-  [/(^|\/)client_secret[^/]*\.json$/i, 'Google client secret file'],
-  [/(^|\/)google-oauth[^/]*\.json$/i, 'OAuth credentials file'],
-]
-
-// This file and the invariants config legitimately contain the patterns/pubkey.
+// This file contains the patterns it looks for, so its content isn't scanned.
 const ALLOW_FILES = new Set(['scripts/check-secrets.mjs'])
 
 const mode = process.argv[2]
@@ -40,24 +33,19 @@ if (mode !== '--staged' && mode !== '--all') {
 const root = repoRoot()
 const files =
   mode === '--staged'
-    ? gitLines(['diff', '--cached', '--name-only', '--diff-filter=ACMR'], root)
-    : gitLines(['ls-files'], root)
+    ? gitPaths(['diff', '--cached', '--name-only', '--diff-filter=ACMR'], root)
+    : gitPaths(['ls-files'], root)
+
+// The staged (`:path`) or committed (`HEAD:path`) version of every file, in one git call.
+const object = (file) => (mode === '--staged' ? `:${file}` : `HEAD:${file}`)
+const contents = gitObjects(files.filter((f) => !ALLOW_FILES.has(f)).map(object), root)
 
 const findings = []
 for (const file of files) {
-  for (const [re, label] of BLOCKED_FILES) if (re.test(file)) findings.push(`${file}: ${label} must not be committed`)
-  if (ALLOW_FILES.has(file)) continue
-  let content
-  try {
-    content = execFileSync('git', ['show', mode === '--staged' ? `:${file}` : `HEAD:${file}`], {
-      cwd: root,
-      encoding: 'buffer',
-      maxBuffer: 64 * 1024 * 1024,
-    })
-  } catch {
-    continue // e.g. file not in HEAD yet in --all mode
-  }
-  if (content.includes(0)) continue // binary
+  for (const kind of secretFileKinds(file)) findings.push(`${file}: ${kind} must not be committed`)
+  const content = contents.get(object(file))
+  // Missing when allow-listed or not in HEAD yet (--all); binaries are skipped.
+  if (!content || content.includes(0)) continue
   const lines = content.toString('utf8').split('\n')
   lines.forEach((line, i) => {
     for (const [label, re] of PATTERNS) {

@@ -8,21 +8,13 @@ import { format } from "date-fns";
 import { Check, Plus, Trash2 } from "lucide-react";
 import type { InvoiceTemplate } from "../../types";
 import { useAppStore } from "../../stores/app-store";
-import { useToast } from "../../hooks/use-toast";
+import { toast } from "../../hooks/use-toast";
+import { capitalise, lessonsWord, money } from "../../lib/format";
+import { WEEKDAYS } from "../../lib/schema/constants";
 import { useAppActions } from "../app-context";
-import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import {
-  capitalise,
-  DAYS,
-  familySchema,
-  formValuesFrom,
-  instrumentOptions,
-  previewFor,
-  toFields,
-  type FamilyFormValues,
-  type FamilyPreview,
-} from "./family-form";
+import { DeleteFamilyDialog } from "./delete-family-dialog";
+import { familySchema, formValuesFrom, instrumentOptions, previewFor, toFields, type FamilyFormValues, type FamilyPreview } from "./family-form";
 import "./family-editor.css";
 
 const BAND_LINE = "One family per invoice: the parent you greet and the pupils you teach them.";
@@ -33,15 +25,13 @@ export function FamilyEditor() {
   const template = useAppStore((s) => (templateId === null ? null : (s.templates.find((t) => t.id === templateId) ?? null)));
 
   if (templateId !== null && template === null) return <MissingFamily onBack={back} />;
-  return <FamilyForm key={templateId ?? "new"} template={template} />;
+  return <FamilyForm template={template} />;
 }
 
 function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
   const { back } = useAppActions();
-  const { toast } = useToast();
   const addTemplate = useAppStore((s) => s.addTemplate);
   const updateTemplate = useAppStore((s) => s.updateTemplate);
-  const deleteTemplate = useAppStore((s) => s.deleteTemplate);
   const setCurrentTemplate = useAppStore((s) => s.setCurrentTemplate);
   const currentTerm = useAppStore((s) => s.currentTerm);
 
@@ -91,14 +81,6 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
       toast({ title: "Saved", description: `${fields.recipient} is on the register.` });
     }
     back();
-  };
-
-  const onDelete = () => {
-    if (!template) return;
-    setConfirmingDelete(false);
-    back();
-    deleteTemplate(template.id);
-    toast({ title: "Deleted", description: `${template.recipient}'s details were removed.` });
   };
 
   return (
@@ -217,7 +199,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
                           <SelectValue placeholder="Lesson day" />
                         </SelectTrigger>
                         <SelectContent>
-                          {DAYS.map((d) => (
+                          {WEEKDAYS.map((d) => (
                             <SelectItem key={d} value={d}>
                               {d}
                             </SelectItem>
@@ -289,27 +271,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
         <InvoicePreview preview={preview} values={values} />
       </div>
 
-      {template && (
-        <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
-          <DialogContent>
-            <DialogTitle>Delete {template.recipient}'s details?</DialogTitle>
-            <DialogDescription>
-              This removes {template.recipient} ({template.students}) from the register. It can't be undone here, but your automatic backups keep
-              a copy.
-            </DialogDescription>
-            <DialogActions>
-              <DialogClose asChild>
-                <button type="button" className="btn btn--secondary">
-                  Cancel
-                </button>
-              </DialogClose>
-              <button type="button" className="btn btn--danger-solid" onClick={onDelete}>
-                <Trash2 aria-hidden="true" /> Delete
-              </button>
-            </DialogActions>
-          </DialogContent>
-        </Dialog>
-      )}
+      <DeleteFamilyDialog family={template} open={confirmingDelete} onOpenChange={setConfirmingDelete} beforeDelete={back} />
     </>
   );
 }
@@ -322,8 +284,6 @@ function FieldError({ id, message }: { id: string; message?: string }) {
     </p>
   );
 }
-
-const lessonsWord = (n: number) => (n === 1 ? "lesson" : "lessons");
 
 /** "This half-term": the family's invoice as it would be with these details. */
 function InvoicePreview({ preview, values }: { preview: FamilyPreview; values: FamilyFormValues }) {
@@ -385,7 +345,7 @@ function ReadyPreview({ preview, values }: { preview: Extract<FamilyPreview, { k
         ) : (
           <>
             <div className="sum">
-              {lessonCount} {lessonsWord(lessonCount)} × £{cost.toFixed(2)} = <b>£{totalCost.toFixed(2)}</b>
+              {lessonCount} {lessonsWord(lessonCount)} × {money(cost)} = <b>{money(totalCost)}</b>
             </div>
             {unticked > 0 && (
               <div className="sum-note">

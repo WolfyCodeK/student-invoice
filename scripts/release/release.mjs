@@ -13,11 +13,12 @@
 //       Push main + tag v<version>, create the GitHub release as a draft with
 //       the CHANGELOG section as notes, verify assets, publish it as latest,
 //       then verify what installed apps will download.
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { repoRoot } from '../lib/repo.mjs'
 import {
-  REPO, assetUrl, buildEnv, capture, changelogSection, compareSemver, die, isSemver, msiName, run, step, v101CompatError,
+  REPO, VERSION_FILES, assetUrl, buildEnv, bumpVersion, capture, changelogSection, collectSignedMsi, compareSemver, die, findSignedMsi,
+  isSemver, msiName, run, step, v101CompatError,
 } from './lib.mjs'
 import { UPDATER_ENDPOINT } from '../invariants.config.mjs'
 import { INSTALLER_BUDGET_MIB } from '../perf/budgets.mjs'
@@ -29,8 +30,9 @@ if (!['prepare', 'rc', 'publish'].includes(cmd) || !version || !isSemver(version
 }
 const tag = `v${version}`
 const outDir = join(root, 'release-artifacts', tag)
-const readJson = (p) => JSON.parse(readFileSync(join(root, p), 'utf8'))
-const writeJson = (p, obj) => writeFileSync(join(root, p), JSON.stringify(obj, null, 2) + '\n')
+/** The release assets, as named in outDir and on GitHub. */
+const ASSETS = [msiName(version), `${msiName(version)}.sig`, 'latest.json']
+const [MSI, SIG, LATEST] = ASSETS
 
 function changelogFor(v) {
   const section = changelogSection(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), v)
@@ -50,7 +52,7 @@ if (cmd === 'prepare') {
   if (capture('git', ['rev-list', '--count', 'HEAD..origin/main'], { cwd: root }) !== '0') die('Local main is behind origin/main')
   if (capture('git', ['tag', '-l', tag], { cwd: root })) die(`Tag ${tag} already exists locally`)
   if (capture('git', ['ls-remote', '--tags', 'origin', tag], { cwd: root })) die(`Tag ${tag} already exists on origin`)
-  const current = readJson('app/package.json').version
+  const current = JSON.parse(readFileSync(join(root, 'app/package.json'), 'utf8')).version
   if (compareSemver(version, current) <= 0) die(`${version} is not greater than the current version ${current}`)
   changelogFor(version)
   capture('gh', ['auth', 'status'])
@@ -70,59 +72,31 @@ if (cmd === 'prepare') {
   run('cargo', ['test'], { cwd: join(root, 'app/src-tauri') })
 
   step(`Bump version ${current} → ${version}`)
-  const pkg = readJson('app/package.json')
-  pkg.version = version
-  writeJson('app/package.json', pkg)
-  const conf = readJson('app/src-tauri/tauri.conf.json')
-  conf.version = version
-  writeJson('app/src-tauri/tauri.conf.json', conf)
-  for (const [file, re] of [
-    ['app/src-tauri/Cargo.toml', /(\[package\][\s\S]*?\nversion = ")[^"]+(")/],
-    ['app/src-tauri/Cargo.lock', /(\[\[package\]\]\nname = "student-invoice-tauri"\nversion = ")[^"]+(")/],
-  ]) {
-    const text = readFileSync(join(root, file), 'utf8')
-    if (!re.test(text)) die(`could not find the version in ${file}`)
-    writeFileSync(join(root, file), text.replace(re, `$1${version}$2`))
-  }
+  bumpVersion(root, version)
   run('node', ['scripts/check-invariants.mjs'], { cwd: root })
   run('node', ['scripts/docs/generate.mjs'], { cwd: root })
 
   step('Build signed MSI')
   run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env })
-  const bundleDir = join(root, 'app/src-tauri/target/release/bundle/msi')
-  const built = readdirSync(bundleDir).find((f) => f.endsWith(`_${version}_x64_en-US.msi`))
-  if (!built || !existsSync(join(bundleDir, `${built}.sig`))) die(`signed MSI for ${version} not found in ${bundleDir}`)
-  const msiMiB = statSync(join(bundleDir, built)).size / 1024 / 1024
+  const msi = findSignedMsi(root, version)
+  const msiMiB = statSync(msi).size / 1024 / 1024
   if (msiMiB > INSTALLER_BUDGET_MIB) die(`MSI is ${msiMiB.toFixed(2)} MiB, over the ${INSTALLER_BUDGET_MIB} MiB budget (docs/performance.md)`)
   console.log(`MSI size ${msiMiB.toFixed(2)} MiB (budget ${INSTALLER_BUDGET_MIB} MiB)`)
 
   step('Collect artifacts and write latest.json')
-  mkdirSync(outDir, { recursive: true })
-  copyFileSync(join(bundleDir, built), join(outDir, msiName(version)))
-  copyFileSync(join(bundleDir, `${built}.sig`), join(outDir, `${msiName(version)}.sig`))
-  const signature = readFileSync(join(outDir, `${msiName(version)}.sig`), 'utf8').trim()
-  const { summary } = changelogFor(version)
-  const platform = { signature, url: assetUrl(tag, msiName(version)) }
-  const latest = {
-    version,
-    notes: summary,
-    pub_date: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-    // updater ≤2.9 (v1.0.1) reads only the generic key; newer updaters prefer the -msi key.
-    platforms: { 'windows-x86_64': platform, 'windows-x86_64-msi': platform },
-  }
-  const err = v101CompatError(latest.version, latest.notes)
-  if (err) die(err)
-  writeFileSync(join(outDir, 'latest.json'), JSON.stringify(latest, null, 2) + '\n')
+  const { summary, minimumSupportedVersion } = changelogFor(version)
+  if (minimumSupportedVersion) console.log(`Versions below ${minimumSupportedVersion} will show this update as important.`)
+  collectSignedMsi(msi, outDir, { version, notes: summary, url: assetUrl(tag, MSI), minimumSupportedVersion })
 
   step('Commit the version bump (not pushed)')
-  run('git', ['add', 'app/package.json', 'app/src-tauri/tauri.conf.json', 'app/src-tauri/Cargo.toml', 'app/src-tauri/Cargo.lock', 'docs'], { cwd: root })
+  run('git', ['add', ...VERSION_FILES, 'docs'], { cwd: root })
   run('git', ['commit', '-m', `Release ${tag}`, '-m', 'Docs-Skip: all -- version bump only'], { cwd: root })
   console.log(`\n✔ Prepared ${tag} in ${outDir}. Next: rc ${version} 1 (update test), then publish ${version}.`)
 }
 
 // ---------------------------------------------------------------------------
 function requireArtifacts() {
-  for (const f of [msiName(version), `${msiName(version)}.sig`, 'latest.json']) {
+  for (const f of ASSETS) {
     if (!existsSync(join(outDir, f))) die(`missing ${f} in ${outDir} — run prepare first`)
   }
 }
@@ -133,15 +107,15 @@ if (cmd === 'rc') {
   const rcTag = `${tag}-rc.${rcNumber}`
   step(`Upload artifacts to pre-release ${rcTag}`)
   // The RC's latest.json must point at the RC's asset URLs.
-  const latest = JSON.parse(readFileSync(join(outDir, 'latest.json'), 'utf8'))
-  for (const p of Object.values(latest.platforms)) p.url = assetUrl(rcTag, msiName(version))
+  const latest = JSON.parse(readFileSync(join(outDir, LATEST), 'utf8'))
+  for (const p of Object.values(latest.platforms)) p.url = assetUrl(rcTag, MSI)
   const rcDir = join(outDir, rcTag)
   mkdirSync(rcDir, { recursive: true })
-  writeFileSync(join(rcDir, 'latest.json'), JSON.stringify(latest, null, 2) + '\n')
+  writeFileSync(join(rcDir, LATEST), JSON.stringify(latest, null, 2) + '\n')
   run('gh', ['release', 'create', rcTag, '--repo', REPO, '--prerelease', '--latest=false', '--target', capture('git', ['rev-parse', 'HEAD'], { cwd: root }),
     '--title', `Student Invoice ${version} (release candidate ${rcNumber})`, '--notes', 'Release candidate for update testing. Not offered to installed apps.',
-    join(outDir, msiName(version)), join(outDir, `${msiName(version)}.sig`), join(rcDir, 'latest.json')])
-  console.log(`\n✔ RC uploaded. Test latest.json: ${assetUrl(rcTag, 'latest.json')}`)
+    join(outDir, MSI), join(outDir, SIG), join(rcDir, LATEST)])
+  console.log(`\n✔ RC uploaded. Test latest.json: ${assetUrl(rcTag, LATEST)}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -157,9 +131,9 @@ if (cmd === 'publish') {
   const notesFile = join(outDir, 'release-notes.md')
   writeFileSync(notesFile, body + '\n')
   run('gh', ['release', 'create', tag, '--repo', REPO, '--draft', '--title', `Student Invoice v${version}`, '--notes-file', notesFile,
-    join(outDir, msiName(version)), join(outDir, `${msiName(version)}.sig`), join(outDir, 'latest.json')])
+    ...ASSETS.map((f) => join(outDir, f))])
   const assets = JSON.parse(capture('gh', ['release', 'view', tag, '--repo', REPO, '--json', 'assets'])).assets.map((a) => a.name)
-  for (const f of [msiName(version), `${msiName(version)}.sig`, 'latest.json']) if (!assets.includes(f)) die(`draft release is missing ${f}`)
+  for (const f of ASSETS) if (!assets.includes(f)) die(`draft release is missing ${f}`)
 
   step('Publish as latest')
   run('gh', ['release', 'edit', tag, '--repo', REPO, '--draft=false', '--latest'])

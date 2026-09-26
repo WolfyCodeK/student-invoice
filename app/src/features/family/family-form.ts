@@ -4,13 +4,12 @@
 // code as it is (docs/billing.md) and never works anything out itself.
 import * as z from "zod";
 import type { InvoiceTemplate, TermData } from "../../types";
-import { WEEKDAYS } from "../../lib/schema/constants";
+import { isWeekday } from "../../lib/schema/constants";
+import { capitalise } from "../../lib/format";
 import { generateInvoice, lessonDateKey, lessonDates } from "../../utils/invoice-generator";
 
 /** The instruments offered, stored lowercase exactly as v1.0.1 stored them. */
 export const INSTRUMENTS = ["piano", "drum", "guitar", "vocal", "music", "singing", "bass guitar", "classical guitar"] as const;
-
-export const DAYS: readonly string[] = WEEKDAYS;
 
 /** The five things the editor saves. Anything else on a template (such as unticked lessons) is left alone. */
 export type FamilyFields = Pick<InvoiceTemplate, "recipient" | "students" | "instrument" | "day" | "cost">;
@@ -23,8 +22,6 @@ export interface FamilyFormValues {
   day: string;
   cost: string;
 }
-
-export const capitalise = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 const EMPTY: FamilyFormValues = { recipient: "", students: "", instrument: "", day: "", cost: "" };
 
@@ -47,7 +44,7 @@ export function formValuesFrom(template: InvoiceTemplate | null): FamilyFormValu
     students: template.students,
     instrument: template.instrument,
     // A day that isn't a weekday can't be shown or billed, so it has to be chosen again.
-    day: DAYS.includes(template.day) ? template.day : "",
+    day: isWeekday(template.day) ? template.day : "",
     cost: costText(template.cost),
   };
 }
@@ -71,7 +68,7 @@ export const familySchema = z.object({
   recipient: filledIn("Enter the name you greet in the email."),
   students: filledIn("Enter the pupils' names."),
   instrument: filledIn("Choose an instrument."),
-  day: z.string().refine((value) => DAYS.includes(value), { error: "Choose the lesson day." }),
+  day: z.string().refine(isWeekday, { error: "Choose the lesson day." }),
   cost: z.string().superRefine((value, ctx) => {
     const problem = costProblem(value);
     if (problem) ctx.addIssue({ code: "custom", message: problem });

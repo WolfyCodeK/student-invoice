@@ -8,11 +8,11 @@ export const DialogClose = DialogPrimitive.Close;
 
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { wide?: boolean }
->(({ className, wide, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay className="dlg-overlay" />
-    <DialogPrimitive.Content ref={ref} className={["dlg", wide ? "dlg--wide" : "", className ?? ""].join(" ").trim()} {...props}>
+    <DialogPrimitive.Content ref={ref} className={`dlg ${className ?? ""}`.trim()} {...props}>
       {children}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>

@@ -9,18 +9,19 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, PoisonError};
 use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
-use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_dialog::{DialogExt, FilePath};
 use tauri_plugin_opener::OpenerExt;
 use tokio::sync::oneshot;
 
 use crate::error::{AppError, AppResult};
 
 /// Largest backup file accepted or written.
-pub const MAX_BACKUP_BYTES: usize = 5 * 1024 * 1024;
+const MAX_BACKUP_BYTES: usize = 5 * 1024 * 1024;
 /// Automatic backups kept per reason; older ones are deleted.
 const KEEP_PER_REASON: usize = 10;
 
@@ -82,7 +83,7 @@ struct Envelope {
 }
 
 /// Checks that `content` is a plausible backup file (size, JSON, envelope).
-pub fn check_content(content: &str) -> AppResult<()> {
+fn check_content(content: &str) -> AppResult<()> {
     if content.len() > MAX_BACKUP_BYTES {
         return Err(AppError::Invalid(
             "This file is too large to be a Student Invoice backup.".into(),
@@ -101,15 +102,18 @@ pub fn check_content(content: &str) -> AppResult<()> {
     Ok(())
 }
 
-/// Decodes file bytes: UTF-8 only, with an optional byte-order mark.
-pub fn decode(bytes: Vec<u8>) -> AppResult<String> {
+/// Decodes a backup file's bytes (UTF-8 only, with an optional byte-order
+/// mark) and checks the text with `check_content`.
+fn decode(bytes: Vec<u8>) -> AppResult<String> {
     let bytes = bytes
         .strip_prefix(b"\xEF\xBB\xBF")
         .map(<[u8]>::to_vec)
         .unwrap_or(bytes);
-    String::from_utf8(bytes).map_err(|_| {
+    let content = String::from_utf8(bytes).map_err(|_| {
         AppError::Invalid("This file isn't a Student Invoice backup (not UTF-8 text).".into())
-    })
+    })?;
+    check_content(&content)?;
+    Ok(content)
 }
 
 /// Writes via a temporary file in the same folder, then renames, so a crash
@@ -142,6 +146,19 @@ fn file_name(path: &Path) -> String {
         .unwrap_or_default()
 }
 
+/// Waits for a native file dialog to close; `None` if the user cancelled.
+async fn chosen_path(
+    rx: oneshot::Receiver<Option<FilePath>>,
+    dialog: &str,
+) -> AppResult<Option<PathBuf>> {
+    let chosen = rx
+        .await
+        .map_err(|_| AppError::Internal(format!("the {dialog} dialog closed unexpectedly")))?;
+    chosen
+        .map(|p| p.into_path().map_err(|e| AppError::Internal(e.to_string())))
+        .transpose()
+}
+
 /// Asks where to save, then writes the export. `None` if the user cancels.
 pub async fn export(
     app: &AppHandle,
@@ -158,20 +175,12 @@ pub async fn export(
         .save_file(move |p| {
             let _ = tx.send(p);
         });
-    let Some(chosen) = rx
-        .await
-        .map_err(|_| AppError::Internal("the save dialog closed unexpectedly".into()))?
-    else {
+    let Some(mut path) = chosen_path(rx, "save").await? else {
         return Ok(None);
     };
-    let mut path = chosen
-        .into_path()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-    if path
+    if !path
         .extension()
-        .and_then(|e| e.to_str())
-        .map(|e| !e.eq_ignore_ascii_case("json"))
-        .unwrap_or(true)
+        .is_some_and(|e| e.eq_ignore_ascii_case("json"))
     {
         path.set_extension("json");
     }
@@ -189,15 +198,9 @@ pub async fn import(app: &AppHandle) -> AppResult<Option<String>> {
         .pick_file(move |p| {
             let _ = tx.send(p);
         });
-    let Some(chosen) = rx
-        .await
-        .map_err(|_| AppError::Internal("the open dialog closed unexpectedly".into()))?
-    else {
+    let Some(path) = chosen_path(rx, "open").await? else {
         return Ok(None);
     };
-    let path = chosen
-        .into_path()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
     let size = fs::metadata(&path)
         .map_err(|e| AppError::Invalid(format!("couldn't read the file: {e}")))?
         .len();
@@ -206,11 +209,9 @@ pub async fn import(app: &AppHandle) -> AppResult<Option<String>> {
             "This file is too large to be a Student Invoice backup.".into(),
         ));
     }
-    let content = decode(
-        fs::read(&path).map_err(|e| AppError::Invalid(format!("couldn't read the file: {e}")))?,
-    )?;
-    check_content(&content)?;
-    Ok(Some(content))
+    let bytes =
+        fs::read(&path).map_err(|e| AppError::Invalid(format!("couldn't read the file: {e}")))?;
+    decode(bytes).map(Some)
 }
 
 fn sanitize_file_name(name: &str) -> String {
@@ -284,7 +285,7 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 
 /// Parses an automatic-backup file name: `<timestamp>-<reason>.json`.
 /// Anything else (including path separators) is rejected.
-pub fn parse_backup_name(name: &str) -> Option<(String, BackupReason)> {
+fn parse_backup_name(name: &str) -> Option<(String, BackupReason)> {
     let stem = name.strip_suffix(".json")?;
     let (ts, slug) = stem.split_at_checked(16)?;
     let slug = slug.strip_prefix('-')?;
@@ -309,8 +310,13 @@ pub fn parse_backup_name(name: &str) -> Option<(String, BackupReason)> {
     BackupReason::from_slug(slug).map(|r| (created, r))
 }
 
+/// Commands run off the main thread, so two automatic backups could be
+/// taken at once; this keeps writing and pruning one at a time.
+static WRITING: Mutex<()> = Mutex::new(());
+
 pub fn create_auto(app: &AppHandle, reason: BackupReason, content: &str) -> AppResult<BackupInfo> {
     check_content(content)?;
+    let _writing = WRITING.lock().unwrap_or_else(PoisonError::into_inner);
     let dir = backups_dir(app)?;
     // Same reason within the same second means the same data: overwrite.
     let name = format!("{}-{}.json", timestamp_now(), reason.slug());
@@ -372,9 +378,7 @@ pub fn read(app: &AppHandle, name: &str) -> AppResult<String> {
     if bytes.len() > MAX_BACKUP_BYTES {
         return Err(AppError::Invalid("This backup is too large.".into()));
     }
-    let content = decode(bytes)?;
-    check_content(&content)?;
-    Ok(content)
+    decode(bytes)
 }
 
 pub fn open_folder(app: &AppHandle) -> AppResult<()> {

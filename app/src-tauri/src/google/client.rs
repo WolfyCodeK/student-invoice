@@ -18,7 +18,7 @@ use crate::error::AppResult;
 pub const COMPOSE_SCOPE: &str = "https://www.googleapis.com/auth/gmail.compose";
 
 /// oauth2 client with auth, revocation and token endpoints set.
-pub type GoogleClient =
+type GoogleClient =
     BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointSet, EndpointSet>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
@@ -28,7 +28,7 @@ pub enum ClientSource {
     Custom,
 }
 
-pub fn built_in() -> Option<ClientCredentials> {
+fn built_in() -> Option<ClientCredentials> {
     match (
         option_env!("SI_GOOGLE_CLIENT_ID"),
         option_env!("SI_GOOGLE_CLIENT_SECRET"),

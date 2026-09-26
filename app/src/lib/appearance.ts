@@ -19,7 +19,8 @@ export const THEME_STORAGE_KEY = 'student-invoice-theme'
 const SCHEMES: readonly ColourScheme[] = ['student-invoice', 'navy-amber']
 const CORNERS: readonly Corners[] = ['square', 'rounded']
 
-function storedMode(): Mode | null {
+/** Light or dark as saved under the theme key, if it is set. */
+export function storedMode(): Mode | null {
   try {
     const v = localStorage.getItem(THEME_STORAGE_KEY)
     return v === 'light' || v === 'dark' ? v : null
@@ -51,4 +52,9 @@ export function saveMode(mode: Mode): void {
   } catch {
     // Storage unavailable: the choice still applies for this session.
   }
+}
+
+/** Windows is set to show less animation: scroll straight to places instead of smoothly. */
+export function prefersReducedMotion(): boolean {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 }

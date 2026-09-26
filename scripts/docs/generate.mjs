@@ -10,10 +10,10 @@
 // Usage:
 //   node scripts/docs/generate.mjs          rewrite docs in place
 //   node scripts/docs/generate.mjs --check  exit 1 if any section is stale
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { readdirSync, writeFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { repoRoot, readRepoFile } from '../lib/repo.mjs'
+import { repoRoot, readRepoFile, listFiles } from '../lib/repo.mjs'
 import { INVARIANTS } from '../invariants.config.mjs'
 
 const root = repoRoot()
@@ -22,12 +22,6 @@ const check = process.argv.includes('--check')
 // ---------------------------------------------------------------------------
 // Tauri commands (parsed from Rust) + consistency with registration and ACL
 // ---------------------------------------------------------------------------
-function rustFiles(dir) {
-  return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? rustFiles(join(dir, e.name)) : e.name.endsWith('.rs') ? [join(dir, e.name).replace(/\\/g, '/')] : [],
-  )
-}
-
 /** Splits on commas that are not inside <...> or (...) (e.g. `State<'_, T>`). */
 function splitTopLevel(text) {
   const parts = []
@@ -45,10 +39,10 @@ function splitTopLevel(text) {
   return parts
 }
 
-export function parseCommands() {
+function parseCommands() {
   const commands = []
-  for (const file of rustFiles('app/src-tauri/src')) {
-    const lines = readRepoFile(file).split('\n')
+  for (const file of listFiles('app/src-tauri/src', '.rs', root)) {
+    const lines = readRepoFile(file, root).split('\n')
     lines.forEach((line, i) => {
       if (!/^\s*#\[tauri::command/.test(line)) return
       const docs = []
@@ -79,16 +73,17 @@ export function parseCommands() {
 }
 
 function registeredCommands() {
-  const lib = readRepoFile('app/src-tauri/src/lib.rs')
+  const lib = readRepoFile('app/src-tauri/src/lib.rs', root)
   const m = lib.match(/generate_handler!\s*\[([\s\S]*?)\]/)
   if (!m) throw new Error('generate_handler! not found in lib.rs')
   return m[1].split(',').map((s) => s.trim().split('::').pop()).filter(Boolean)
 }
 
 function manifestCommands() {
-  const build = readRepoFile('app/src-tauri/build.rs')
+  const build = readRepoFile('app/src-tauri/build.rs', root)
   const m = build.match(/const COMMANDS:\s*&\[&str\]\s*=\s*&\[([\s\S]*?)\];/) ?? build.match(/\.commands\(\s*&\[([\s\S]*?)\]\s*\)/)
-  if (!m) return null // no app ACL manifest yet: every registered command is callable
+  // Without the app ACL manifest every registered command would be callable from the webview.
+  if (!m) throw new Error('the AppManifest command list was not found in build.rs')
   return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1])
 }
 
@@ -96,7 +91,7 @@ function capabilityFiles() {
   const dir = 'app/src-tauri/capabilities'
   return readdirSync(join(root, dir))
     .filter((f) => f.endsWith('.json'))
-    .map((f) => ({ file: `${dir}/${f}`, ...JSON.parse(readRepoFile(`${dir}/${f}`)) }))
+    .map((f) => ({ file: `${dir}/${f}`, ...JSON.parse(readRepoFile(`${dir}/${f}`, root)) }))
 }
 
 function genTauriCommands() {
@@ -109,16 +104,12 @@ function genTauriCommands() {
   const errors = []
   for (const c of cmds) if (!registered.includes(c.name)) errors.push(`command ${c.name} (${c.file}:${c.line}) is not in generate_handler!`)
   for (const r of registered) if (!cmds.some((c) => c.name === r)) errors.push(`generate_handler! lists ${r} but no #[tauri::command] fn ${r} exists`)
-  if (manifest) {
-    for (const r of registered) if (!manifest.includes(r)) errors.push(`${r} is registered but missing from the build.rs AppManifest command list`)
-    for (const m of manifest) if (!registered.includes(m)) errors.push(`build.rs AppManifest lists ${m} but it is not registered`)
-    for (const r of registered) if (!allowed.has(r)) errors.push(`${r} has no allow-${r.replace(/_/g, '-')} permission in capabilities/ (the webview cannot call it)`)
-  }
+  for (const r of registered) if (!manifest.includes(r)) errors.push(`${r} is registered but missing from the build.rs AppManifest command list`)
+  for (const m of manifest) if (!registered.includes(m)) errors.push(`build.rs AppManifest lists ${m} but it is not registered`)
+  for (const r of registered) if (!allowed.has(r)) errors.push(`${r} has no allow-${r.replace(/_/g, '-')} permission in capabilities/ (the webview cannot call it)`)
   if (errors.length) throw new Error('Tauri command inventory is inconsistent:\n  ' + errors.join('\n  '))
 
-  const acl = manifest
-    ? 'Only commands granted an `allow-<command>` permission in `app/src-tauri/capabilities/` can be called from the webview.'
-    : '**No app ACL manifest yet:** every registered command can be called by any script running in the webview.'
+  const acl = 'Only commands granted an `allow-<command>` permission in `app/src-tauri/capabilities/` can be called from the webview.'
   const rows = cmds
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((c) => `| \`${c.name}\` | ${c.args.length ? c.args.map((a) => '`' + a + '`').join('<br>') : '—'} | \`${c.returns.replace(/\|/g, '\\|')}\` | ${c.doc || '—'} | \`${c.file.replace('app/src-tauri/', '')}:${c.line}\` |`)
@@ -147,7 +138,7 @@ function genInvariants() {
 // Dependency versions (from lockfiles, so no install is needed)
 // ---------------------------------------------------------------------------
 function pnpmLockVersions() {
-  const lock = readRepoFile('app/pnpm-lock.yaml')
+  const lock = readRepoFile('app/pnpm-lock.yaml', root)
   const importer = lock.split(/\nimporters:\n/)[1]?.split(/\n\S/)[0] ?? ''
   const out = {}
   for (const m of importer.matchAll(/\n {6}'?([@\w/.-]+)'?:\n {8}specifier: ([^\n]+)\n {8}version: ([^\s(\n]+)/g)) out[m[1]] = m[3]
@@ -155,7 +146,7 @@ function pnpmLockVersions() {
 }
 
 function cargoLockVersions() {
-  const lock = readRepoFile('app/src-tauri/Cargo.lock')
+  const lock = readRepoFile('app/src-tauri/Cargo.lock', root)
   const out = {}
   for (const m of lock.matchAll(/\[\[package\]\]\nname = "([^"]+)"\nversion = "([^"]+)"/g)) (out[m[1]] ??= []).push(m[2])
   return out
@@ -164,7 +155,7 @@ function cargoLockVersions() {
 function genVersions() {
   const npm = pnpmLockVersions()
   const cargo = cargoLockVersions()
-  const npmKeys = ['react', 'typescript', 'vite', 'tailwindcss', 'zustand', 'zod', 'react-hook-form', 'date-fns', '@tauri-apps/api', '@tauri-apps/cli', '@tauri-apps/plugin-opener', 'vitest', 'eslint']
+  const npmKeys = ['react', 'typescript', 'vite', 'zustand', 'zod', 'react-hook-form', 'date-fns', '@tauri-apps/api', '@tauri-apps/cli', 'vitest', 'eslint']
   const cargoKeys = ['tauri', 'tauri-build', 'tauri-plugin-updater', 'tauri-plugin-opener', 'tauri-plugin-dialog', 'oauth2', 'reqwest', 'tokio']
   const rows = [
     ...npmKeys.filter((k) => npm[k]).map((k) => `| \`${k}\` | npm | ${npm[k]} |`),
@@ -174,7 +165,7 @@ function genVersions() {
 }
 
 function genAppScripts() {
-  const pkg = JSON.parse(readRepoFile('app/package.json'))
+  const pkg = JSON.parse(readRepoFile('app/package.json', root))
   return ['| `pnpm <script>` (run in `app/`) | Runs |', '|---|---|', ...Object.entries(pkg.scripts).map(([k, v]) => `| \`${k}\` | \`${v.replace(/\|/g, '\\|')}\` |`)].join('\n')
 }
 
@@ -182,9 +173,7 @@ function genAppScripts() {
 // Persisted-state and backup JSON Schemas (from the zod source of truth)
 // ---------------------------------------------------------------------------
 async function genSchema(exportName) {
-  const modPath = join(root, 'app/src/lib/schema/index.ts')
-  if (!existsSync(modPath)) throw new Error('app/src/lib/schema/index.ts does not exist yet')
-  const mod = await import(pathToFileURL(modPath).href)
+  const mod = await import(pathToFileURL(join(root, 'app/src/lib/schema/index.ts')).href)
   const { z } = await import(pathToFileURL(join(root, 'app/node_modules/zod/index.js')).href)
   const schema = z.toJSONSchema(mod[exportName], { io: 'input', unrepresentable: 'any' })
   return '```json\n' + JSON.stringify(schema, null, 2) + '\n```'
@@ -216,20 +205,11 @@ const GENERATORS = {
 }
 
 // ---------------------------------------------------------------------------
-function markdownFiles(dir) {
-  const abs = join(root, dir)
-  if (!existsSync(abs)) return []
-  return readdirSync(abs, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? markdownFiles(join(dir, e.name)) : e.name.endsWith('.md') ? [join(dir, e.name)] : [],
-  )
-}
-
-const targets = [...markdownFiles('docs'), 'CLAUDE.md', 'README.md'].filter((f) => existsSync(join(root, f)))
+const targets = [...listFiles('docs', '.md', root), 'CLAUDE.md', 'README.md'].filter((f) => existsSync(join(root, f)))
 const BLOCK = /<!-- GEN:([\w-]+) -->\n[\s\S]*?<!-- \/GEN:\1 -->/g
-let stale = []
+const stale = []
 for (const file of targets) {
-  const abs = join(root, file)
-  const original = readFileSync(abs, 'utf8').replace(/\r\n/g, '\n')
+  const original = readRepoFile(file, root)
   let updated = original
   for (const [, name] of [...original.matchAll(BLOCK)]) {
     const gen = GENERATORS[name]
@@ -238,8 +218,8 @@ for (const file of targets) {
     updated = updated.replace(new RegExp(`<!-- GEN:${name} -->\\n[\\s\\S]*?<!-- /GEN:${name} -->`), () => `<!-- GEN:${name} -->\n${body}\n<!-- /GEN:${name} -->`)
   }
   if (updated !== original) {
-    stale.push(relative(root, abs).replace(/\\/g, '/'))
-    if (!check) writeFileSync(abs, updated)
+    stale.push(file)
+    if (!check) writeFileSync(join(root, file), updated)
   }
 }
 
