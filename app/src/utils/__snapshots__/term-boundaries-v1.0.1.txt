@@ -1,0 +1,12 @@
+2025 autumn-1st: dayBefore=outside term; start00:00=autumn-1st (8w); end00:00=autumn-1st (8w); endNoon=outside term; dayAfter=outside term
+2025 autumn-2nd: dayBefore=outside term; start00:00=autumn-2nd (7w); end00:00=autumn-2nd (7w); endNoon=outside term; dayAfter=outside term
+2025 spring-1st: dayBefore=outside term; start00:00=spring-1st (6w); end00:00=spring-1st (6w); endNoon=outside term; dayAfter=outside term
+2025 spring-2nd: dayBefore=outside term; start00:00=spring-2nd (5w); end00:00=spring-2nd (5w); endNoon=outside term; dayAfter=outside term
+2025 summer-1st: dayBefore=outside term; start00:00=summer-1st (6w); end00:00=summer-1st (6w); endNoon=outside term; dayAfter=outside term
+2025 summer-2nd: dayBefore=outside term; start00:00=summer-2nd (7w); end00:00=summer-2nd (7w); endNoon=outside term; dayAfter=outside term
+2026 autumn-1st: dayBefore=outside term; start00:00=autumn-1st (8w); end00:00=autumn-1st (8w); endNoon=outside term; dayAfter=outside term
+2026 autumn-2nd: dayBefore=outside term; start00:00=autumn-2nd (7w); end00:00=autumn-2nd (7w); endNoon=outside term; dayAfter=outside term
+2026 spring-1st: dayBefore=outside term; start00:00=spring-1st (6w); end00:00=spring-1st (6w); endNoon=outside term; dayAfter=outside term
+2026 spring-2nd: dayBefore=outside term; start00:00=spring-2nd (5w); end00:00=spring-2nd (5w); endNoon=outside term; dayAfter=outside term
+2026 summer-1st: dayBefore=outside term; start00:00=summer-1st (6w); end00:00=summer-1st (6w); endNoon=outside term; dayAfter=outside term
+2026 summer-2nd: dayBefore=outside term; start00:00=summer-2nd (7w); end00:00=summer-2nd (7w); endNoon=outside term; dayAfter=outside term

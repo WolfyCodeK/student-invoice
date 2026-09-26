@@ -8,7 +8,7 @@ import { Textarea } from "./ui/textarea";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertTriangle, Info, Settings, Mail, Palette, Calendar } from "lucide-react";
 import { useAppStore, getTermsForAcademicYear } from "../stores/app-store";
-import { AppSettings } from "../types";
+import { AppSettings, InvoiceTemplate, TermData } from "../types";
 import { getDefaultTemplateString } from "../utils/invoice-generator";
 import { format } from "date-fns";
 
@@ -208,8 +208,8 @@ interface EmailBodyEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template?: string;
-  currentTemplate?: any;
-  currentTerm?: any;
+  currentTemplate?: InvoiceTemplate;
+  currentTerm?: TermData | null;
   onSave: (template: string | undefined) => void;
 }
 

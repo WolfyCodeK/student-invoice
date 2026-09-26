@@ -121,7 +121,7 @@ function App() {
         title: "Success",
         description: "Email draft created successfully!",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create draft. Please check your Gmail connection.",
@@ -146,7 +146,7 @@ function App() {
         });
         console.error("Draft creation errors:", result.errors);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create drafts. Please check your Gmail connection and ensure you have templates.",
@@ -162,7 +162,7 @@ function App() {
         title: "Copied",
         description: `${type === 'subject' ? 'Subject' : 'Email body'} copied to clipboard!`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to copy to clipboard.",
@@ -185,7 +185,7 @@ function App() {
           description: "You're running the latest version!",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to check for updates. Please try again.",
