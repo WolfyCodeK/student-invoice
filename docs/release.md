@@ -71,6 +71,34 @@ not the installed app.
    there is exactly one entry in *Installed apps*.
 5. **Downgrade check:** reinstall the old MSI; the data must still load.
 
+## Local update test (no publishing)
+
+`scripts/release/update-test.mjs` exercises the real v1.0.1 updater code
+against a build of the current checkout, entirely on this PC.
+
+1. **Build the harness:** `node scripts/release/update-test.mjs harness`
+   builds *v1.0.1-localtest*. This is the exact v1.0.1 source, except that its
+   updater asks `http://127.0.0.1:8765/latest.json` instead of GitHub.
+2. **Build the target:** `node scripts/release/update-test.mjs target 1.1.0`
+   builds a signed MSI of the current checkout labelled 1.1.0, plus a
+   `latest.json` for the local server. The version bump is reverted
+   afterwards and nothing is committed.
+3. **Serve:** `node scripts/release/update-test.mjs serve`, and leave it
+   running.
+4. **Install the harness:**
+   - Back up `%LOCALAPPDATA%\com.isaac.student-invoice` first.
+   - Install `release-artifacts/update-test/Student.Invoice_1.0.1-localtest_x64_en-US.msi`.
+   - Open the app. It reports version 1.0.1, and the Updates button shows the
+     update.
+5. **Update:** click **Updates → Install Update**, accept the UAC prompt, and
+   wait for the app to restart.
+6. **Check:** the app now reports the new version, all templates and settings
+   are intact, and *Installed apps* lists a single "Student Invoice".
+7. **Restore:** reinstall the real release MSI (for example
+   `Student.Invoice_1.0.1_x64_en-US.msi` from GitHub). The harness updater
+   only looks at `127.0.0.1`, so leaving it installed would cut this PC off
+   from real updates. Then run `update-test.mjs clean`.
+
 ## If something goes wrong after publishing
 
 - `gh release edit v<previous> --latest` makes the previous release *latest*
