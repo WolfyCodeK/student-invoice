@@ -9,3 +9,7 @@ before/after table covering every affected case, what users will notice, and
 an **Approval** line recording who approved it and when. Once approved and
 implemented, the characterization snapshots are updated in the same commit
 and the proposal is linked from [billing](../billing.md).
+
+## Proposals
+
+- [Billing rules for v1.1.0](2026-09-billing-v1.1.md) — awaiting decisions.
