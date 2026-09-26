@@ -12,4 +12,4 @@ and the proposal is linked from [billing](../billing.md).
 
 ## Proposals
 
-- [Billing rules for v1.1.0](2026-09-billing-v1.1.md): decisions 2 and 5 approved, 1, 3, 4 and 6 pending with the teacher.
+- [Billing rules](2026-09-billing-v1.1.md): deferred to a version after v1.1.0, pending consultation with the main user.

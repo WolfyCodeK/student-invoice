@@ -33,7 +33,7 @@ components in `app/src/components/ui/` (built on Radix primitives), and
 
 | Dialog | Where | Purpose |
 |---|---|---|
-| Template form | `app/src/components/template-form.tsx` | Create or edit a template: recipient, cost, instrument (fixed list), day (Mon–Sun), students. Validated with zod and react-hook-form. The form resets every time it opens. Names are trimmed and limited to 200 characters (recipient) and 500 (students). |
+| Template form | `app/src/components/template-form.tsx` | Create or edit a template: recipient, cost, instrument (fixed list), day (Mon–Sun), students. Validated with zod and react-hook-form. The form resets every time it opens. |
 | Settings | `app/src/components/settings-dialog.tsx` | Notifications switch (unused), default template (unused), email body editor, Gmail status with an *Advanced* section for a custom Google OAuth client (saved immediately to Credential Manager, separate from the dialog's Save), "Your data" (export, import, automatic backups; see [backup](backup.md)), read-only term dates for the current academic year. |
 | Email body editor | same file (`EmailBodyEditorDialog`) | Edit the custom body with placeholders; see [billing](billing.md#invoice-text). |
 | Connect Gmail (while the browser sign-in is pending, with Cancel), Draft results (lists each failed student and why), Delete Template, Software Update (shows download progress; can't be closed while installing), Feedback | `app/src/App.tsx` | The Feedback form (`FeedbackForm`) sends a message through EmailJS (max 5,000 characters). |

@@ -88,7 +88,7 @@ describe('rejects hostile or broken files', () => {
   })
 
   it('non-finite, negative or string costs', () => {
-    for (const cost of [-1, '20', null, 1e9]) {
+    for (const cost of [-1, '20', null]) {
       const f = valid()
       f.data.store.templates[0].cost = cost
       expect(parseBackup(JSON.stringify(f)).ok).toBe(false)
@@ -107,7 +107,7 @@ describe('rejects hostile or broken files', () => {
 
   it('oversized text', () => {
     const f = valid()
-    f.data.store.templates[0].recipient = 'x'.repeat(201)
+    f.data.store.templates[0].recipient = 'x'.repeat(5_001)
     expect(parseBackup(JSON.stringify(f)).ok).toBe(false)
   })
 })

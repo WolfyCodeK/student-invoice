@@ -10,13 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { InvoiceTemplate } from "../types";
 
 const templateSchema = z.object({
-  recipient: z.string().trim().min(1, "Recipient name is required").max(200, "Keep this under 200 characters"),
+  recipient: z.string().min(1, "Recipient name is required"),
   cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Cost must be a positive number",
   }),
   instrument: z.string().min(1, "Instrument is required"),
   day: z.string().min(1, "Day is required"),
-  students: z.string().trim().min(1, "Student name is required").max(500, "Keep this under 500 characters"),
+  students: z.string().min(1, "Student name is required"),
 });
 
 type TemplateFormData = z.infer<typeof templateSchema>;

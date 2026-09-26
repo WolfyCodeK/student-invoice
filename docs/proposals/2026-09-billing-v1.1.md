@@ -1,6 +1,11 @@
 # Proposal: billing rules for v1.1.0
 
-**Status:** partly decided. **Decisions so far (owner, 2026-09-26):**
+**Status:** deferred to a future version. On 2026-09-26 the owner decided that
+v1.1.0 does not change any calculation, email wording or way of using the
+app. The decisions below will be revisited after consulting the main user
+(the teacher), and none of them is implemented in v1.1.0.
+
+**Preliminary positions recorded on 2026-09-26 (not final):**
 
 | # | Decision | Outcome |
 |---|---|---|

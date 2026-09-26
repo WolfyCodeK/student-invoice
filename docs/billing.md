@@ -59,10 +59,21 @@ are the same every year:
   `{{weeksCount}}`, `{{lessonCountText}}` (session/sessions), `{{dateRange}}`,
   `{{cost}}`, `{{totalCost}}`, `{{isAre}}` (is/are).
 
-## Known issues (not yet changed — need approval)
+## Known issues (deferred to a future version)
 
-See the [bug audit](audits/2026-09-bug-audit.md): **B1** (count is not the
-number of actual lesson days, and the quoted range can run past the end of
-term), **B2** (the last day of term counts as "outside term" after midnight),
-**B3** (dates never change year to year), **B14** (cost validation and
-floating-point totals).
+The owner decided on 2026-09-26 that **v1.1.0 does not change any calculation,
+email wording or way of using the app**. Changes will be made in a later
+version, after consulting the main user. The analysis and options are in the
+[billing proposal](proposals/2026-09-billing-v1.1.md). The issues are listed
+in the [bug audit](audits/2026-09-bug-audit.md):
+
+- **B1:** the count is not the number of actual lesson days, and the quoted
+  range can run past the end of term.
+- **B2:** the last day of term counts as "outside term" after midnight.
+- **B3:** the dates never change from year to year.
+- **B14:** cost validation, and floating-point totals.
+- **B23:** bank holidays are billed.
+- **B25:** "the teacher" is hard-coded in the sign-off.
+- **B26:** there are no invoices between half-terms.
+- **B27:** costs with more than 2 decimals.
+- **B29, B31:** wording.

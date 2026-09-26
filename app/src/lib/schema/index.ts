@@ -43,14 +43,16 @@ export const persistedStateSchema = z.looseObject({
 /**
  * A template inside an imported file: strictly validated, because the file
  * may come from anywhere. Unknown fields (from a newer version) are kept.
+ * Length limits are generous on purpose: the app itself doesn't limit these
+ * fields, and every export must be importable again.
  */
 export const backupTemplateSchema = z.looseObject({
   id: text(100).min(1),
-  recipient: text(200),
-  cost: z.number().finite().min(0).max(100_000),
-  instrument: text(100),
+  recipient: text(5_000),
+  cost: z.number().finite().min(0),
+  instrument: text(1_000),
   day: z.enum(WEEKDAYS),
-  students: text(500),
+  students: text(5_000),
   createdAt: z.string().max(40).optional(),
   updatedAt: z.string().max(40).optional(),
 })
@@ -58,7 +60,7 @@ export const backupTemplateSchema = z.looseObject({
 /** Settings inside an imported file. Google credentials are never included. */
 export const backupSettingsSchema = z.looseObject({
   theme: z.enum(['light', 'dark']).optional(),
-  customEmailBodyTemplate: text(20_000).optional(),
+  customEmailBodyTemplate: text(200_000).optional(),
 })
 
 /** The export file (`Student Invoice backup YYYY-MM-DD.json`). */

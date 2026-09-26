@@ -27,9 +27,10 @@ The UI lives in Settings → **Your data** (`app/src/components/data-section.tsx
 2. `parseBackup` validates everything strictly with zod
    (`app/src/lib/schema/index.ts`):
    - it drops `__proto__`, `constructor` and `prototype` keys while parsing;
-   - it enforces length limits;
-   - `day` must be a weekday name, `cost` a finite number from 0 to 100,000,
-     and template ids must be unique;
+   - it enforces generous length limits (larger than anything the app itself
+     allows, so every export can be imported again);
+   - `day` must be a weekday name, `cost` a finite number of at least 0, and
+     template ids must be unique;
    - no unexpected top-level fields are allowed;
    - a newer `formatVersion` is refused with "update the app first".
 3. A confirmation shows the number of templates, the date and the app version
@@ -110,16 +111,15 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                   },
                   "recipient": {
                     "type": "string",
-                    "maxLength": 200
+                    "maxLength": 5000
                   },
                   "cost": {
                     "type": "number",
-                    "minimum": 0,
-                    "maximum": 100000
+                    "minimum": 0
                   },
                   "instrument": {
                     "type": "string",
-                    "maxLength": 100
+                    "maxLength": 1000
                   },
                   "day": {
                     "type": "string",
@@ -135,7 +135,7 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                   },
                   "students": {
                     "type": "string",
-                    "maxLength": 500
+                    "maxLength": 5000
                   },
                   "createdAt": {
                     "type": "string",
@@ -180,7 +180,7 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                 },
                 "customEmailBodyTemplate": {
                   "type": "string",
-                  "maxLength": 20000
+                  "maxLength": 200000
                 }
               },
               "additionalProperties": {}
