@@ -98,7 +98,7 @@ export function buildEnv() {
   const env = {
     ...process.env,
     TAURI_SIGNING_PRIVATE_KEY: p.signingKey, // Tauri accepts a path
-    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: readFileSync(p.signingPassword, 'utf8').replace(/\r?\n$/, ''),
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: readFileSync(p.signingPassword, 'utf8').replace(/^\uFEFF/, '').replace(/\r?\n$/, ''), // Notepad may add a BOM or a final newline
   }
   // Release builds must have Gmail: build.rs embeds this client (docs/gmail.md).
   if (!existsSync(p.googleClient)) die(`Google OAuth client file not found at ${p.googleClient}. Restore it from your password manager.`)
