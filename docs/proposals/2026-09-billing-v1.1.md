@@ -1,6 +1,17 @@
 # Proposal: billing rules for v1.1.0
 
-**Status:** awaiting the owner's decisions. **Approval:** _not yet approved._
+**Status:** partly decided. **Decisions so far (owner, 2026-09-26):**
+
+| # | Decision | Outcome |
+|---|---|---|
+| 1 | Lesson count rule | **Pending**: checking with the teacher. Money logic unchanged until then. |
+| 2 | Term dates | **Approved**: editable per academic year in Settings, with today's dates as defaults. |
+| 3 | Bank holidays / days off | **Pending**: checking with the teacher. |
+| 4 | Invoicing between half-terms | **Pending**: checking with the teacher. |
+| 5 | Sign-off name | **Approved**: no hard-coded names anywhere. There is a "Your name" setting, empty on a fresh install; data upgraded from v1.0.1 is pre-filled with "the teacher" so existing emails are unchanged. |
+| 6 | Subject wording / pupil name | **Pending**: checking with the teacher. |
+
+**Note on decision 2:** with editable dates, today's week formula (milliseconds ÷ 7 days) can be thrown off by clock changes (e.g. 1 Oct → 5 Nov gives 6, not 5). Whatever rule decision 1 settles on must count calendar days. For today's fixed dates, counting calendar days gives exactly the same results (checked 2023–2040), and the characterization snapshots prove it.
 **Author:** 2026-09-26. **Evidence:** bug audit B1, B2, B3, B23, B26
 ([audit](../audits/2026-09-bug-audit.md)) and the characterization snapshots
 in `app/src/utils/__snapshots__/`.
