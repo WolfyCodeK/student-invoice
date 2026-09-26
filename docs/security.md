@@ -34,8 +34,8 @@ Rules:
   backed up. Its password can be changed at any time, because that
   re-encrypts the same key
   ([release](release.md#the-signing-key-password)). The original password
-  was public, because it was hard-coded in the old `Release.ps1`. It is
-  being replaced before v1.1.0.
+  was public, because it was hard-coded in the old `Release.ps1`. It was
+  replaced on 2026-09-26.
 
 ## The public updater key is not a secret
 
