@@ -38,12 +38,15 @@ drawn by the app, in the manner of Discord's: it reads as part of the app,
 not as Windows chrome.
 
 - **Colour:** register blue, continuing into the blue header band below.
-- **Left:** the app icon and name, or a back arrow on other screens.
-- **Centre:** where you are, e.g. "Register · 1st half Autumn term 2026" or
-  "Editing Priya's details".
+- **Left:** a back arrow on screens other than the register, then the app
+  icon and name.
+- **Centre:** where you are: "Register", or a breadcrumb such as
+  "Register › Settings" or "Register › Priya" on other screens. The band
+  below carries the full heading.
 - **Right:**
   - Help (starts the tour);
-  - Updates (becomes an "Update ready" pill when one is available);
+  - Check for updates (a refresh arrow; it becomes an "Update ready" pill
+    when one is available);
   - Feedback;
   - Settings;
   - then a divider and thin minimise, maximise/restore and close buttons.
@@ -69,8 +72,10 @@ The main screen (`register-view.tsx`) has three parts.
   narrow windows.
 - One column per calendar week, from the week the half-term starts to the
   week of the last lesson charged (`weeks.ts`). A week wholly after the
-  half-term ends is shaded; today's rule can charge a Monday lesson there
+  half-term ends is hatched, except where a lesson is drawn: today's rule can
+  still charge a Monday lesson there, and the legend and tooltip say so
   (see [billing](billing.md)).
+- The page stays ruled below the last family, like a register.
 - **Marks are buttons.** Each lesson charged has a mark in its week, dated in
   its tooltip. Clicking a mark unticks the lesson (dashed circle, not
   charged); clicking again ticks it
@@ -78,6 +83,8 @@ The main screen (`register-view.tsx`) has three parts.
 - Then Lessons ("7 of 8" when some are unticked), Per lesson and Total.
   Figures come from `generateInvoice`, so they always match the email.
 - A red double margin rule runs between the family and the weeks.
+- With Gmail not connected, **Connect Gmail** is the strong button in the
+  band and Draft all steps back.
 - Below the grid: Add a family, Edit, Delete… (with confirmation), and a
   legend.
 

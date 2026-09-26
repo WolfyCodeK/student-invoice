@@ -4,19 +4,14 @@
 // close. Empty areas drag the window; double-click maximises.
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ArrowLeft, CircleHelp, Download, MessageSquareText, NotebookText, PencilLine, Settings, UserPlus } from "lucide-react";
+import { ArrowLeft, CircleHelp, Download, MessageSquareText, NotebookText, PencilLine, RefreshCw, Settings, UserPlus } from "lucide-react";
 import appIcon from "../assets/app-icon.svg";
 import { useAppActions } from "../features/app-context";
 import { useAppStore } from "../stores/app-store";
 
-function termLabel(half: string, season: string, year: number) {
-  return `${half} half ${season.charAt(0).toUpperCase()}${season.slice(1)} term ${year}`;
-}
-
 export function TitleBar() {
   const { view, back, navigate, updates, checkForUpdates, startTour, openFeedback } = useAppActions();
   const templates = useAppStore((s) => s.templates);
-  const currentTerm = useAppStore((s) => s.currentTerm);
   const [maximised, setMaximised] = useState(false);
 
   useEffect(() => {
@@ -28,17 +23,16 @@ export function TitleBar() {
     return () => unlisten?.();
   }, []);
 
+  // Where you are, in a word or two (the band below has the full heading).
   let icon = <NotebookText aria-hidden="true" />;
-  let title = currentTerm
-    ? `Register · ${termLabel(currentTerm.term.half, currentTerm.term.season, currentTerm.term.startDate.getFullYear())}`
-    : "Register";
+  let title = "Register";
   if (view.name === "settings") {
     icon = <Settings aria-hidden="true" />;
-    title = "Settings";
+    title = "Register › Settings";
   } else if (view.name === "edit") {
     const t = templates.find((x) => x.id === view.templateId);
     icon = t ? <PencilLine aria-hidden="true" /> : <UserPlus aria-hidden="true" />;
-    title = t ? `Editing ${t.recipient}'s details` : "Add a family";
+    title = t ? `Register › ${t.recipient}` : "Register › New family";
   }
 
   const win = () => getCurrentWindow();
@@ -46,16 +40,15 @@ export function TitleBar() {
   return (
     <header className="tb" data-tauri-drag-region>
       <div className="tb-left" data-tauri-drag-region>
-        {view.name === "register" ? (
-          <span className="tb-app" data-tauri-drag-region>
-            <img src={appIcon} alt="" data-tauri-drag-region />
-            <span data-tauri-drag-region>Student Invoice</span>
-          </span>
-        ) : (
+        {view.name !== "register" && (
           <button type="button" className="tb-btn" onClick={back} data-tip="Back to the register" data-tip-side="left" aria-label="Back to the register">
             <ArrowLeft />
           </button>
         )}
+        <span className="tb-app" data-tauri-drag-region>
+          <img src={appIcon} alt="" data-tauri-drag-region />
+          <span data-tauri-drag-region>Student Invoice</span>
+        </span>
       </div>
 
       <div className="tb-title" data-tauri-drag-region>
@@ -75,7 +68,7 @@ export function TitleBar() {
             </button>
           ) : (
             <button type="button" className="tb-btn" onClick={checkForUpdates} disabled={updates.checking} data-tip="Check for updates" aria-label="Check for updates">
-              <Download />
+              <RefreshCw className={updates.checking ? "spin" : undefined} />
             </button>
           )}
           <button type="button" className="tb-btn" onClick={openFeedback} data-tip="Send feedback" aria-label="Send feedback">

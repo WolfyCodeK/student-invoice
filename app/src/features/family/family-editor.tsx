@@ -368,8 +368,8 @@ function ReadyPreview({ preview, values }: { preview: Extract<FamilyPreview, { k
         {lessons.map((l) => (
           <div
             key={l.key}
-            className={`fe-wk${l.afterTerm ? " is-holiday" : ""}`}
-            title={`${format(l.date, "EEEE d MMMM")}${l.charged ? "" : ": unticked, not charged"}${l.afterTerm ? " (after the half-term ends)" : ""}`}
+            className={`fe-wk${l.afterTerm ? " is-after" : ""}`}
+            title={`${format(l.date, "EEEE d MMMM")}${l.charged ? "" : ": unticked, not charged"}${l.afterTerm ? " (after the half-term ends; still charged)" : ""}`}
           >
             <span className="wk-h">
               <b>{format(l.date, "d")}</b>

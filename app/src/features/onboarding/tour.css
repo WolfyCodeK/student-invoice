@@ -1,6 +1,6 @@
 /* Guided tour: small additions to the tour styles in styles/app.css. Tokens only. */
 
-/* "Step 2 of 7" and the progress dots share one line. */
+/* The progress dots and "2 of 7" share one line, under the step text. */
 .tour-top {
   display: flex;
   align-items: center;

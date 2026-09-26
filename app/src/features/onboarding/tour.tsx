@@ -220,18 +220,20 @@ function TourSession({ onClose }: { onClose: () => void }) {
       <div className="tour-block" aria-hidden="true" onMouseDown={swallow} onClick={swallow} onDoubleClick={swallow} onContextMenu={swallow} />
       <div ref={spotRef} className="tour-spot" aria-hidden="true" />
       <div ref={cardRef} className="tour-card" role="dialog" aria-modal="true" aria-labelledby={`${stepId} ${titleId}`} aria-describedby={bodyId}>
+        <h2 id={titleId}>
+          {index + 1}. {step.title}
+        </h2>
+        <p id={bodyId}>{step.body}</p>
         <div className="tour-top">
-          <div className="tour-step" id={stepId}>
-            Step {index + 1} of {count}
-          </div>
           <div className="tour-dots" aria-hidden="true">
             {steps?.map((s, i) => (
               <i key={s.target} className={i === index ? "is-on" : undefined} />
             ))}
           </div>
+          <div className="tour-step" id={stepId}>
+            {index + 1} of {count}
+          </div>
         </div>
-        <h2 id={titleId}>{step.title}</h2>
-        <p id={bodyId}>{step.body}</p>
         <div className="tour-bar">
           <button type="button" className="btn btn--link" onClick={() => onClose()}>
             Skip tour

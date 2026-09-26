@@ -93,11 +93,29 @@ svg {
   white-space: nowrap;
 }
 
-/* Thin scrollbars in the palette. */
+/* Scrollbars in the palette. WebView2 is Chromium, which applies the
+   ::-webkit-scrollbar styles only when scrollbar-width/-color are unset. */
 .scroll {
   overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) transparent;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--scroll-thumb) padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted) padding-box;
+}
+::-webkit-scrollbar-button {
+  display: none;
 }
 
 .lucide {

@@ -176,11 +176,17 @@ export function RegisterView() {
                   </span>
                 </p>
               ) : (
-                <button type="button" className="bbtn bbtn--ghost" onClick={onConnect} disabled={gmailConnecting}>
+                <button type="button" className="bbtn" onClick={onConnect} disabled={gmailConnecting}>
                   <Mail /> Connect Gmail
                 </button>
               )}
-              <button type="button" className="bbtn" onClick={onDraftAll} disabled={draftWhy !== null || drafting} aria-describedby={draftWhy ? "draft-why" : undefined}>
+              <button
+                type="button"
+                className={gmailConnected ? "bbtn" : "bbtn bbtn--ghost"}
+                onClick={onDraftAll}
+                disabled={draftWhy !== null || drafting}
+                aria-describedby={draftWhy ? "draft-why" : undefined}
+              >
                 {drafting ? <Loader2 className="spin" /> : <Mails />}
                 {drafting ? "Saving drafts…" : chargeable > 0 ? `Draft all ${chargeable} in Gmail` : "Draft all in Gmail"}
               </button>
@@ -217,7 +223,7 @@ export function RegisterView() {
                 <div className="c th c-day" role="columnheader">Day</div>
                 <div className="c weeks" role="columnheader" aria-label="Weeks">
                   {weeks.map((w) => (
-                    <span key={w.monday.getTime()} className={`wk wk-h${w.afterTerm ? " is-holiday" : ""}`} title={w.afterTerm ? `Week of ${format(w.monday, "d MMMM")}: after the half-term has ended` : `Week of ${format(w.monday, "d MMMM")}`}>
+                    <span key={w.monday.getTime()} className={`wk wk-h${w.afterTerm ? " is-holiday" : ""}`} title={w.afterTerm ? `Week of ${format(w.monday, "d MMMM")}: after the half-term ends. A lesson here is still charged.` : `Week of ${format(w.monday, "d MMMM")}`}>
                       <b>{format(w.monday, "d")}</b>
                       <span>{format(w.monday, "MMM")}</span>
                     </span>
@@ -251,7 +257,7 @@ export function RegisterView() {
                     onClick={() => setCurrentTemplate(t.id)}
                   >
                     <div className="c" role="cell" style={{ padding: 0 }}>
-                      <button type="button" className="fam fam-btn c" style={{ width: "100%", height: "100%" }} onClick={() => setCurrentTemplate(t.id)} aria-label={`${t.recipient}: ${t.students}, ${t.instrument}`}>
+                      <button type="button" className="fam fam-btn c" onClick={() => setCurrentTemplate(t.id)} aria-label={`${t.recipient}: ${t.students}, ${t.instrument}`}>
                         <span className="who">{t.recipient}</span>
                         <span className="what">
                           {t.students} · {cap(t.instrument)}
@@ -268,7 +274,7 @@ export function RegisterView() {
                         if (!l) return <span key={wi} className={`wk${w.afterTerm ? " is-holiday" : ""}`} />;
                         const label = format(l.date, "EEEE d MMMM");
                         return (
-                          <span key={wi} className={`wk${w.afterTerm ? " is-holiday" : ""}`}>
+                          <span key={wi} className="wk">
                             <button
                               type="button"
                               className={`mark${changed === `${t.id}:${l.key}` ? " is-changed" : ""}`}
@@ -344,7 +350,7 @@ export function RegisterView() {
                 </span>
                 {weeks.some((w) => w.afterTerm) && (
                   <span>
-                    <i className="legend-hol" aria-hidden="true" /> After the half-term
+                    <i className="legend-hol" aria-hidden="true" /> After the half-term ends (a lesson there is still charged)
                   </span>
                 )}
               </p>

@@ -32,14 +32,14 @@
 .fe-wk:last-child {
   border-right: 0;
 }
-.fe-wk.is-holiday {
-  background: repeating-linear-gradient(-45deg, var(--holiday-hatch) 0 1.5px, transparent 1.5px 7px), var(--holiday);
+.fe-wk.is-after {
+  background: var(--holiday);
 }
 .fe-wk .wk-h {
   border-bottom: 1px solid var(--rule);
   color: var(--head-ink);
 }
-.fe-wk.is-holiday .wk-h {
+.fe-wk.is-after .wk-h {
   color: var(--holiday-ink);
 }
 .fe-mk {

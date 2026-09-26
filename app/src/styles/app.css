@@ -314,6 +314,8 @@
 }
 .row {
   position: relative;
+  /* Rows never shrink to fit the sheet; the sheet scrolls instead. */
+  flex: none;
   display: grid;
   grid-template-columns: var(--fam) var(--day) calc(var(--weeks) * var(--wk) + 4px) var(--les) var(--per) var(--tot) var(--status);
   min-height: 58px;
@@ -331,6 +333,13 @@
 .row--fill {
   flex: 1 0 58px;
   border-bottom: 0;
+}
+.row--fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, transparent 0 57px, var(--rule) 57px 58px);
+  pointer-events: none;
 }
 .c {
   display: flex;
@@ -351,10 +360,14 @@
   align-items: flex-start;
   justify-content: center;
   gap: 1px;
+  padding-block: 9px;
   padding-left: 20px;
   text-align: left;
 }
 .fam-btn {
+  width: 100%;
+  /* min-height, not height: the row must grow when the family line wraps. */
+  min-height: 100%;
   border: 0;
   background: transparent;
 }
@@ -570,6 +583,9 @@
   }
   .what .day-inline {
     display: inline;
+  }
+  .what {
+    white-space: normal;
   }
 }
 @container reg (max-width: 640px) {
@@ -1414,8 +1430,6 @@ details.adv[open] summary {
 @media (max-height: 720px) {
   .slip {
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scroll-thumb) transparent;
   }
   .slip .mail {
     flex: none;
