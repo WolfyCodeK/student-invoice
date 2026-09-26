@@ -339,9 +339,23 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_updater::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::default().build());
+
+    // Development only (never in release builds): the Tauri MCP bridge,
+    // bound to localhost so it is not reachable from the network.
+    #[cfg(all(debug_assertions, feature = "mcp-bridge"))]
+    {
+        builder = builder.plugin(
+            tauri_plugin_mcp_bridge::Builder::new()
+                .bind_address("127.0.0.1")
+                .build(),
+        );
+    }
+
+    builder
         .invoke_handler(tauri::generate_handler![
             greet,
             get_gmail_auth_url,

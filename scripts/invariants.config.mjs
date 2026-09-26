@@ -83,6 +83,12 @@ export const INVARIANTS = [
     why: 'Only the dev-only config overlay may enable it (for the Tauri MCP bridge). Shipping it widens the attack surface.',
   },
   {
+    id: 'mcp-bridge-dev-only',
+    what: 'Tauri MCP bridge (`tauri-plugin-mcp-bridge`)',
+    expected: 'optional Cargo dependency behind the non-default `mcp-bridge` feature, registered only under `cfg(all(debug_assertions, feature = "mcp-bridge"))`, bound to 127.0.0.1, and granted only in `tauri.dev.conf.json`',
+    why: 'It lets a local tool drive the app. It must never reach users\' machines, and even in dev it must not listen on the network.',
+  },
+  {
     id: 'store-key',
     what: 'zustand persist `name` and `version` in `app/src/stores/app-store.ts`',
     expected: '`student-invoice-store`, version 0 (default)',

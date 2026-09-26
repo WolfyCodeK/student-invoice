@@ -43,5 +43,12 @@ thiserror = "2.0"
 # Lazy static for global state
 lazy_static = "1.4"
 
+# Development only: lets the Tauri MCP server inspect and drive the app.
+# Enabled by the non-default `mcp-bridge` feature (see docs/development.md).
+tauri-plugin-mcp-bridge = { version = "0.13", optional = true }
+
 # URL encoding/decoding
 urlencoding = "2.1"
+
+[features]
+mcp-bridge = ["dep:tauri-plugin-mcp-bridge"]

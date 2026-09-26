@@ -12,7 +12,8 @@
     "scripts/**",
     ".github/**",
     ".githooks/**",
-    ".claude/settings.json"
+    ".claude/settings.json",
+    ".mcp.json"
   ],
   "ignore": [
     "app/src/assets/**",
@@ -96,7 +97,8 @@
         ".githooks/**",
         ".github/**",
         ".claude/settings.json",
-        "scripts/tests/**"
+        "scripts/tests/**",
+        ".mcp.json"
       ]
     },
     "docs/documentation.md": {

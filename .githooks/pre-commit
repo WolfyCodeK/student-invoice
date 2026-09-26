@@ -11,5 +11,5 @@ node scripts/docs/links.mjs
 
 # Frontend checks only when frontend files are staged.
 if git diff --cached --name-only | grep -q '^app/'; then
-  (cd app && pnpm -s typecheck && pnpm -s lint)
+  (cd app && pnpm -s typecheck && pnpm -s exec eslint . --quiet)
 fi

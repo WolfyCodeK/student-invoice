@@ -44,6 +44,21 @@ const checks = {
     return Array.isArray(t) && t.length === 1 && t[0] === 'msi' ? null : `bundle.targets is ${JSON.stringify(t)}`
   },
   'global-tauri': () => (conf.app?.withGlobalTauri ? 'app.withGlobalTauri is enabled in the shipped config' : null),
+  'mcp-bridge-dev-only': () => {
+    const lib = read('app/src-tauri/src/lib.rs')
+    const dep = cargo.match(/^tauri-plugin-mcp-bridge\s*=\s*(.+)$/m)?.[1]
+    if (dep !== undefined && !/optional\s*=\s*true/.test(dep)) return 'tauri-plugin-mcp-bridge must be an optional dependency'
+    const defaults = cargo.match(/^\[features\][\s\S]*?^default\s*=\s*\[([^\]]*)\]/m)?.[1] ?? ''
+    if (/mcp-bridge/.test(defaults)) return 'mcp-bridge must not be a default feature'
+    const uses = lib.split('\n').map((l, i) => [l, i]).filter(([l]) => l.includes('tauri_plugin_mcp_bridge'))
+    for (const [, i] of uses) {
+      const guard = lib.split('\n').slice(Math.max(0, i - 3), i).join('\n')
+      if (!/#\[cfg\(all\(debug_assertions,\s*feature\s*=\s*"mcp-bridge"\)\)\]/.test(guard)) return `lib.rs:${i + 1} uses the MCP bridge without the dev-only cfg guard`
+    }
+    if (uses.length && !/bind_address\("127\.0\.0\.1"\)/.test(lib)) return 'MCP bridge must bind to 127.0.0.1'
+    if (JSON.stringify(conf).includes('mcp-bridge')) return 'the shipped tauri.conf.json references the MCP bridge'
+    return null
+  },
   'store-key': () => {
     if (!/name:\s*['"]student-invoice-store['"]/.test(store)) return 'persist name student-invoice-store not found'
     const v = store.match(/persist\([\s\S]*?\{[\s\S]*?\bversion:\s*(\d+)/)?.[1]

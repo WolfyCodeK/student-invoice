@@ -40,6 +40,7 @@ pnpm tauri dev      # starts Vite on http://localhost:3000 and the app window
 | `build` | `tsc && vite build` |
 | `preview` | `vite preview` |
 | `tauri` | `tauri` |
+| `dev:mcp` | `tauri dev --features mcp-bridge --config src-tauri/tauri.dev.conf.json` |
 | `typecheck` | `tsc --noEmit` |
 | `lint` | `eslint .` |
 | `test` | `vitest run` |
@@ -80,9 +81,22 @@ node scripts/docs/check.mjs              # all docs checks
 
 ## Claude Code
 
-`.claude/settings.json` adds a Stop hook that runs the docs checks, so an AI
-session can't finish with the docs out of date. See
-[documentation](documentation.md).
+- **Docs Stop hook:** `.claude/settings.json` adds a Stop hook that runs the
+  docs checks, so an AI session can't finish with the docs out of date. See
+  [documentation](documentation.md).
+- **Tauri MCP server:** `.mcp.json` registers the Tauri MCP server
+  (`@hypothesi/tauri-mcp-server`, pinned). It lets Claude take screenshots,
+  inspect the DOM and IPC traffic, and drive the running app.
+  - It needs the app started with the bridge: `pnpm dev:mcp` (in `app/`).
+  - That enables the Cargo feature `mcp-bridge` and merges
+    `app/src-tauri/tauri.dev.conf.json`, which turns on `withGlobalTauri` and
+    grants the bridge's permissions.
+  - The bridge listens on `127.0.0.1` only (ports 9223–9322).
+  - It never ships: it is an optional dependency, registered only under
+    `cfg(all(debug_assertions, feature = "mcp-bridge"))` and absent from
+    `tauri.conf.json`, which invariant `mcp-bridge-dev-only` enforces.
+  - Claude Code asks you to approve the server the first time it loads the
+    project.
 
 ## Locked dependency versions
 

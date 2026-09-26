@@ -48,6 +48,9 @@ second it asks Rust for the Gmail status.
 - `src/gmail.rs` is the OAuth2 (PKCE) and Gmail drafts client.
 - `tauri.conf.json` holds the window, security (CSP), updater and bundle
   settings. Several of these values are frozen; see [compatibility](compatibility.md).
+- `tauri.dev.conf.json` is a development-only overlay, merged by
+  `pnpm dev:mcp`, that enables the Tauri MCP bridge (see
+  [development](development.md#claude-code)). Release builds never use it.
 
 ### Commands callable from the UI
 
