@@ -121,7 +121,6 @@ node scripts/docs/check.mjs              # all docs checks
 | `react` | npm | 19.3.0 |
 | `typescript` | npm | 5.8.3 |
 | `vite` | npm | 7.3.6 |
-| `tailwindcss` | npm | 3.4.19 |
 | `zustand` | npm | 5.0.15 |
 | `zod` | npm | 4.6.5 |
 | `react-hook-form` | npm | 7.89.0 |

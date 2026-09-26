@@ -37,8 +37,34 @@ fn create_main_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::
         .cloned()
         .ok_or("the main window is missing from tauri.conf.json")?;
     config.additional_browser_args = Some(preferences::browser_args(preferences::load(app)));
+    // Start no bigger than the screen's free area (e.g. 1366x768 laptops).
+    if let Ok(Some(monitor)) = app.primary_monitor() {
+        let scale = monitor.scale_factor();
+        let area = monitor.work_area().size;
+        let (width, height) = fit_to_screen(
+            (config.width, config.height),
+            (
+                config.min_width.unwrap_or(0.0),
+                config.min_height.unwrap_or(0.0),
+            ),
+            (
+                f64::from(area.width) / scale,
+                f64::from(area.height) / scale,
+            ),
+        );
+        config.width = width;
+        config.height = height;
+    }
     tauri::WebviewWindowBuilder::from_config(app, &config)?.build()?;
     Ok(())
+}
+
+/// The window size to open at: the configured size, reduced to leave a small
+/// margin inside the screen's free area, but never below the minimum size.
+fn fit_to_screen(size: (f64, f64), min: (f64, f64), screen: (f64, f64)) -> (f64, f64) {
+    const MARGIN: f64 = 24.0;
+    let fit = |want: f64, min: f64, avail: f64| want.min(avail - MARGIN).max(min);
+    (fit(size.0, min.0, screen.0), fit(size.1, min.1, screen.1))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -90,4 +116,28 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::fit_to_screen;
+
+    #[test]
+    fn window_fits_small_screens_but_not_below_minimum() {
+        // 1366x768 laptop with a 48 px taskbar: 1366x720 free.
+        assert_eq!(
+            fit_to_screen((1280.0, 800.0), (960.0, 600.0), (1366.0, 720.0)),
+            (1280.0, 696.0)
+        );
+        // Large screen: unchanged.
+        assert_eq!(
+            fit_to_screen((1280.0, 800.0), (960.0, 600.0), (2560.0, 1392.0)),
+            (1280.0, 800.0)
+        );
+        // Tiny screen: never below the minimum.
+        assert_eq!(
+            fit_to_screen((1280.0, 800.0), (960.0, 600.0), (800.0, 560.0)),
+            (960.0, 600.0)
+        );
+    }
 }

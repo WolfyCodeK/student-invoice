@@ -50,8 +50,8 @@
       "covers": [
         "app/src/stores/app-store.ts",
         "app/src/types/**",
-        "app/src/components/theme-provider.tsx",
-        "app/src/lib/schema/**"
+        "app/src/lib/schema/**",
+        "app/src/lib/appearance.ts"
       ]
     },
     "docs/billing.md": {
@@ -71,13 +71,12 @@
     "docs/ui.md": {
       "covers": [
         "app/src/App.tsx",
-        "app/src/App.css",
         "app/src/components/**",
         "app/src/hooks/**",
-        "app/src/utils/cn.ts",
         "app/index.html",
-        "app/tailwind.config.js",
-        "app/postcss.config.js"
+        "app/src/features/**",
+        "app/src/styles/**",
+        "app/src/lib/appearance.ts"
       ]
     },
     "docs/compatibility.md": {
@@ -127,14 +126,14 @@
         "app/src/lib/backup-parse.ts",
         "app/src/lib/backup.test.ts",
         "app/src/lib/schema/**",
-        "app/src/components/data-section.tsx"
+        "app/src/features/settings/data-group.tsx"
       ]
     },
     "docs/performance.md": {
       "covers": [
         "scripts/perf/**",
         "app/src-tauri/src/preferences.rs",
-        "app/src/components/performance-section.tsx"
+        "app/src/features/settings/performance-group.tsx"
       ]
     }
   },

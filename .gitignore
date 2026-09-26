@@ -16,3 +16,6 @@ google-oauth*.json
 # OS / editor noise
 .DS_Store
 Thumbs.db
+
+# Impeccable review captures (screenshots)
+.impeccable/review/

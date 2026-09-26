@@ -62,6 +62,10 @@ export const backupTemplateSchema = z.looseObject({
 export const backupSettingsSchema = z.looseObject({
   theme: z.enum(['light', 'dark']).optional(),
   customEmailBodyTemplate: text(200_000).optional(),
+  // Strings, not enums: a file from a newer version may name a newer choice.
+  colourScheme: text(40).optional(),
+  corners: text(40).optional(),
+  lastSeenVersion: text(40).optional(),
 })
 
 /** The export file (`Student Invoice backup YYYY-MM-DD.json`). */

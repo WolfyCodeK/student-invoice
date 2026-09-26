@@ -13,7 +13,7 @@ it that way.
 |---|---|---|
 | Start-up JS (gzip) | 150 KiB | CI (`scripts/perf/check-bundle.mjs`) |
 | All JS (gzip) | 210 KiB | CI |
-| CSS (gzip) | 10 KiB | CI |
+| CSS (gzip) | 12 KiB | CI |
 | MSI installer | 6 MiB | release script |
 | Time to usable UI | 800 ms | `scripts/perf/measure.ps1` (manual) |
 | Idle CPU | 0.1 CPU-s per 10 s | `scripts/perf/measure.ps1` (manual) |
@@ -65,7 +65,7 @@ scrolling and animations a little less smooth.
   `{"lowMemoryMode": true}`. It is a setting for this PC, so it is not part
   of exports or backups. A missing or unreadable file means the defaults. Unknown fields
   are ignored, so older and newer versions can share the file.
-- **UI:** `app/src/components/performance-section.tsx`.
+- **UI:** `app/src/features/settings/performance-group.tsx`.
 
 ## What keeps it small
 
@@ -76,19 +76,31 @@ scrolling and animations a little less smooth.
 - **One HTTP stack:** everything, including OAuth, uses the app's reqwest
   client. The old oauth2 4.x dependency, which pulled in a second, older
   stack, is gone.
-- **Code splitting** (`app/src/App.tsx`): Settings (and with it export/import
-  and zod), the template form (react-hook-form, zod) and the feedback form
-  (EmailJS) are loaded on first use. They are prefetched when the app is
-  idle, so they still open instantly. The start-up bundle went from 187 KiB to
-  141 KiB gzipped.
+- **Code splitting** (`app/src/App.tsx`): these are loaded on first use:
+  - Settings, and with it export/import and zod;
+  - the family editor (react-hook-form, zod);
+  - the feedback form (EmailJS);
+  - What's new and the tour.
+  The first three are prefetched when the app is idle, so they still open
+  instantly. The start-up bundle went from 187 KiB (v1.0.1) to 114 KiB
+  gzipped.
+- **No CSS framework:** the v1.1.0 redesign replaced Tailwind and the
+  shadcn wrappers with plain CSS on design tokens (`app/src/styles/`). Screens
+  loaded on demand bring their own small CSS files. The CSS budget went from
+  10 to 12 KiB because the tokens carry four colour sets (two schemes, light
+  and dark). The JavaScript saving more than pays for it.
+- **Fonts are bundled, not fetched** (the CSP allows no font hosts). Only the
+  Latin and Latin Extended subsets ship, about 190 KB in all. A face
+  downloads only when it's used, so a normal start loads one 34 KB file, and
+  the Navy and amber fonts load only with that scheme.
 - **zod stays out of the start-up bundle:** constants the store needs live
   in `app/src/lib/schema/constants.ts`, and backup parsing is in its own module
   (`app/src/lib/backup-parse.ts`).
 - **Modern build target** (`es2022`), because WebView2 is an evergreen
   Chromium.
 - **No artificial delay at start-up:** v1.0.1 showed a fixed 800 ms loading
-  screen. The saved light/dark theme is now applied by a tiny inline script in
-  `app/index.html` before the first paint.
+  screen. The saved appearance (colour scheme, corners, light or dark) is now
+  applied by a tiny inline script in `app/index.html` before the first paint.
 
 ## Measuring
 

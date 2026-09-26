@@ -12,6 +12,21 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 ## [Unreleased]
 
 ### Added
+- **A new look: the register.** Every family is on one screen for the
+  half-term, with a mark for each lesson and the total at the end of the
+  row. Click a family to see its invoice email beside it.
+- **Choose how it looks:** in Settings, pick the Student Invoice colours or
+  Navy and amber (to match the teacher's website), square or rounded
+  corners, and light or dark.
+- **A new title bar** that's part of the app, with buttons for Help, Updates,
+  Feedback and Settings. The window can now be resized, maximised and
+  snapped, and it fits smaller laptop screens.
+- **What's new** appears once after each update. After this update, a short
+  guided tour shows how everything works; replay it any time from the
+  question mark or Settings.
+- **Draft all shows each family's progress**, and one that failed can be
+  tried again on its own.
+- A new app icon.
 - **Move your data to another PC:** Settings → Your data → Export, then
   Import on the other PC. It includes templates, settings, the email wording
   and the theme.
@@ -26,6 +41,9 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   screens. It's off by default and applies after a restart.
 
 ### Changed
+- Settings is now a full page, and changes are saved straight away. The
+  "Show notifications" and "Default template" settings, which did nothing,
+  are gone.
 - Connecting Gmail is simpler: no more pasting a client ID and secret into
   Settings. Click **Connect Gmail**, choose your account in the browser, and
   you stay connected, even after closing the app.

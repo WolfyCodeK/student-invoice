@@ -20,7 +20,7 @@ folder:
 | Key | Written by | Contents |
 |---|---|---|
 | `student-invoice-store` | zustand `persist` in `app/src/stores/app-store.ts` | `{"state": {templates, currentTemplateId, settings, gmailConnected}, "version": 0}` |
-| `student-invoice-theme` | `app/src/components/theme-provider.tsx` | `"light"` or `"dark"` |
+| `student-invoice-theme` | `app/src/lib/appearance.ts` | `"light"` or `"dark"` (light or dark mode) |
 
 Gmail credentials are **not** in localStorage. The refresh token (and an
 optional custom OAuth client) live in Windows Credential Manager, and the
@@ -46,14 +46,17 @@ interface InvoiceTemplate {        // one per student / family
 interface AppSettings {
   theme: 'light' | 'dark'           // fallback only; the theme key above wins
   emailMode: 'clipboard' | 'gmail-draft'   // unused
-  defaultTemplateId?: string        // editable, unused
+  defaultTemplateId?: string        // unused (no longer shown in Settings)
   windowPosition: { x, y }          // unused
   gmailClientId?: string            // legacy (v1.0.1); cleared to '' on load
   gmailClientSecret?: string        // legacy (v1.0.1); cleared to '' on load
   autoSave: boolean                 // unused
-  showNotifications: boolean        // editable, unused
+  showNotifications: boolean        // unused (no longer shown in Settings)
   customEmailBodyTemplate?: string  // replaces the default email body
   dataRevision?: number             // v1.1.0+: which upgrades have run (see below)
+  colourScheme?: 'student-invoice' | 'navy-amber'  // v1.1.0 (docs/ui.md "Appearance")
+  corners?: 'square' | 'rounded'    // v1.1.0
+  lastSeenVersion?: string          // v1.1.0: newest "What's new" shown on this PC
 }
 ```
 

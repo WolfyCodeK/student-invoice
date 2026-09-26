@@ -234,7 +234,16 @@ describe('Draft all', () => {
     const { useAppStore } = await loadStore()
     backend.gmailCreateDraft.mockRejectedValue({ kind: 'ReauthRequired', message: 'Please reconnect Gmail.' })
     const result = await useAppStore.getState().createAllInvoiceDrafts()
-    expect(result).toEqual({ success: 0, failures: [{ label: 'Sam (Alex Parent)', message: 'Please reconnect Gmail.' }], skipped: 1, nothingToInvoice: [] })
+    expect(result).toEqual({
+      outcomes: [
+        { templateId: 'a1', status: 'failed', message: 'Please reconnect Gmail.' },
+        { templateId: 'b2', status: 'skipped', message: 'Not tried: fix the Gmail connection, then try again.' },
+      ],
+      success: 0,
+      failures: [{ label: 'Sam (Alex Parent)', message: 'Please reconnect Gmail.' }],
+      skipped: 1,
+      nothingToInvoice: [],
+    })
     expect(useAppStore.getState().drafting).toBe(false)
   })
 
@@ -278,7 +287,8 @@ describe('unticking a lesson that did not happen (docs/proposals/2026-09-untick-
     for (const d of lessonDates({ day: 'Thursday' }, term)) useAppStore.getState().toggleLesson('b2', lessonDateKey(d))
     backend.gmailCreateDraft.mockResolvedValue({ id: 'd' })
     const result = await useAppStore.getState().createAllInvoiceDrafts()
-    expect(result).toEqual({ success: 1, failures: [], skipped: 0, nothingToInvoice: ['Kim (Jo Parent)'] })
+    expect(result).toMatchObject({ success: 1, failures: [], skipped: 0, nothingToInvoice: ['Kim (Jo Parent)'] })
+    expect(result.outcomes.map((o) => o.status)).toEqual(['saved', 'nothing'])
     await expect(useAppStore.getState().createCurrentInvoiceDraft()).rejects.toThrow('nothing to invoice')
   })
 })

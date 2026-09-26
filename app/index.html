@@ -2,14 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Invoice</title>
     <script>
-      // Apply the saved theme before the first paint so there's no light/dark flash.
+      // Apply the saved appearance before the first paint, so there's no
+      // flash of the wrong colours (docs/ui.md "Appearance").
       try {
-        if (localStorage.getItem("student-invoice-theme") === "dark") document.documentElement.classList.add("dark");
-      } catch {}
+        var root = document.documentElement;
+        var mode = localStorage.getItem("student-invoice-theme");
+        var settings = (JSON.parse(localStorage.getItem("student-invoice-store") || "{}").state || {}).settings || {};
+        root.dataset.mode = mode === "dark" || mode === "light" ? mode : settings.theme === "dark" ? "dark" : "light";
+        root.dataset.scheme = settings.colourScheme === "navy-amber" ? "navy-amber" : "student-invoice";
+        root.dataset.corners = settings.corners === "rounded" ? "rounded" : "square";
+      } catch (e) {}
     </script>
   </head>
 

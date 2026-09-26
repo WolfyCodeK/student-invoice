@@ -1,0 +1,308 @@
+/* Design tokens: the Register direction (DESIGN.md, docs/ui.md "Appearance").
+   Three independent switches on <html>, set before first paint by index.html:
+     data-scheme  = student-invoice | navy-amber   (colours and lettering)
+     data-corners = square | rounded                   (shape of buttons and panels)
+     data-mode    = light | dark
+   Components use only these tokens. */
+
+:root {
+  color-scheme: light;
+
+  /* Lettering follows the colour scheme. */
+  --font-ui: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
+  --font-head: "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif;
+  --head-weight: 700;
+  --head-track: -0.005em;
+
+  --fs-xs: 13px;
+  --fs-s: 14px;
+  --fs-m: 15px;
+  --fs-l: 17px;
+  --fs-xl: 22px;
+
+  /* Square corners (default). */
+  --r-btn: 4px;
+  --r-field: 4px;
+  --r-panel: 4px;
+  --r-letter: 4px;
+  --r-block: 2px;
+  --r-chip: 3px;
+
+  /* Student Invoice colours, light. */
+  --page: #ffffff;
+  --ground: #f2f5fa;
+  --cover: #1d3f8a;
+  --cover-ink: #ffffff;
+  --cover-muted: #c9d6f2;
+  --cover-line: rgba(255, 255, 255, 0.16);
+  --cover-hover: rgba(255, 255, 255, 0.12);
+  --cover-press: rgba(255, 255, 255, 0.2);
+  --cover-ghost: rgba(255, 255, 255, 0.46);
+  --cover-ok: #8be0ae;
+  --cover-off: rgba(255, 255, 255, 0.12);
+  --cover-off-ink: rgba(255, 255, 255, 0.66);
+  --band-btn: #ffffff;
+  --band-btn-ink: #1d3f8a;
+  --band-btn-hover: #e6eefa;
+  --rule: #c8d6ea;
+  --rule-strong: #9db2d6;
+  --margin: #d0453a;
+  --ink: #172033;
+  --heading: #111a2c;
+  --muted: #53607a;
+  --head-ink: #1d3f8a;
+  --mark: #1d3f8a;
+  --mark-soft: #7d93c4;
+  --mark-off: #9aa6bd;
+  --holiday: #f4f1ea;
+  --holiday-ink: #6f6450;
+  --holiday-hatch: #d9ceb8;
+  --selected: #e6eefa;
+  --sel-line: #9db5e3;
+  --row-hover: #f5f8fd;
+  --totals: #f6f8fc;
+  --totals-sel: #d8e4f7;
+  --primary: #1d3f8a;
+  --primary-ink: #ffffff;
+  --primary-hover: #17336f;
+  --primary-line: #1d3f8a;
+  --sec-bg: #ffffff;
+  --sec-line: #9db2d6;
+  --sec-ink: #1d3f8a;
+  --sec-hover: #eef3fb;
+  --field-bg: #ffffff;
+  --field-line: #8fa5cc;
+  --money: #1d3f8a;
+  --accent-line: #1d3f8a;
+  --success: #1f7a47;
+  --success-bg: #e8f4ed;
+  --warning: #8a5a00;
+  --warning-bg: #fdf3e1;
+  --danger: #b42318;
+  --danger-bg: #fceeec;
+  --danger-bg2: #f8e1de;
+  --danger-line: #e3a199;
+  --focus: #1d3f8a;
+  --focus-on-cover: #ffffff;
+  --sel-bg: #bfd2f3;
+  --sel-ink: #172033;
+  --scroll-thumb: #b4c4e0;
+  --win-border: #7f93bd;
+  --scrim: rgba(11, 22, 48, 0.52);
+  --tour-scrim: rgba(11, 22, 48, 0.62);
+  --shadow-1: 0 1px 2px rgba(16, 32, 72, 0.1);
+  --shadow-2: 0 4px 14px rgba(16, 32, 72, 0.08);
+  --shadow-3: 0 22px 52px rgba(16, 32, 72, 0.3);
+  --shadow-slip: -6px 0 16px rgba(16, 32, 72, 0.06);
+
+  /* Register marks, drawn as masks so they take any colour. */
+  --mk: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M8.6 20.4 15.4 3.6' stroke='%23000' stroke-width='2.2' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --mk-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='6.5' stroke='%23000' stroke-width='1.6' stroke-dasharray='2.6 2.4' fill='none'/%3E%3C/svg%3E");
+}
+
+:root[data-mode="dark"] {
+  color-scheme: dark;
+  --page: #10151f;
+  --ground: #0b0f17;
+  --cover: #23407f;
+  --cover-ink: #ffffff;
+  --cover-muted: #c9d6f2;
+  --cover-line: rgba(255, 255, 255, 0.14);
+  --cover-hover: rgba(255, 255, 255, 0.1);
+  --cover-press: rgba(255, 255, 255, 0.18);
+  --cover-ghost: rgba(255, 255, 255, 0.42);
+  --cover-ok: #8be0ae;
+  --cover-off: rgba(255, 255, 255, 0.1);
+  --cover-off-ink: rgba(255, 255, 255, 0.62);
+  --band-btn: #dce6fa;
+  --band-btn-ink: #142b5e;
+  --band-btn-hover: #c8d7f5;
+  --rule: #22304a;
+  --rule-strong: #34496e;
+  --margin: #e0675c;
+  --ink: #e5eaf3;
+  --heading: #f2f5fa;
+  --muted: #9faac0;
+  --head-ink: #9db7f0;
+  --mark: #9db7f0;
+  --mark-soft: #5d76a8;
+  --mark-off: #5f6b82;
+  --holiday: #1a1812;
+  --holiday-ink: #b8ab8c;
+  --holiday-hatch: #3a3526;
+  --selected: #1a2740;
+  --sel-line: #3a5486;
+  --row-hover: #151c29;
+  --totals: #131a26;
+  --totals-sel: #213150;
+  --primary: #23407f;
+  --primary-ink: #ffffff;
+  --primary-hover: #2b4c94;
+  --primary-line: #4466b4;
+  --sec-bg: #151c29;
+  --sec-line: #3a4f76;
+  --sec-ink: #c9d8f6;
+  --sec-hover: #1c2538;
+  --field-bg: #0d121b;
+  --field-line: #46597f;
+  --money: #c9d8f6;
+  --accent-line: #8faae8;
+  --success: #5dbb85;
+  --success-bg: #11261a;
+  --warning: #e8b45c;
+  --warning-bg: #2a2111;
+  --danger: #f0877d;
+  --danger-bg: #2a1517;
+  --danger-bg2: #331a1c;
+  --danger-line: #7a3a33;
+  --focus: #9db7f0;
+  --sel-bg: #2e4a80;
+  --sel-ink: #ffffff;
+  --scroll-thumb: #34496e;
+  --win-border: #2c3c5c;
+  --scrim: rgba(2, 5, 12, 0.66);
+  --tour-scrim: rgba(2, 5, 12, 0.74);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 24px 56px rgba(0, 0, 0, 0.55);
+  --shadow-slip: -6px 0 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Navy and amber colours and lettering (the teacher's website), light. */
+:root[data-scheme="navy-amber"] {
+  --font-ui: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --font-head: "Nunito", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --head-weight: 800;
+  --head-track: -0.01em;
+  --page: #ffffff;
+  --ground: #eff3f7;
+  --cover: #2e4c6d;
+  --cover-ink: #ffffff;
+  --cover-muted: #c9d6e4;
+  --cover-line: rgba(255, 255, 255, 0.14);
+  --cover-hover: rgba(255, 255, 255, 0.12);
+  --cover-press: rgba(255, 255, 255, 0.2);
+  --cover-ghost: rgba(255, 255, 255, 0.44);
+  --cover-ok: #9fe0b8;
+  --cover-off: rgba(255, 255, 255, 0.12);
+  --cover-off-ink: rgba(255, 255, 255, 0.66);
+  --band-btn: #c98a34;
+  --band-btn-ink: #2a1e06;
+  --band-btn-hover: #b97b27;
+  --rule: #d3dce4;
+  --rule-strong: #a9b8c6;
+  --margin: #c98a34;
+  --ink: #1e2a36;
+  --heading: #16222e;
+  --muted: #51606c;
+  --head-ink: #2e4c6d;
+  --mark: #2e4c6d;
+  --mark-soft: #7d93ab;
+  --mark-off: #9aa7b3;
+  --holiday: #f7f1e7;
+  --holiday-ink: #6e5a3a;
+  --holiday-hatch: #e3d3b8;
+  --selected: #e3eaf1;
+  --sel-line: #aebfd0;
+  --row-hover: #f5f8fb;
+  --totals: #f6f8fa;
+  --totals-sel: #d6e0ea;
+  --primary: #2e4c6d;
+  --primary-ink: #ffffff;
+  --primary-hover: #223a56;
+  --primary-line: #2e4c6d;
+  --sec-bg: #ffffff;
+  --sec-line: #a9b8c6;
+  --sec-ink: #2e4c6d;
+  --sec-hover: #eef3f7;
+  --field-bg: #ffffff;
+  --field-line: #98a9ba;
+  --money: #223a56;
+  --accent-line: #2e4c6d;
+  --focus: #2e4c6d;
+  --sel-bg: #f0dcbc;
+  --sel-ink: #1e2a36;
+  --scroll-thumb: #b8c6d3;
+  --win-border: #a9b8c6;
+  --scrim: rgba(23, 35, 46, 0.52);
+  --tour-scrim: rgba(23, 35, 46, 0.62);
+  --shadow-1: 0 1px 3px rgba(23, 35, 46, 0.08);
+  --shadow-2: 0 6px 18px rgba(23, 35, 46, 0.08);
+  --shadow-3: 0 22px 50px rgba(23, 35, 46, 0.16);
+  --shadow-slip: -6px 0 16px rgba(23, 35, 46, 0.06);
+}
+
+/* Navy and amber, dark (derived; his site has no dark mode). */
+:root[data-scheme="navy-amber"][data-mode="dark"] {
+  --page: #16212c;
+  --ground: #0f1720;
+  --cover: #223a56;
+  --cover-muted: #b9c9da;
+  --cover-line: rgba(255, 255, 255, 0.12);
+  --cover-hover: rgba(255, 255, 255, 0.1);
+  --cover-press: rgba(255, 255, 255, 0.18);
+  --cover-ghost: rgba(255, 255, 255, 0.38);
+  --cover-off: rgba(255, 255, 255, 0.1);
+  --cover-off-ink: rgba(255, 255, 255, 0.62);
+  --band-btn: #d59a45;
+  --band-btn-ink: #2a1e06;
+  --band-btn-hover: #c98a34;
+  --rule: #2a3a4a;
+  --rule-strong: #3a4d60;
+  --margin: #d59a45;
+  --ink: #e3eaf1;
+  --heading: #f3f6f9;
+  --muted: #9dadbc;
+  --head-ink: #8fb4da;
+  --mark: #8fb4da;
+  --mark-soft: #5a7896;
+  --mark-off: #5d6f80;
+  --holiday: #1b1a15;
+  --holiday-ink: #c4b08a;
+  --holiday-hatch: #3b3528;
+  --selected: #1d2b38;
+  --sel-line: #3a5570;
+  --row-hover: #1a2631;
+  --totals: #1a2530;
+  --totals-sel: #253747;
+  --primary: #3a6390;
+  --primary-hover: #44709f;
+  --primary-line: #3a6390;
+  --sec-bg: #16212c;
+  --sec-line: #3a4d60;
+  --sec-ink: #8fb4da;
+  --sec-hover: #1d2b38;
+  --field-bg: #121b25;
+  --field-line: #465b70;
+  --money: #d59a45;
+  --accent-line: #8fb4da;
+  --success: #5dbb85;
+  --success-bg: #12261c;
+  --warning: #e8b45c;
+  --warning-bg: #2a2111;
+  --danger: #f0877d;
+  --danger-bg: #2b1a1c;
+  --danger-bg2: #35201f;
+  --danger-line: #7a3a33;
+  --focus: #8fb4da;
+  --sel-bg: #3a6390;
+  --sel-ink: #ffffff;
+  --scroll-thumb: #3a4d60;
+  --win-border: #2a3a4a;
+  --scrim: rgba(0, 0, 0, 0.62);
+  --tour-scrim: rgba(0, 0, 0, 0.72);
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 24px 56px rgba(0, 0, 0, 0.5);
+  --shadow-slip: -6px 0 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Rounded corners (the Navy and amber shape, available with either scheme). */
+:root[data-corners="rounded"] {
+  --r-btn: 999px;
+  --r-field: 8px;
+  --r-panel: 14px;
+  --r-letter: 22px;
+  --r-block: 6px;
+  --r-chip: 999px;
+}

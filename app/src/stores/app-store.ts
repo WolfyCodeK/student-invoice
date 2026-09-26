@@ -9,6 +9,7 @@ import type { ParseResult } from '../lib/backup-parse'
 import type { BackupFile } from '../lib/schema'
 import { WEEKDAYS } from '../lib/schema/constants'
 import { getVersion } from '@tauri-apps/api/app'
+import { applyAppearance, appearanceFrom, saveMode, THEME_STORAGE_KEY, type Appearance } from '../lib/appearance'
 
 /** One template's result from "Draft all". */
 export interface DraftFailure {
@@ -16,7 +17,15 @@ export interface DraftFailure {
   message: string
 }
 
+/** What happened to one family during "Draft all" (for the register's status column). */
+export interface DraftOutcome {
+  templateId: string
+  status: 'saving' | 'saved' | 'failed' | 'nothing' | 'skipped'
+  message?: string
+}
+
 export interface DraftAllResult {
+  outcomes: DraftOutcome[]
   success: number
   failures: DraftFailure[]
   /** Not attempted, because an earlier failure means every draft would fail. */
@@ -37,6 +46,10 @@ interface AppState {
   setCurrentTemplate: (id: string | null) => void
   /** Untick a lesson that didn't happen, or tick it again (docs/billing.md). */
   toggleLesson: (templateId: string, date: string) => void
+
+  // Appearance (docs/ui.md)
+  setAppearance: (update: Partial<Appearance>) => void
+  markVersionSeen: (version: string) => void
 
   // Settings
   settings: AppSettings
@@ -63,7 +76,9 @@ interface AppState {
   setCustomGmailClient: (clientId: string, clientSecret: string) => Promise<void>
   clearCustomGmailClient: () => Promise<void>
   createCurrentInvoiceDraft: () => Promise<void>
-  createAllInvoiceDrafts: () => Promise<DraftAllResult>
+  createAllInvoiceDrafts: (onProgress?: (outcome: DraftOutcome) => void) => Promise<DraftAllResult>
+  /** Save one family's invoice as a draft ("Try again" after Draft all). */
+  draftTemplate: (templateId: string) => Promise<void>
 
   // Updates
   checkForUpdates: () => Promise<UpdateInfo>
@@ -88,7 +103,7 @@ const defaultSettings: AppSettings = {
   customEmailBodyTemplate: undefined
 }
 
-export const THEME_STORAGE_KEY = 'student-invoice-theme'
+export { THEME_STORAGE_KEY }
 
 async function currentBackupText(): Promise<string> {
   const { templates, currentTemplateId, settings } = useAppStore.getState()
@@ -211,9 +226,9 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      createAllInvoiceDrafts: async () => {
+      createAllInvoiceDrafts: async (onProgress) => {
         const state = get()
-        if (state.drafting) return { success: 0, failures: [], skipped: 0, nothingToInvoice: [] }
+        if (state.drafting) return { outcomes: [], success: 0, failures: [], skipped: 0, nothingToInvoice: [] }
         const term = state.currentTerm
         if (!term) throw new Error('It is outside term time, so there are no invoices to create.')
         if (state.templates.length === 0) throw new Error('There are no templates yet.')
@@ -222,25 +237,40 @@ export const useAppStore = create<AppState>()(
         let skipped = 0
         const failures: DraftFailure[] = []
         const nothingToInvoice: string[] = []
+        const outcomes: DraftOutcome[] = []
+        const report = (outcome: DraftOutcome) => {
+          if (outcome.status !== 'saving') outcomes.push(outcome)
+          onProgress?.(outcome)
+        }
         try {
           for (const [i, template] of state.templates.entries()) {
+            const label = `${template.students} (${template.recipient})`
             if (!hasValidLessonDay(template)) {
-              failures.push({ label: `${template.students} (${template.recipient})`, message: 'The lesson day is not set correctly. Edit the template and choose a day.' })
+              const message = 'The lesson day is not set correctly. Edit the family and choose a day.'
+              failures.push({ label, message })
+              report({ templateId: template.id, status: 'failed', message })
               continue
             }
             const invoice = generateInvoice(template, term, state.settings.customEmailBodyTemplate)
             if (invoice.lessonCount === 0) {
-              nothingToInvoice.push(`${template.students} (${template.recipient})`)
+              nothingToInvoice.push(label)
+              report({ templateId: template.id, status: 'nothing', message: NOTHING_TO_INVOICE })
               continue
             }
+            report({ templateId: template.id, status: 'saving' })
             try {
               await backend.gmailCreateDraft(invoice.subject, invoice.body)
               success++
+              report({ templateId: template.id, status: 'saved' })
             } catch (error) {
-              failures.push({ label: `${template.students} (${template.recipient})`, message: errorMessage(error) })
+              failures.push({ label, message: errorMessage(error) })
+              report({ templateId: template.id, status: 'failed', message: errorMessage(error) })
               // Without a working connection every remaining draft would fail too.
               if (isBackendError(error) && ['ReauthRequired', 'NotConnected', 'NotConfigured'].includes(error.kind)) {
                 skipped = state.templates.length - i - 1
+                for (const rest of state.templates.slice(i + 1)) {
+                  report({ templateId: rest.id, status: 'skipped', message: 'Not tried: fix the Gmail connection, then try again.' })
+                }
                 await get().refreshGmailStatus()
                 break
               }
@@ -249,7 +279,29 @@ export const useAppStore = create<AppState>()(
         } finally {
           set({ drafting: false })
         }
-        return { success, failures, skipped, nothingToInvoice }
+        return { outcomes, success, failures, skipped, nothingToInvoice }
+      },
+
+      draftTemplate: async (templateId) => {
+        const state = get()
+        if (state.drafting) return
+        const template = state.templates.find((t) => t.id === templateId)
+        if (!template || !state.currentTerm || !hasValidLessonDay(template)) {
+          throw new Error('There is no invoice to save for this family right now.')
+        }
+        const invoice = generateInvoice(template, state.currentTerm, state.settings.customEmailBodyTemplate)
+        if (invoice.lessonCount === 0) throw new Error(NOTHING_TO_INVOICE)
+        set({ drafting: true })
+        try {
+          await backend.gmailCreateDraft(invoice.subject, invoice.body)
+        } catch (error) {
+          if (isBackendError(error) && (error.kind === 'ReauthRequired' || error.kind === 'NotConnected')) {
+            await get().refreshGmailStatus()
+          }
+          throw error
+        } finally {
+          set({ drafting: false })
+        }
       },
 
       // Updates
@@ -344,6 +396,23 @@ export const useAppStore = create<AppState>()(
         if (skipped.has(date)) skipped.delete(date)
         else skipped.add(date)
         get().updateTemplate(templateId, { skippedLessonDates: [...skipped].sort() })
+      },
+
+      // Appearance
+      setAppearance: (update) => {
+        const settings = { ...get().settings }
+        if (update.mode) {
+          saveMode(update.mode)
+          settings.theme = update.mode
+        }
+        if (update.scheme) settings.colourScheme = update.scheme
+        if (update.corners) settings.corners = update.corners
+        set({ settings })
+        applyAppearance(appearanceFrom(settings))
+      },
+
+      markVersionSeen: (version) => {
+        set((state) => ({ settings: { ...state.settings, lastSeenVersion: version } }))
       },
 
       // Settings

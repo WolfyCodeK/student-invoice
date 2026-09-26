@@ -51,6 +51,11 @@ export interface AppSettings {
   customEmailBodyTemplate?: string
   /** Stored-data revision (see docs/data-model.md). Absent in v1.0.1 data. */
   dataRevision?: number
+  /** v1.1.0 appearance (docs/ui.md). Light/dark stays in `theme` and the theme key. */
+  colourScheme?: 'student-invoice' | 'navy-amber'
+  corners?: 'square' | 'rounded'
+  /** Newest version whose "What's new" (and tour) this PC has shown. */
+  lastSeenVersion?: string
 }
 
 // API Response types

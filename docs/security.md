@@ -72,8 +72,11 @@ private key.
   - Only commands granted an `allow-*` permission in
     `app/src-tauri/capabilities/default.json` can be called; see
     [architecture](architecture.md#capabilities-permissions-granted-to-the-window).
-  - Core permissions are limited to reading the app version and listening
-    to events.
+  - Core permissions are limited to reading the app version, listening to
+    events, and the window controls the custom title bar needs: minimise,
+    maximise/restore, close, drag and double-click to maximise
+    (`core:window:allow-minimize`, `-toggle-maximize`, `-close`,
+    `-start-dragging`, `-internal-toggle-maximize`, `-is-maximized`).
   - There are no filesystem, shell, HTTP or opener permissions in the
     webview. URLs are opened by Rust.
 - **Files:** the webview can't read or write arbitrary files. Export and import use native dialogs opened by Rust, and automatic backups are addressed by strictly checked names. Imported files are size-limited and strictly validated ([backup](backup.md)).

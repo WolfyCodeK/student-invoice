@@ -1,0 +1,24 @@
+/* Guided tour: small additions to the tour styles in styles/app.css. Tokens only. */
+
+/* "Step 2 of 7" and the progress dots share one line. */
+.tour-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Never wider than the window (the layout keeps a 12 px margin). */
+.tour-card {
+  max-width: calc(100vw - 24px);
+}
+
+/* Nothing on screen to highlight: dim everything, draw no ring. */
+.tour-spot.is-empty {
+  box-shadow: 0 0 0 200vmax var(--tour-scrim);
+}
+
+/* "Skip tour" is a link, but still an easy target. */
+.tour-bar .btn--link {
+  min-height: 32px;
+}

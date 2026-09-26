@@ -1,0 +1,78 @@
+/* Family editor: the few pieces app.css (.edit, .record, .mini …) doesn't
+   cover. Tokens only (styles/tokens.css). */
+
+/* The page under the band scrolls on its own, so the band stays put. */
+.fe-page {
+  flex: 1;
+  min-height: 0;
+}
+
+.fe-band h1 {
+  overflow-wrap: anywhere;
+}
+
+.fe-ctl {
+  min-width: 0;
+}
+
+/* The half-term's lessons for this family, as dated register marks behind
+   the red margin rule. */
+.fe-weeks {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  margin-left: 16px;
+  border-left: 4px double var(--margin);
+  border-bottom: 1px solid var(--rule);
+}
+.fe-wk {
+  display: grid;
+  grid-template-rows: 36px 38px;
+  border-right: 1px solid var(--rule);
+}
+.fe-wk:last-child {
+  border-right: 0;
+}
+.fe-wk.is-holiday {
+  background: repeating-linear-gradient(-45deg, var(--holiday-hatch) 0 1.5px, transparent 1.5px 7px), var(--holiday);
+}
+.fe-wk .wk-h {
+  border-bottom: 1px solid var(--rule);
+  color: var(--head-ink);
+}
+.fe-wk.is-holiday .wk-h {
+  color: var(--holiday-ink);
+}
+.fe-mk {
+  display: grid;
+  place-items: center;
+}
+.fe-mk::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  background-color: var(--mark);
+  -webkit-mask: var(--mk) center / 22px 22px no-repeat;
+  mask: var(--mk) center / 22px 22px no-repeat;
+}
+.fe-mk.is-off::before {
+  background-color: var(--mark-off);
+  -webkit-mask-image: var(--mk-off);
+  mask-image: var(--mk-off);
+}
+
+.edit-side .fe-subj {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+.fe-subj strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* A long saved instrument stays on one line inside its list box. */
+.fe-ctl .select-trigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

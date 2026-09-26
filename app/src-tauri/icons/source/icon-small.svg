@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Student Invoice (small sizes)</title>
+  <!-- Simplified for 16-32 px. Geometry sits on a 64-unit grid, so every
+       edge lands on a whole pixel at 16 px and 32 px. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C52AB"/>
+      <stop offset="1" stop-color="#22479C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tile -->
+  <rect width="1024" height="1024" rx="225" fill="url(#tile)"/>
+
+  <!-- Back sheet: plain, a little deeper than the master so it separates from the front sheet -->
+  <rect x="128" y="128" width="512" height="640" rx="32" fill="#C4D6F1"/>
+
+  <!-- Front sheet with two bold lines -->
+  <rect x="256" y="256" width="512" height="640" rx="32" fill="#FFFFFF"/>
+  <g fill="#1D3F8A">
+    <rect x="320" y="320" width="320" height="64"/>
+    <rect x="320" y="448" width="192" height="64"/>
+  </g>
+
+  <!-- Tick: centreline (416,640) > (512,736) > (800,448), 128 wide -->
+  <path d="M461.25 594.75 L370.75 685.25 L512 826.51 L845.25 493.25 L754.75 402.75 L512 645.49 Z" fill="#2FA36B"/>
+</svg>

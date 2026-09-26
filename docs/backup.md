@@ -7,7 +7,7 @@ included; the user connects Gmail again on the new PC. Neither is Low
 memory mode, which is a setting for each PC (see
 [performance](performance.md#low-memory-mode)).
 
-The UI lives in Settings → **Your data** (`app/src/components/data-section.tsx`).
+The UI lives in Settings → **Your data** (`app/src/features/settings/data-group.tsx`).
 
 ## Export
 
@@ -195,6 +195,18 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                 "customEmailBodyTemplate": {
                   "type": "string",
                   "maxLength": 200000
+                },
+                "colourScheme": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "corners": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "lastSeenVersion": {
+                  "type": "string",
+                  "maxLength": 40
                 }
               },
               "additionalProperties": {}

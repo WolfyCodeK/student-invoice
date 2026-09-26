@@ -8,7 +8,7 @@ can't: the Google OAuth loopback server, Gmail API calls, and the updater.
 ```
 ┌──────────────────────── WebView2 (origin http://tauri.localhost) ───────────────────────┐
 │ React UI (app/src)                                                                      │
-│   App.tsx ── components/* ── zustand store (stores/app-store.ts) ── utils/* (pure logic) │
+│   App.tsx ── features/*, components/* ── zustand store (stores/) ── utils/* (pure logic) │
 │        │                         │ persist → localStorage "student-invoice-store"        │
 │        │ lib/backend.ts (typed invoke wrappers; CSP + command allowlist enforced)        │
 └────────┼────────────────────────────────────────────────────────────────────────────────┘
@@ -25,8 +25,13 @@ The feedback form calls api.emailjs.com directly from the webview.
 
 - `main.tsx` mounts `App` in React StrictMode, inside an error boundary
   (`components/error-boundary.tsx`).
-- `App.tsx` is the whole UI today: header, template picker and actions, invoice
-  preview, and all dialogs. See [UI](ui.md).
+- `App.tsx` is the shell: the title bar, the current screen (register,
+  settings or the family editor), and the app-wide dialogs. The screens are
+  in `features/`, the title bar and shared pieces in `components/`, and the
+  styles in `styles/`. See [UI](ui.md).
+- `features/app-context.tsx` gives every screen navigation and shared
+  actions. `lib/appearance.ts` handles the colour scheme, corners and light
+  or dark.
 - `stores/app-store.ts`: the single zustand store. It holds templates, settings,
   the current term and invoice, Gmail connection state, and the update
   actions, and it persists part of itself to localStorage. See
@@ -34,8 +39,9 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `utils/terms.ts` and `utils/invoice-generator.ts`: pure, tested billing logic.
   See [billing](billing.md).
 - `types/index.ts`: shared domain types.
-- **Loaded on first use:** Settings, the template form and the feedback
-  form are code-split (`React.lazy`) and prefetched when idle. Backup
+- **Loaded on first use:** Settings, the family editor, the feedback form,
+  What's new and the tour are code-split (`React.lazy`), and the first three
+  are prefetched when idle. Backup
   parsing, which needs zod, is imported on demand. See
   [performance](performance.md).
 - `lib/backend.ts`: typed wrappers for every Rust command and the shared
@@ -48,7 +54,8 @@ The feedback form calls api.emailjs.com directly from the webview.
 - **When `App` mounts:** it upgrades data from older versions, after a backup
   if there is data to protect (`migrateStoredData`), takes the daily automatic backup
   (`ensureDailyBackup`), starts listening for update progress, and checks for
-  updates.
+  updates. Once the data is ready, it shows What's new, and the tour after
+  1.1.0, if this PC hasn't seen them yet.
 
 ## Backend (`app/src-tauri`)
 
@@ -58,7 +65,9 @@ The feedback form calls api.emailjs.com directly from the webview.
   the updater state. It then creates the main window itself from the
   `tauri.conf.json` config (`"create": false`), so the WebView2 arguments can
   follow the user's Low memory mode choice (see
-  [performance](performance.md#low-memory-mode)).
+  [performance](performance.md#low-memory-mode)). It also fits the start-up
+  size to the screen's free area (`fit_to_screen`). The window has no Windows
+  frame, because the UI draws its own title bar ([UI](ui.md#title-bar)).
 - `src/preferences.rs` holds per-PC preferences read before the window
   exists (`preferences.json`).
 - `src/commands.rs` holds every command the UI can call. They validate input
@@ -114,6 +123,12 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 - `core:app:allow-version`
 - `core:event:allow-listen`
 - `core:event:allow-unlisten`
+- `core:window:allow-minimize`
+- `core:window:allow-toggle-maximize`
+- `core:window:allow-close`
+- `core:window:allow-start-dragging`
+- `core:window:allow-internal-toggle-maximize`
+- `core:window:allow-is-maximized`
 - `allow-gmail-status`
 - `allow-gmail-connect`
 - `allow-gmail-cancel-connect`

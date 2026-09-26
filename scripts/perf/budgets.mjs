@@ -9,7 +9,7 @@ export const BUNDLE_BUDGETS = {
   /** All JS, including chunks loaded on demand. */
   totalJsGzipKiB: 210,
   /** All CSS. */
-  cssGzipKiB: 10,
+  cssGzipKiB: 12,
 }
 
 /** The signed MSI installer, in MiB (checked by the release script). */

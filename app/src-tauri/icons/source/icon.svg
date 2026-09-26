@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Student Invoice</title>
+  <defs>
+    <!-- Tile: register blue, very subtle top-to-bottom gradient -->
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C52AB"/>
+      <stop offset="1" stop-color="#22479C"/>
+    </linearGradient>
+    <!-- Back sheet: pale register blue -->
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DDE8F8"/>
+      <stop offset="1" stop-color="#CCDBF1"/>
+    </linearGradient>
+    <!-- Front sheet: white, cooling slightly towards the bottom -->
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F0F4FB"/>
+    </linearGradient>
+    <!-- Tick: success green, a touch deeper at the bottom-left -->
+    <linearGradient id="tick" gradientUnits="userSpaceOnUse" x1="460" y1="780" x2="820" y2="470">
+      <stop offset="0" stop-color="#289A62"/>
+      <stop offset="1" stop-color="#36AF75"/>
+    </linearGradient>
+    <!-- The one soft shadow, under the front sheet -->
+    <filter id="shadow" x="-25%" y="-20%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#0A1E4F" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <!-- Tile (22% corner radius); transparent outside the corners -->
+  <rect width="1024" height="1024" rx="225" fill="url(#tile)"/>
+
+  <!-- Back sheet, offset up and to the left -->
+  <rect x="208" y="192" width="416" height="528" rx="32" fill="url(#back)"/>
+  <!-- Sheet geometry and rows sit on a 16-unit grid: whole pixels at 64 and 256 px -->
+  <g fill="#9DB6DF">
+    <rect x="256" y="240" width="192" height="32" rx="16"/>
+    <rect x="256" y="336" width="128" height="32" rx="16"/>
+    <rect x="256" y="416" width="128" height="32" rx="16"/>
+    <rect x="256" y="496" width="128" height="32" rx="16"/>
+  </g>
+
+  <!-- Front sheet -->
+  <rect x="336" y="304" width="416" height="528" rx="32" fill="url(#front)" filter="url(#shadow)"/>
+  <g fill="#1D3F8A">
+    <rect x="400" y="368" width="256" height="32" rx="16"/>
+    <rect x="400" y="448" width="256" height="32" rx="16"/>
+    <rect x="400" y="528" width="176" height="32" rx="16"/>
+  </g>
+
+  <!-- Tick: centreline (480,640) > (568,728) > (792,504), 80 wide;
+       drawn as a 60-wide outline plus a 20 round-join stroke for soft corners -->
+  <path d="M501.21 618.79 L458.79 661.21 L568 770.43 L813.21 525.21 L770.79 482.79 L568 685.57 Z"
+        fill="url(#tick)" stroke="url(#tick)" stroke-width="20" stroke-linejoin="round"/>
+</svg>

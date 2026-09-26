@@ -1,0 +1,317 @@
+/* Settings screen: additions to app.css (.page-work, .nav, .set, .grp, .srow …).
+   Tokens only (styles/tokens.css). */
+
+/* ---- Page frame ------------------------------------------------------ */
+.page-work.st-page {
+  grid-template-rows: minmax(0, 1fr);
+}
+.st-nav {
+  min-height: 0;
+}
+/* The list shows its labels, so the tooltips are only for the narrow, icons-only list. */
+.st-nav button[data-tip]:hover::after,
+.st-nav button[data-tip]:focus-visible::after {
+  display: none;
+}
+.st-nav .st-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-set {
+  min-height: 0;
+  container: settings / inline-size;
+  overscroll-behavior: contain;
+}
+.st-set .grp > h2:focus-visible {
+  outline-offset: 4px;
+}
+
+/* ---- Shared bits ----------------------------------------------------- */
+.st-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.st-status .lucide {
+  width: 18px;
+  height: 18px;
+}
+.st-wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.st-full {
+  flex-basis: 100%;
+}
+.st-lead {
+  padding: 14px 0 12px;
+  color: var(--muted);
+}
+
+/* ---- Appearance: choice tiles ---------------------------------------- */
+.st-choices {
+  align-items: stretch;
+}
+.sctl > .choice {
+  flex: 1 1 0;
+  min-width: 240px;
+  max-width: 320px;
+  min-height: 58px;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+.choice:hover:not([aria-checked="true"]) {
+  background: var(--sec-hover);
+}
+.st-choice-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.st-choice-text small {
+  line-height: 1.3;
+}
+.st-choice-check {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  color: var(--head-ink);
+  visibility: hidden;
+}
+.choice[aria-checked="true"] .st-choice-check {
+  visibility: visible;
+}
+
+/* ---- Gmail: advanced client ------------------------------------------ */
+.st-block {
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.st-block details.adv summary {
+  display: list-item;
+  padding: 6px 0;
+}
+.st-adv {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+}
+.st-adv-note {
+  color: var(--muted);
+}
+.st-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.st-field label {
+  font-weight: 600;
+}
+
+/* ---- Email wording --------------------------------------------------- */
+.st-wording {
+  min-height: 240px;
+  line-height: 1.5;
+}
+.st-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+}
+.st-warn .lucide {
+  width: 16px;
+  height: 16px;
+  color: var(--warning);
+}
+.st-save-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+}
+.st-unsaved {
+  color: var(--warning);
+  font-weight: 600;
+}
+.tpl-col .phlist li {
+  padding: 0;
+}
+.st-ph {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: calc(100% + 12px);
+  margin: 0 -6px;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: var(--r-field);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+.st-ph:hover {
+  background: var(--sec-hover);
+}
+.st-ph:hover code {
+  background: var(--totals-sel);
+}
+
+/* ---- Term dates ------------------------------------------------------ */
+.st-holiday {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 600px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: var(--r-panel);
+  background: var(--warning-bg);
+}
+.st-holiday .lucide {
+  width: 18px;
+  height: 18px;
+  color: var(--warning);
+}
+.st-terms {
+  max-width: 600px;
+}
+.st-terms .trow:last-child {
+  border-bottom-color: var(--rule-strong);
+}
+.st-season {
+  font-weight: 600;
+  color: var(--heading);
+}
+.st-half {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.trow.is-now .st-half {
+  font-weight: 600;
+  color: var(--heading);
+}
+.st-dates {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- Your data ------------------------------------------------------- */
+.st-backups {
+  min-width: 0;
+}
+.st-backups ul {
+  border-top: 1px solid var(--rule);
+}
+.st-backups .bk p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.st-backups-bar {
+  padding-top: 10px;
+}
+.st-empty {
+  color: var(--muted);
+}
+.st-error {
+  padding-top: 12px;
+}
+.st-summary {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule);
+}
+.st-summary > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.st-summary dt {
+  color: var(--muted);
+}
+.st-summary dd {
+  font-weight: 600;
+}
+
+/* ---- Performance ----------------------------------------------------- */
+.st-perf {
+  align-items: flex-start;
+}
+.st-perf .switch {
+  margin-top: 1px;
+}
+.st-perf-note {
+  flex: 1 1 280px;
+  color: var(--muted);
+}
+.st-restart {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid var(--sel-line);
+  border-radius: var(--r-panel);
+  background: var(--selected);
+  font-weight: 600;
+}
+
+/* ---- About & help ---------------------------------------------------- */
+.st-new {
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* ---- Narrow windows ---------------------------------------------------- */
+@media (max-width: 860px) {
+  .page-work.st-page {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .st-nav {
+    padding: 12px 8px;
+    overflow: visible; /* lets the tooltips show beside the icons */
+  }
+  .st-nav button {
+    justify-content: center;
+    padding: 0;
+  }
+  .st-nav .st-nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .st-nav .nav-foot {
+    display: none;
+  }
+  .st-nav button[data-tip]:hover::after,
+  .st-nav button[data-tip]:focus-visible::after {
+    display: block;
+    top: 50%;
+    right: auto;
+    left: calc(100% + 8px);
+    transform: translateY(-50%);
+  }
+}
+@container settings (max-width: 600px) {
+  .st-set .srow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .st-set .trow {
+    grid-template-columns: 84px minmax(0, 1fr) auto;
+  }
+  .sctl > .choice {
+    max-width: none;
+  }
+}
