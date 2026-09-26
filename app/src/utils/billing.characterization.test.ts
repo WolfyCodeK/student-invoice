@@ -87,7 +87,7 @@ describe('v1.0.1 billing characterization', () => {
 
   it('subject and default body text', () => {
     const termData = calculateTermData(new Date(2026, 8, 10))!
-    const inv = generateInvoice(template({ instrument: 'bass guitar', day: 'Thursday', cost: 22.5 }), termData)
+    const inv = generateInvoice(template({ instrument: 'bass guitar', day: 'Thursday', cost: 22.5 }), termData, undefined, 'Jo Teacher')
     expect(inv.subject).toMatchInlineSnapshot(`"Invoice for Bass guitar Lessons 1st half autumn term 2026"`)
     expect(inv.body).toMatchInlineSnapshot(`
       "Hi Alex Parent,
@@ -99,16 +99,18 @@ describe('v1.0.1 billing characterization', () => {
       8 x £22.50 = £180.00
 
       Many thanks,
-      the teacher"
+      Jo Teacher"
     `)
   })
 
   it('custom body template: every placeholder, plus current edge-case behaviour', () => {
     const termData = calculateTermData(new Date(2026, 8, 10))!
     const custom = getDefaultTemplateString()
-    const inv = generateInvoice(template(), termData, custom)
-    const def = generateInvoice(template(), termData)
+    const inv = generateInvoice(template(), termData, custom, 'Jo Teacher')
+    const def = generateInvoice(template(), termData, undefined, 'Jo Teacher')
     expect(inv.body).toBe(def.body)
+    // "Your name" is inserted literally, even if it looks like a replacement pattern.
+    expect(generateInvoice(template(), termData, '{{yourName}}', 'A $& B').body).toBe('A $& B')
 
     // Names containing replacement patterns / other placeholders (recorded as-is).
     const tricky = generateInvoice(

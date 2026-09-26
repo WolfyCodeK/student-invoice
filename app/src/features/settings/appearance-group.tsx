@@ -46,7 +46,7 @@ const SCHEMES: RadioOption<ColourScheme>[] = [
           </span>
         }
         name="Navy and amber"
-        note="Navy and amber, like the teacher's website"
+        note="With softer lettering"
       />
     ),
   },

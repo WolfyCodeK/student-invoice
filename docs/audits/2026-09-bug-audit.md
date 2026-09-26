@@ -37,7 +37,7 @@ Severity: **High** = wrong money/data loss/can't use a core feature;
 | B22 | Low | Gmail | Gmail connection is lost on every restart (tokens are memory-only), while the persisted `gmailConnected` flag briefly shows "connected" for ~1 s after start. | Fixed (v1.1.0; runtime check pending) |
 | B23 | High | Billing | Bank holidays inside a term are billed as lessons: lessons are simply every 7 days. The Early May bank holiday falls in summer ½ every year (17/17 years 2023–2040); Good Friday or Easter Monday is billed in 10/17 years. Example: a Monday pupil at £20 in summer ½ 2025 is billed 6 lessons, including 21 Apr and 5 May. | Deferred to a future version (owner, 2026-09-26: v1.1.0 keeps calculations, email wording and usage unchanged) |
 | B24 | Medium | Billing | The week count is computed from milliseconds (`ceil(ms / 7 days)`), which is sensitive to clock changes. Harmless with today's hard-coded dates (checked 2023–2040), but any fix for B3 that allows other dates must count calendar days (e.g. 1 Oct → 5 Nov gives 6, not 5). | Deferred to a future version (owner, 2026-09-26: v1.1.0 keeps calculations, email wording and usage unchanged) |
-| B25 | Medium | Invoice text | The default email is signed "the teacher", hard-coded. Anyone else using the app without a custom body sends invoices signed "the teacher". | Deferred to a future version (owner, 2026-09-26: v1.1.0 keeps calculations, email wording and usage unchanged) |
+| B25 | Medium | Invoice text | The default email is signed with the main user's first name, hard-coded. Anyone else using the app without a custom body sends invoices signed with his name. | Fixed (v1.1.0) by the "Your name" setting ([proposal](../proposals/2026-09-your-name-sign-off.md), approved 2026-09-27). Earlier status: deferred (owner, 2026-09-26). |
 | B26 | Medium | Billing/UI | Outside term time nothing can be invoiced, and the preview says "Select a template to preview the invoice" even when one is selected. There are gaps between every half-term, plus B2. | Empty-preview message fixed; invoicing between half-terms deferred to a future version (owner, 2026-09-26) |
 | B27 | Low | Billing | A cost with more than 2 decimals (only reachable through stored or imported data) makes the calculation line inconsistent, e.g. 12.345 gives "8 x £12.35 = £98.76". Two-decimal costs are always correct (checked £0.01–£1000 × 1–10 lessons). | Deferred to a future version (owner, 2026-09-26: v1.1.0 keeps calculations, email wording and usage unchanged) |
 | B28 | Low | Settings | Saving the email-body editor unchanged stores a frozen copy of the default, so later changes to the default wording never reach that user. Misspelt placeholders (`{{ cost }}`) are sent verbatim with no warning. | Deferred to a future version (owner, 2026-09-26: v1.1.0 keeps calculations, email wording and usage unchanged) |
@@ -87,8 +87,10 @@ main user before a later version; see the
    inclusive"?
 4. **Between terms (B26):** should the next half-term's invoices be
    preparable during the holiday before it (e.g. late August for Autumn ½)?
-5. **Sender name (B25):** is the app used only by the teacher, or should the
-   sign-off be a setting (default "the teacher" so existing emails don't change)?
+5. **Sender name (B25):** is the app used only by the main user, or should
+   the sign-off be a setting (defaulting to his first name so existing emails
+   don't change)? *Settled on 2026-09-27: a "Your name" setting, empty until
+   the user types it ([proposal](../proposals/2026-09-your-name-sign-off.md)).*
 6. **Wording (B29/B31):** "lessons" or "sessions"? Should the subject name the
    pupil?
 

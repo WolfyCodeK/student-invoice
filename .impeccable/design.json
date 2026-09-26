@@ -546,7 +546,7 @@
       },
       "na-cover": {
         "role": "secondary",
-        "displayName": "Navy and amber Navy",
+        "displayName": "Navy",
         "canonical": "#2e4c6d",
         "tonalRamp": [
           "oklch(15% 0.066 251.9)",
@@ -561,7 +561,7 @@
       },
       "na-amber": {
         "role": "secondary",
-        "displayName": "Navy and amber Amber",
+        "displayName": "Amber",
         "canonical": "#c98a34",
         "tonalRamp": [
           "oklch(15% 0.125 70.8)",
@@ -576,7 +576,7 @@
       },
       "na-ground": {
         "role": "neutral",
-        "displayName": "Navy and amber Ground",
+        "displayName": "Ground (Navy and amber)",
         "canonical": "#eff3f7",
         "tonalRamp": [
           "oklch(15% 0.007 247.9)",
@@ -1223,7 +1223,7 @@
   ],
   "narrative": {
     "northStar": "The Class Register",
-    "overview": "Student Invoice is a UK school register in software form. The half-term is the page. Every family is a ruled row, every lesson is a dated diagonal mark, and the tinted block at the end of the row is the invoice. A register-blue cover band runs across the title bar and header as one piece. Below it sits a white, feint-ruled page with a double margin rule between the names and the lessons. The pupil's page sits to the right as a side panel, like a slip laid on the register. The app avoids the usual invoice list with status pills. Any state it shows belongs to the register itself: a mark, a tint, or a word in the row.\n\nThe density is that of a working document, not a dashboard. Rows are a generous 58px and the lettering is Atkinson Hyperlegible Next, chosen for reading figures at a glance. Tabular figures appear wherever money or dates line up. The system has three independent appearance switches on the root element: colour scheme (Student Invoice or Navy and amber), corners (Square or Rounded) and mode (Light or Dark, Light by default). The frontmatter records the default combination: Student Invoice, square, light. The other combinations swap token values and never change the structure. The Navy and amber scheme takes its navy, amber and Nunito lettering from the teacher's website.\n\nthe teacher has basic computer confidence and uses the app by day and at night. That is why every scheme and mode keeps readable contrast, every control works from the keyboard, and all motion stops under reduced-motion.",
+    "overview": "Student Invoice is a UK school register in software form. The half-term is the page. Every family is a ruled row, every lesson is a dated diagonal mark, and the tinted block at the end of the row is the invoice. A register-blue cover band runs across the title bar and header as one piece. Below it sits a white, feint-ruled page with a double margin rule between the names and the lessons. The pupil's page sits to the right as a side panel, like a slip laid on the register. The app avoids the usual invoice list with status pills. Any state it shows belongs to the register itself: a mark, a tint, or a word in the row.\n\nThe density is that of a working document, not a dashboard. Rows are a generous 58px and the lettering is Atkinson Hyperlegible Next, chosen for reading figures at a glance. Tabular figures appear wherever money or dates line up. The system has three independent appearance switches on the root element: colour scheme (Student Invoice or Navy and amber), corners (Square or Rounded) and mode (Light or Dark, Light by default). The frontmatter records the default combination: Student Invoice, square, light. The other combinations swap token values and never change the structure. The Navy and amber scheme pairs slate navy and amber with the softer Nunito lettering.\n\nThe teacher has basic computer confidence and uses the app by day and at night. That is why every scheme and mode keeps readable contrast, every control works from the keyboard, and all motion stops under reduced-motion.",
     "keyCharacteristics": [
       "A single cover band in the scheme's cover colour, joined to the Discord-style title bar with Windows 11 caption buttons.",
       "A white ruled page. Blank rows keep their ruling below the last family, so the page never ends in empty space.",

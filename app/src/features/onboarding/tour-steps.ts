@@ -1,4 +1,4 @@
-// The guided tour's steps, in the order the teacher works at half-term (docs/ui.md).
+// The guided tour's steps, in the order a teacher works at half-term (docs/ui.md).
 // Each step highlights the element marked `data-tour="<target>"`. Steps whose
 // element is missing or hidden (for example no families yet) are skipped.
 

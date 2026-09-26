@@ -9,6 +9,8 @@ import { getTermsForAcademicYear } from "../../utils/terms";
 import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
 import { academicYearStart } from "../../lib/term-display";
 import { PLACEHOLDERS, unknownPlaceholders, wordingToSave } from "./settings-logic";
+import { YourNameField } from "../your-name/your-name-field";
+import { toast } from "../../hooks/use-toast";
 
 const STANDARD = getDefaultTemplateString();
 
@@ -74,6 +76,10 @@ export function WordingGroup() {
   ]);
 
   return (
+    <>
+    <div className="st-block st-name">
+      <YourNameField onSaved={() => toast({ title: "Saved", description: "Your invoice emails are signed with this name." })} />
+    </div>
     <div className="tpl">
       <div className="tpl-col">
         <div className="slab">
@@ -172,5 +178,6 @@ export function WordingGroup() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

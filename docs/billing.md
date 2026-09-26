@@ -7,8 +7,10 @@
 > fail on any such change, by design.
 
 This page describes the rules exactly as implemented. They are v1.0.1's
-logic plus one approved change in v1.1.0, unticking a lesson that didn't
-happen ([proposal](proposals/2026-09-untick-lessons.md)). Known problems are
+logic plus two approved changes in v1.1.0: unticking a lesson that didn't
+happen ([proposal](proposals/2026-09-untick-lessons.md)), and signing the
+email with the user's own name instead of a hard-coded one
+([proposal](proposals/2026-09-your-name-sign-off.md)). Known problems are
 listed at the end; they are not fixed until a proposal is approved.
 
 ## Where the logic lives
@@ -19,7 +21,8 @@ listed at the end; they are not fixed until a proposal is approved.
 | Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`lessonDates`, `generateInvoice`) |
 | Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts`; tests in `app/src/utils/untick-lessons.test.ts` |
 | When the current term is computed | once at start-up (the store's initial `currentTerm`, from `calculateTermData(new Date())` in `app/src/stores/app-store.ts`) |
-| Which invoice a screen or draft uses | `invoiceFor()` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term, or none outside term time or for an invalid lesson day |
+| Which invoice a screen or draft uses | `invoiceFor(template, term, wording)` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term with the email wording settings (the custom body and Your name), or none outside term time or for an invalid lesson day |
+| Whether an email can go out yet | `needsYourName()` in `app/src/stores/app-store.ts`: true while the wording uses `{{yourName}}` and no name is set ([UI](ui.md#your-name)) |
 | Locked-in expected output | `app/src/utils/billing.characterization.test.ts` and its snapshots in `app/src/utils/__snapshots__/` |
 
 ## Term dates
@@ -77,16 +80,27 @@ Approved in [untick lessons](proposals/2026-09-untick-lessons.md).
 - **Body (default):** greeting to the recipient, the students' names and
   instrument, `Lessons: N, from <first lesson> to and including <last lesson>`,
   the calculation line `N x £cost = £total`, and the sign-off `Many thanks,` /
-  `the teacher`. The exact text is pinned in the characterization test.
+  `{{yourName}}`. The exact text is pinned in the characterization test,
+  which signs with a made-up name.
+- **Your name (v1.1.0):** the sign-off used to be a hard-coded first name.
+  It is now the "Your name" setting, trimmed, passed as the last argument of
+  `generateInvoice(template, term, customBody?, yourName = '')`
+  ([proposal](proposals/2026-09-your-name-sign-off.md)). It is empty on a new
+  install and after updating from v1.0.1, and no email is copied or drafted
+  while the wording needs it and it's empty ([UI](ui.md#your-name)). This
+  resolves bug audit B25.
 - **Custom body:** the user can replace the body in Settings. Placeholders:
   `{{recipient}}`, `{{students}}`, `{{instrument}}`, `{{termInfo}}`,
   `{{weeksCount}}`, `{{lessonCountText}}` (session/sessions), `{{dateRange}}`,
-  `{{cost}}`, `{{totalCost}}`, `{{isAre}}` (is/are).
+  `{{cost}}`, `{{totalCost}}`, `{{isAre}}` (is/are), `{{yourName}}` (Your
+  name, inserted literally, so `$&` in a name stays as typed). Custom wording
+  saved before v1.1.0 is left exactly as it was.
 
 ## Known issues (deferred to a future version)
 
 The owner decided on 2026-09-26 that **v1.1.0 does not change any calculation,
-email wording or way of using the app**. Changes will be made in a later
+email wording or way of using the app**, apart from the two approved changes
+above. Other changes will be made in a later
 version, after consulting the main user. The analysis and options are in the
 [billing proposal](proposals/2026-09-billing-v1.1.md). The issues are listed
 in the [bug audit](audits/2026-09-bug-audit.md):
@@ -97,7 +111,6 @@ in the [bug audit](audits/2026-09-bug-audit.md):
 - **B3:** the dates never change from year to year.
 - **B14:** cost validation, and floating-point totals.
 - **B23:** bank holidays are billed.
-- **B25:** "the teacher" is hard-coded in the sign-off.
 - **B26:** there are no invoices between half-terms.
 - **B27:** costs with more than 2 decimals.
 - **B29, B31:** wording.

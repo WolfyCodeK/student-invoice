@@ -2,13 +2,15 @@
 // "Save as Gmail draft" (docs/ui.md "Register").
 import { format } from "date-fns";
 import { Copy, Loader2, MailPlus } from "lucide-react";
-import { useAppStore } from "../../stores/app-store";
+import { invoiceFor, useAppStore } from "../../stores/app-store";
 import { errorMessage } from "../../lib/backend";
 import { capitalise, lessonsWord, money } from "../../lib/format";
 import { toast } from "../../hooks/use-toast";
 import type { InvoiceTemplate } from "../../types";
 import type { InvoiceData } from "../../utils/invoice-generator";
 import type { RegisterLesson } from "./weeks";
+import { YourNameField } from "../your-name/your-name-field";
+import { useNeedsYourName, useYourNameGate } from "../your-name/use-your-name";
 
 interface Props {
   template: InvoiceTemplate | null;
@@ -21,6 +23,8 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
   const gmailConnected = useAppStore((s) => s.gmailConnected);
   const drafting = useAppStore((s) => s.drafting);
   const draftTemplate = useAppStore((s) => s.draftTemplate);
+  const needName = useNeedsYourName();
+  const { gate, dialog } = useYourNameGate();
 
   const copy = async (text: string, what: string) => {
     try {
@@ -29,6 +33,13 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
     } catch {
       toast({ title: "Couldn't copy", description: "Select the text and press Ctrl+C instead.", variant: "destructive" });
     }
+  };
+
+  // Copies the email as it is now: the name may have been added a moment ago.
+  const copyEmail = (t: InvoiceTemplate) => {
+    const { currentTerm, settings } = useAppStore.getState();
+    const now = invoiceFor(t, currentTerm, settings);
+    if (now) void copy(now.body, "email text");
   };
 
   const onDraft = async (templateId: string) => {
@@ -85,6 +96,15 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
         )}
       </div>
 
+      {invoice && needName && (
+        <div className="name-needed" role="note">
+          <p>
+            <strong>Add your name to sign your emails.</strong>
+          </p>
+          <YourNameField />
+        </div>
+      )}
+
       {invoice ? (
         <>
           <div className="subj">
@@ -100,14 +120,15 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
             {invoice.body}
           </div>
           <div className="slip-bar">
-            <button type="button" className="btn btn--secondary" onClick={() => void copy(invoice.body, "email text")} disabled={nothing}>
+            <button type="button" className="btn btn--secondary" onClick={() => gate(() => copyEmail(template))} disabled={nothing}>
               <Copy /> Copy email text
             </button>
-            <button type="button" className="btn btn--primary" onClick={() => void onDraft(template.id)} disabled={draftWhy !== null || drafting}>
+            <button type="button" className="btn btn--primary" onClick={() => gate(() => void onDraft(template.id))} disabled={draftWhy !== null || drafting}>
               {drafting ? <Loader2 className="spin" /> : <MailPlus />} Save as Gmail draft
             </button>
             {draftWhy && <p className="slip-why">{draftWhy}</p>}
           </div>
+          {dialog}
         </>
       ) : (
         <div className="slip-empty">

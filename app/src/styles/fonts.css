@@ -1,7 +1,7 @@
 /* Bundled fonts (SIL Open Font License, see ../assets/fonts/OFL-*.txt). Only
    Latin and Latin Extended are shipped. A face is downloaded only when the
-   page uses it, so the Navy and amber fonts load only with that colour
-   scheme. See docs/ui.md ("Appearance"). */
+   page uses it, so the Navy and amber fonts (Nunito) load only with that
+   colour scheme. See docs/ui.md ("Appearance"). */
 
 @font-face {
   font-family: "Atkinson Hyperlegible Next";

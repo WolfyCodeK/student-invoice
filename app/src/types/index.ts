@@ -46,4 +46,6 @@ export interface AppSettings {
   corners?: 'square' | 'rounded'
   /** Newest version whose "What's new" (and tour) this PC has shown. */
   lastSeenVersion?: string
+  /** v1.1.0: signs emails (`{{yourName}}`). Empty on a new install. */
+  yourName?: string
 }

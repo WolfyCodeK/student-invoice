@@ -36,6 +36,7 @@ export const PLACEHOLDERS = {
   cost: 'Cost per lesson',
   totalCost: 'Total',
   isAre: '"is" or "are"',
+  yourName: 'Your name, from the box above',
 } as const
 
 const KNOWN_PLACEHOLDERS: ReadonlySet<string> = new Set(Object.keys(PLACEHOLDERS))

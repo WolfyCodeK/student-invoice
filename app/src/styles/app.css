@@ -762,6 +762,43 @@
   font-size: var(--fs-xs);
   color: var(--muted);
 }
+/* "Your name" (features/your-name): a label, a box and Save, and the
+   reminder the pupil's page and What's new show while it's missing. */
+.name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 460px;
+}
+.name-field label {
+  font-weight: 600;
+}
+.name-field-row {
+  display: flex;
+  gap: 8px;
+}
+.name-field-row .field {
+  flex: 1;
+  min-width: 0;
+}
+.name-field-hint {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.name-needed {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px 14px;
+  background: var(--warning-bg);
+  border-bottom: 1px solid var(--rule);
+}
+.letter .name-needed {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--r-field);
+}
 .subj {
   flex: none;
   display: flex;

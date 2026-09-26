@@ -1,16 +1,16 @@
 # Proposal: untick a lesson that didn't happen
 
 **Status:** approved for v1.1.0 (see Approval). Not implemented yet.
-**Author:** 2026-09-26. **Requested by:** the teacher, via the owner, after seeing
-the Register design. **Relates to:** decision 3 of the
-[billing rules proposal](2026-09-billing-v1.1.md) ("let the teacher tick off any
-individual date"), which this answers.
+**Author:** 2026-09-26. **Requested by:** the main user, via the owner,
+after seeing the Register design. **Relates to:** decision 3 of the
+[billing rules proposal](2026-09-billing-v1.1.md) ("let the main user tick off
+any individual date"), which this answers.
 
-## What the teacher asked for
+## What the main user asked for
 
 In the register, each pupil's row has one mark per lesson this half-term.
-the teacher wants to untick a lesson that didn't happen (illness, a concert, a
-holiday) and have that lesson's cost taken off the invoice.
+The main user wants to untick a lesson that didn't happen (illness, a
+concert, a holiday) and have that lesson's cost taken off the invoice.
 
 ## Proposed rule
 
@@ -71,16 +71,16 @@ Lessons: 7, from Monday 7th September to and including Monday 19th October
 7 x £25.00 = £175.00
 
 Many thanks,
-the teacher
+[the teacher's first name]
 ```
 
-## Things the teacher will notice
+## Things the main user will notice
 
 - **Mon 26 Oct is in the half-term holiday.** Today's count rule charges
   Monday pupils for it (bug audit B1, decision 1 of the billing proposal,
-  still pending). With dates on the marks this becomes visible, and the teacher can
-  untick it. If decision 1 is later approved, Monday pupils would simply have 7
-  marks, and unticking works the same way.
+  still pending). With dates on the marks this becomes visible, and the main
+  user can untick it. If decision 1 is later approved, Monday pupils would
+  simply have 7 marks, and unticking works the same way.
 - The date range still spans the whole period even when a lesson in the
   middle is unticked (the Mon 21 Sep row above). The count and total are what
   change.
@@ -115,14 +115,14 @@ the teacher
 
 Approved by the owner on 2026-09-26, in these words: "build the app with the
 current v1.0.1 logic and with the new week deselecting system (which will
-become v1.1.0), and then the teacher can use it and report back what he thinks,
-then we'll do v1.1.1, v1.1.2, v1.1.3 etc until we've fine tuned it how he
-wants."
+become v1.1.0), and then [the main user] can use it and report back what he
+thinks, then we'll do v1.1.1, v1.1.2, v1.1.3 etc until we've fine tuned it
+how he wants."
 
 - **a.** The rule is approved as written.
 - **b.** It ships in v1.1.0. Every other calculation stays exactly as in v1.0.1.
 - **c.** The wording stays unchanged, including the single-lesson date range,
   because the owner specified the v1.0.1 logic.
 
-Later adjustments come from the teacher's feedback as v1.1.x patch releases. Each
-money change still needs its own approved proposal.
+Later adjustments come from the main user's feedback as v1.1.x patch
+releases. Each money change still needs its own approved proposal.

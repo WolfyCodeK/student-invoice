@@ -57,6 +57,7 @@ interface AppSettings {
   colourScheme?: 'student-invoice' | 'navy-amber'  // v1.1.0 (docs/ui.md "Appearance")
   corners?: 'square' | 'rounded'    // v1.1.0
   lastSeenVersion?: string          // v1.1.0: newest "What's new" shown on this PC
+  yourName?: string                 // v1.1.0: signs emails ({{yourName}}); empty on a new install (docs/ui.md "Your name")
 }
 ```
 
@@ -82,6 +83,9 @@ v1.1.0 derives the connection state from Rust (`gmail_status`) at start-up.
   in `settings`. The upgrade sets both fields to `''`. The fields are kept, so
   older versions still load the data, but someone who downgrades to v1.0.1
   would have to paste credentials again to use Gmail there.
+- **Your name:** no upgrade sets `yourName`, so data from v1.0.1 has none
+  until the user types it ([UI](ui.md#your-name)). v1.0.1 ignores the field
+  and signs with its own hard-coded name.
 - **Unusable lesson days:** a template whose `day` isn't one of the seven
   weekday names (possible only through damaged data) produces no invoice and
   is reported by Draft all, instead of reaching the invoice generator.

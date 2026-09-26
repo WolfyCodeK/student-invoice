@@ -37,16 +37,17 @@ Gmail as drafts for you to check and send.
 - **Invoice emails written for you.** Each family's email is ready to copy, or
   to save as a Gmail draft. **Draft all** does the whole half-term at once and
   shows each family's progress. Nothing is ever sent without you.
-- **Your wording.** Change the email text in Settings; placeholders fill in
-  names, lessons and totals.
-- **Looks the way you like.** Choose the Student Invoice colours or the
-  Navy and amber colours, square or rounded corners, and light or dark.
+- **Your wording, your name.** Every email is signed with your name, typed
+  once. Change the email text in Settings; placeholders fill in names,
+  lessons and totals.
+- **Looks the way you like.** Choose the Student Invoice colours or Navy and
+  amber, square or rounded corners, and light or dark.
 - **Your data stays yours.** It's kept on your PC, backed up automatically
   every day, and can be moved to another PC with Export and Import.
 - **Keeps itself up to date.** New versions install from inside the app, and
   a short "What's new" appears after each update.
 
-<img src="docs/images/register-navy-amber.png" width="720" alt="The same register in the Navy and amber colours: navy and amber with rounded buttons.">
+<img src="docs/images/register-navy-amber.png" width="720" alt="The same register in the Navy and amber colours, with rounded buttons.">
 
 ## Getting started
 
@@ -55,9 +56,9 @@ Gmail as drafts for you to check and send.
    and run it.
 2. Windows may say it "protected your PC", because the installer isn't signed
    with a paid certificate. Choose **More info**, then **Run anyway**.
-3. Add your families, then **Connect Gmail**. If Google says the app isn't
-   verified, choose **Advanced**, then continue. The app only asks to manage
-   your drafts; it can't read or send your email.
+3. Add your name and your families, then **Connect Gmail**. If Google says
+   the app isn't verified, choose **Advanced**, then continue. The app only
+   asks to manage your drafts; it can't read or send your email.
 4. At each half-term: untick any lessons that didn't happen, press **Draft
    all**, then check and send the drafts from Gmail.
 

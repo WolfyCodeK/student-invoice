@@ -38,8 +38,12 @@ The feedback form calls api.emailjs.com directly from the webview.
   the current term, Gmail connection state and the drafting and install
   actions, and it persists part of itself to localStorage. See
   [data model](data-model.md). Invoices are never stored: `invoiceFor()`
-  builds a family's invoice from its template and the current term whenever
-  a screen or a draft needs it (the register memoises them per render).
+  builds a family's invoice from its template, the current term and the
+  email wording settings (the custom body and Your name) whenever a screen
+  or a draft needs it (the register memoises them per render).
+  `needsYourName()` says when the wording needs a name that isn't set yet;
+  the drafting actions then refuse with `YOUR_NAME_NEEDED`
+  ([UI](ui.md#your-name)).
 - `utils/terms.ts` and `utils/invoice-generator.ts`: pure, tested billing logic.
   See [billing](billing.md).
 - `types/index.ts`: shared domain types.

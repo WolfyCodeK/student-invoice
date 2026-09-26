@@ -16,8 +16,7 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   half-term, with a mark for each lesson and the total at the end of the
   row. Click a family to see its invoice email beside it.
 - **Choose how it looks:** in Settings, pick the Student Invoice colours or
-  Navy and amber (to match the teacher's website), square or rounded
-  corners, and light or dark.
+  Navy and amber, square or rounded corners, and light or dark.
 - **A new title bar** that's part of the app, with buttons for Help, Updates,
   Feedback and Settings. The window can now be resized, maximised and
   snapped, and it fits smaller laptop screens.
@@ -41,6 +40,10 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   screens. It's off by default and applies after a restart.
 
 ### Changed
+- **Emails are signed with your name.** Add it once in Settings → Email
+  wording (you're asked the first time you copy or save an email); it
+  replaces the name the emails used to end with. Wording you wrote yourself
+  is left as it is, and `{{yourName}}` puts your name in it.
 - Settings is now a full page, and changes are saved straight away. The
   "Show notifications" and "Default template" settings, which did nothing,
   are gone.

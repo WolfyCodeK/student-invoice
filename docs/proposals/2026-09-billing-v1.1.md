@@ -2,19 +2,19 @@
 
 **Status:** deferred to a future version. On 2026-09-26 the owner decided that
 v1.1.0 does not change any calculation, email wording or way of using the
-app. The decisions below will be revisited after consulting the main user
-(the teacher), and none of them is implemented in v1.1.0.
+app. The decisions below will be revisited after consulting the main user,
+and none of them is implemented in v1.1.0 (except where the table says so).
 
 **Preliminary positions recorded on 2026-09-26 (not final):**
 
 | # | Decision | Outcome |
 |---|---|---|
-| 1 | Lesson count rule | **Pending**: checking with the teacher. Money logic unchanged until then. |
+| 1 | Lesson count rule | **Pending**: checking with the main user. Money logic unchanged until then. |
 | 2 | Term dates | **Approved**: editable per academic year in Settings, with today's dates as defaults. |
-| 3 | Bank holidays / days off | **the teacher's answer (2026-09-26):** let him untick any lesson that didn't happen. Approved for v1.1.0 in [untick lessons](2026-09-untick-lessons.md). |
-| 4 | Invoicing between half-terms | **Pending**: checking with the teacher. |
-| 5 | Sign-off name | **Approved**: no hard-coded names anywhere. There is a "Your name" setting, empty on a fresh install; data upgraded from v1.0.1 is pre-filled with "the teacher" so existing emails are unchanged. |
-| 6 | Subject wording / pupil name | **Pending**: checking with the teacher. |
+| 3 | Bank holidays / days off | **The main user's answer (2026-09-26):** let him untick any lesson that didn't happen. Approved for v1.1.0 in [untick lessons](2026-09-untick-lessons.md). |
+| 4 | Invoicing between half-terms | **Pending**: checking with the main user. |
+| 5 | Sign-off name | **Approved**: no hard-coded names anywhere. Implemented in v1.1.0 as the "Your name" setting, empty on every install, including data upgraded from v1.0.1; the main user types his name once (see [Your name](2026-09-your-name-sign-off.md), 2026-09-27). |
+| 6 | Subject wording / pupil name | **Pending**: checking with the main user. |
 
 **Note on decision 2:** with editable dates, today's week formula (milliseconds ÷ 7 days) can be thrown off by clock changes (e.g. 1 Oct → 5 Nov gives 6, not 5). Whatever rule decision 1 settles on must count calendar days. For today's fixed dates, counting calendar days gives exactly the same results (checked 2023–2040), and the characterization snapshots prove it.
 **Author:** 2026-09-26. **Evidence:** bug audit B1, B2, B3, B23, B26
@@ -54,13 +54,13 @@ from 00:00:01, so no invoice can be produced that day (B2).
    calendar). Changing a date changes the counts for that half-term only.
 3. **Bank holidays (optional).** Leave England & Wales bank holidays out of
    the count and the date range when they fall on a lesson day. Table B lists
-   the affected dates. Alternatively, let the teacher tick off any individual date
+   the affected dates. Alternatively, let the main user tick off any individual date
    ("no lesson") per half-term, which also covers INSET days, illness and
    concerts.
 4. **Between half-terms (optional).** During a holiday, allow preparing the
    *next* half-term's invoices (e.g. during late August for Autumn ½1).
-5. **Sender name.** Make the sign-off a setting, defaulting to "the teacher", so
-   existing emails are unchanged.
+5. **Sender name.** Make the sign-off a setting, defaulting to the main
+   user's first name, so existing emails are unchanged.
 6. **Wording.** Keep "sessions" in the email and "lessons" in the subject, or
    choose one. Optionally name the pupil in the subject (e.g. "Invoice for
    Sam's Piano Lessons …") so Gmail drafts are easy to tell apart.

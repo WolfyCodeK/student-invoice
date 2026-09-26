@@ -66,6 +66,7 @@ const backupSettingsSchema = z.looseObject({
   colourScheme: text(40).optional(),
   corners: text(40).optional(),
   lastSeenVersion: text(40).optional(),
+  yourName: text(200).optional(),
 })
 
 /** The export file (`Student Invoice backup YYYY-MM-DD.json`). */

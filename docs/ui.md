@@ -22,6 +22,7 @@ primitives for dialogs, selects, switches and toasts
 | Settings | `app/src/features/settings/` |
 | Adding or editing a family | `app/src/features/family/` |
 | What's new and the guided tour | `app/src/features/onboarding/` |
+| Your name: the name box (`your-name-field.tsx`), and the check and dialog that ask for it before an email goes out (`use-your-name.tsx`) | `app/src/features/your-name/` |
 | Gmail sign-in dialog and the shared Connect Gmail action | `app/src/features/gmail/` |
 | Feedback form | `app/src/components/feedback-form.tsx` |
 | Crash screen | `app/src/components/error-boundary.tsx` |
@@ -97,6 +98,8 @@ The main screen (`register-view.tsx`) has three parts.
 - The subject with **Copy subject**, and the full email.
 - **Copy email text** and **Save as Gmail draft**, each disabled with a
   reason when it can't be used.
+- Until Your name is set (and the wording uses it), a reminder with the name
+  box ([Your name](#your-name)).
 
 **Draft all.**
 - The pupil's page closes and a status column appears.
@@ -122,8 +125,10 @@ button. The sections:
 - **Appearance:** see [Appearance](#appearance) below.
 - **Gmail:** status, Connect or Disconnect, and the *Advanced* custom Google
   OAuth client ([gmail](gmail.md)).
-- **Email wording:** the custom body with placeholders, and a button to go
-  back to the standard wording ([billing](billing.md#invoice-text)).
+- **Email wording:** the Your name box at the top
+  ([Your name](#your-name)), then the custom body with placeholders, and a
+  button to go back to the standard wording
+  ([billing](billing.md#invoice-text)).
 - **Term dates:** the school year's half-terms, read-only, with the current
   one marked.
 - **Your data:** export, import, automatic backups and restore
@@ -135,6 +140,30 @@ button. The sections:
 
 The old "Show notifications" and "Default template" settings did nothing and
 are gone. Their stored fields are left untouched.
+
+## Your name
+
+The standard email wording ends `Many thanks,` / `{{yourName}}`, filled from
+`settings.yourName` ([billing](billing.md#invoice-text),
+[proposal](proposals/2026-09-your-name-sign-off.md)). It is empty on every
+install, including an update from v1.0.1, and nothing fills it in: the
+teacher types it once. Custom wording is left as the user saved it, and if it
+doesn't use `{{yourName}}` the name is never asked for.
+
+- **Where it's set:** Settings → Email wording, at the top. The same box
+  (`YourNameField`) is used wherever the name is asked for. The placeholder
+  list describes `{{yourName}}` as "Your name, from the box above".
+- **Asked for first:** while the wording in use contains `{{yourName}}` and
+  no name is set, Copy email text, Save as Gmail draft, Draft all and a
+  draft's **Try again** first open "Add your name first", with the box and
+  **Save and carry on**, then continue (`useYourNameGate`). The store also
+  refuses to draft without it (`needsYourName()` and `YOUR_NAME_NEEDED` in
+  `app/src/stores/app-store.ts`), so nothing goes out unsigned.
+- **Reminder:** until it's set, the pupil's page shows "Add your name to
+  sign your emails." with the box (`useNeedsYourName`).
+- **What's new:** while the name is missing (as after updating from v1.0.1),
+  What's new adds "Your emails now end with your name. Type it once and
+  every email uses it." with the box.
 
 ## Adding or editing a family
 
@@ -152,10 +181,11 @@ v1.0.1, and every field has a plain hint.
 `features/onboarding/` handles both, in this order:
 - **What's new** shows once, the first time the app opens after an update.
   It has only changes a user would notice, in a few short lines
-  (`whats-new.ts`).
+  (`whats-new.ts`). While Your name is missing, it also asks for it
+  ([Your name](#your-name)).
 - **The guided tour** follows only after the v1.1.0 update. It dims
   everything except one highlighted area, with numbered steps in the order
-  the teacher works (`tour-steps.ts`). Its targets are the `data-tour` attributes
+  a teacher works at half-term (`tour-steps.ts`). Its targets are the `data-tour` attributes
   on the register and title bar. The Help button and Settings → **Show the
   tour again** replay it.
 - **Later updates** show What's new only.
@@ -171,7 +201,7 @@ as an attribute on `<html>`, which `app/src/styles/tokens.css` reads.
 
 | Switch | Values | Stored in |
 |---|---|---|
-| Colours (`data-scheme`) | `student-invoice` (register blue, Atkinson Hyperlegible Next) or `navy-amber` (navy and amber with Nunito lettering, matching the teacher's website) | `settings.colourScheme` |
+| Colours (`data-scheme`) | `student-invoice` (register blue, Atkinson Hyperlegible Next) or `navy-amber` ("Navy and amber": navy and amber with the softer Nunito lettering) | `settings.colourScheme` |
 | Corners (`data-corners`) | `square` (default) or `rounded` (pill buttons, 8/14/22 px panels) | `settings.corners` |
 | Light or dark (`data-mode`) | `light` (default) or `dark` | the `student-invoice-theme` key and `settings.theme`, as in v1.0.1 |
 
@@ -183,8 +213,8 @@ as an attribute on `<html>`, which `app/src/styles/tokens.css` reads.
   start-up, by `setAppearance` in the store when the user picks one, and by
   `replaceAllData` after an import or restore.
 - **Fonts:** bundled in `app/src/assets/fonts/` (SIL OFL, Latin and Latin
-  Extended only). A face downloads only when it's used, so the Navy and amber
-  fonts load only with that scheme.
+  Extended only). A face downloads only when it's used, so the Navy and
+  amber fonts (Nunito) load only with that scheme.
 
 Components use only the tokens: no literal colours, radii or fonts. The
 selection colour, focus rings and scrollbars are themed too.

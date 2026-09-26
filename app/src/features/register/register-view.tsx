@@ -18,6 +18,7 @@ import { useConnectGmail } from "../gmail/use-connect-gmail";
 import { DeleteFamilyDialog } from "../family/delete-family-dialog";
 import { registerLessons, registerWeeks, type RegisterLesson } from "./weeks";
 import { PupilPage } from "./pupil-page";
+import { useYourNameGate } from "../your-name/use-your-name";
 import type { InvoiceTemplate } from "../../types";
 
 const SEASON_SHORT: Record<string, string> = { autumn: "Aut", spring: "Spr", summer: "Sum" };
@@ -25,7 +26,7 @@ const SEASON_SHORT: Record<string, string> = { autumn: "Aut", spring: "Spr", sum
 export const RegisterView = memo(function RegisterView() {
   const { navigate } = useAppActions();
   const {
-    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody,
+    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody, yourName,
     gmail, gmailConnected, gmailConnecting, drafting, createAllInvoiceDrafts, draftTemplate,
   } = useAppStore(
     useShallow((s) => ({
@@ -35,6 +36,7 @@ export const RegisterView = memo(function RegisterView() {
       currentTerm: s.currentTerm,
       toggleLesson: s.toggleLesson,
       customBody: s.settings.customEmailBodyTemplate,
+      yourName: s.settings.yourName,
       gmail: s.gmail,
       gmailConnected: s.gmailConnected,
       gmailConnecting: s.gmailConnecting,
@@ -65,11 +67,11 @@ export const RegisterView = memo(function RegisterView() {
   const invoices = useMemo(() => {
     const map = new Map<string, InvoiceData>();
     for (const t of templates) {
-      const invoice = invoiceFor(t, currentTerm, customBody);
+      const invoice = invoiceFor(t, currentTerm, { customEmailBodyTemplate: customBody, yourName });
       if (invoice) map.set(t.id, invoice);
     }
     return map;
-  }, [templates, currentTerm, customBody]);
+  }, [templates, currentTerm, customBody, yourName]);
   const lessonsById = useMemo(() => {
     const map = new Map<string, RegisterLesson[]>();
     if (currentTerm) for (const t of templates) if (isWeekday(t.day)) map.set(t.id, registerLessons(t, currentTerm));
@@ -87,6 +89,8 @@ export const RegisterView = memo(function RegisterView() {
           : null;
 
   const setOutcome = (outcome: DraftOutcome) => setOutcomes((prev) => ({ ...prev, [outcome.templateId]: outcome }));
+
+  const { gate, dialog: askName } = useYourNameGate();
 
   const onDraftAll = async () => {
     setOutcomes({});
@@ -194,7 +198,7 @@ export const RegisterView = memo(function RegisterView() {
               <button
                 type="button"
                 className={gmailConnected ? "bbtn" : "bbtn bbtn--ghost"}
-                onClick={onDraftAll}
+                onClick={() => gate(() => void onDraftAll())}
                 disabled={draftWhy !== null || drafting}
                 aria-describedby={draftWhy ? "draft-why" : undefined}
               >
@@ -318,7 +322,7 @@ export const RegisterView = memo(function RegisterView() {
                     <div className="c tcell end tot" role="cell" data-tour={selected ? "totals" : undefined}>
                       {inv ? money(inv.totalCost) : "–"}
                     </div>
-                    {results && <StatusCell outcome={outcome} onRetry={() => void onRetry(t.id)} busy={drafting} />}
+                    {results && <StatusCell outcome={outcome} onRetry={() => gate(() => void onRetry(t.id))} busy={drafting} />}
                   </div>
                 );
               })}
@@ -380,6 +384,7 @@ export const RegisterView = memo(function RegisterView() {
         )}
       </div>
 
+      {askName}
       <DeleteFamilyDialog family={deleting} open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)} />
     </>
   );

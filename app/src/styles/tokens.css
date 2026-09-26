@@ -1,6 +1,6 @@
 /* Design tokens: the Register direction (DESIGN.md, docs/ui.md "Appearance").
    Three independent switches on <html>, set before first paint by index.html:
-     data-scheme  = student-invoice | navy-amber   (colours and lettering)
+     data-scheme  = student-invoice | navy-amber      (colours and lettering)
      data-corners = square | rounded                   (shape of buttons and panels)
      data-mode    = light | dark
    Components use only these tokens. */
@@ -164,7 +164,7 @@
   --shadow-slip: -6px 0 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Navy and amber colours and lettering (the teacher's website), light. */
+/* Navy and amber colours with Nunito lettering, light. */
 :root[data-scheme="navy-amber"] {
   --font-ui: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
   --font-head: "Nunito", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
@@ -227,7 +227,7 @@
   --shadow-slip: -6px 0 16px rgba(23, 35, 46, 0.06);
 }
 
-/* Navy and amber, dark (derived; his site has no dark mode). */
+/* Navy and amber, dark (derived from the light set). */
 :root[data-scheme="navy-amber"][data-mode="dark"] {
   --page: #16212c;
   --ground: #0f1720;
@@ -290,7 +290,7 @@
   --shadow-slip: -6px 0 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Rounded corners (the Navy and amber shape, available with either scheme). */
+/* Rounded corners (available with either scheme). */
 :root[data-corners="rounded"] {
   --r-btn: 999px;
   --r-field: 8px;

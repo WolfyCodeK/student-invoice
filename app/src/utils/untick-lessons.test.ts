@@ -16,7 +16,7 @@ function template(overrides: Partial<InvoiceTemplate>): InvoiceTemplate {
   }
 }
 
-const sarah = (skipped?: string[]) => generateInvoice(template({ skippedLessonDates: skipped }), autumn1)
+const sarah = (skipped?: string[]) => generateInvoice(template({ skippedLessonDates: skipped }), autumn1, undefined, 'Jo Teacher')
 const rangeLine = (body: string) => body.split('\n').find((l) => l.startsWith('Lessons: ')) ?? ''
 
 describe('lesson dates', () => {
@@ -75,7 +75,7 @@ Lessons: 7, from Monday 7th September to and including Monday 19th October
 7 x £25.00 = £175.00
 
 Many thanks,
-the teacher`)
+Jo Teacher`)
   })
 
   it('one lesson left: the existing singular wording, range unchanged in form', () => {

@@ -5,6 +5,8 @@ import { CalendarX, HardDriveDownload, LayoutList, MailCheck, Palette, type Luci
 import { Dialog, DialogActions, DialogContent, DialogTitle } from "../../components/ui/dialog";
 import appIcon from "../../assets/app-icon.svg";
 import type { NewsIcon, WhatsNewEntry } from "./whats-new";
+import { YourNameField } from "../your-name/your-name-field";
+import { useNeedsYourName } from "../your-name/use-your-name";
 
 const ICONS: Record<NewsIcon, LucideIcon> = {
   "layout-list": LayoutList,
@@ -25,6 +27,8 @@ export interface WhatsNewDialogProps {
 
 export function WhatsNewDialog({ open, entries, hasTourNext, onClose }: WhatsNewDialogProps) {
   const listId = useId();
+  // Emails are now signed with Your name: ask for it here, once, if it's missing.
+  const needName = useNeedsYourName();
   const newest = entries.length > 0 ? entries[entries.length - 1].version : null;
   // Newest changes first; one plain list, no per-version headings.
   const items = [...entries].reverse().flatMap((entry) => entry.items.map((item, i) => ({ ...item, key: `${entry.version}-${i}` })));
@@ -65,6 +69,14 @@ export function WhatsNewDialog({ open, entries, hasTourNext, onClose }: WhatsNew
             );
           })}
         </ul>
+        {needName && (
+          <div className="name-needed">
+            <p>
+              <strong>Your emails now end with your name.</strong> Type it once and every email uses it.
+            </p>
+            <YourNameField />
+          </div>
+        )}
         <DialogActions>
           <button type="button" className="btn btn--primary btn--lg" onClick={onClose}>
             {hasTourNext ? "Show me around" : "Got it"}

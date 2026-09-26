@@ -2,9 +2,9 @@
 
 Everything a user has set up can be exported to one file and imported on
 another PC running Student Invoice: templates, the selected template,
-settings (including the custom email body) and the theme. Gmail isn't
-included; the user connects Gmail again on the new PC. Neither is Low
-memory mode, which is a setting for each PC (see
+settings (including the custom email body and Your name) and the theme.
+Gmail isn't included; the user connects Gmail again on the new PC. Neither
+is Low memory mode, which is a setting for each PC (see
 [performance](performance.md#low-memory-mode)).
 
 The UI lives in Settings → **Your data** (`app/src/features/settings/data-group.tsx`).
@@ -211,6 +211,10 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                 "lastSeenVersion": {
                   "type": "string",
                   "maxLength": 40
+                },
+                "yourName": {
+                  "type": "string",
+                  "maxLength": 200
                 }
               },
               "additionalProperties": {}

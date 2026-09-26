@@ -96,7 +96,7 @@ scrolling and animations a little less smooth.
 - **Fonts are bundled, not fetched** (the CSP allows no font hosts). Only the
   Latin and Latin Extended subsets ship, about 190 KB in all. A face
   downloads only when it's used, so a normal start loads one 34 KB file, and
-  the Navy and amber fonts load only with that scheme.
+  the Navy and amber fonts (Nunito) load only with that scheme.
 - **zod stays out of the start-up bundle:** constants the store needs live
   in `app/src/lib/schema/constants.ts`, and backup parsing is in its own module
   (`app/src/lib/backup-parse.ts`).

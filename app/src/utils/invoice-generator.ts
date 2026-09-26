@@ -61,7 +61,8 @@ export function lessonDates(template: Pick<InvoiceTemplate, 'day'>, termData: Te
   })
 }
 
-export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string): InvoiceData {
+/** `yourName` signs the email (settings "Your name"; docs/proposals/2026-09-your-name-sign-off.md). */
+export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string, yourName = ''): InvoiceData {
   const { term } = termData
 
   // Lessons charged: every lesson date except the ones the teacher unticked
@@ -102,6 +103,7 @@ export function generateInvoice(template: InvoiceTemplate, termData: TermData, c
       .replace(/{{cost}}/g, template.cost.toFixed(2))
       .replace(/{{totalCost}}/g, totalCost.toFixed(2))
       .replace(/{{isAre}}/g, weeksCount === 1 ? 'is' : 'are')
+      .replace(/{{yourName}}/g, () => yourName)
   } else {
     // Use default template
     const lessonCountText = weeksCount === 1 ? 'session' : 'sessions'
@@ -114,7 +116,7 @@ Lessons: ${weeksCount}, from ${dateRange}
 ${weeksCount} x £${template.cost.toFixed(2)} = £${totalCost.toFixed(2)}
 
 Many thanks,
-the teacher`
+${yourName}`
   }
 
   return {
@@ -136,5 +138,5 @@ Lessons: {{weeksCount}}, from {{dateRange}}
 {{weeksCount}} x £{{cost}} = £{{totalCost}}
 
 Many thanks,
-the teacher`
+{{yourName}}`
 }

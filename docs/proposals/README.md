@@ -13,4 +13,5 @@ and the proposal is linked from [billing](../billing.md).
 ## Proposals
 
 - [Billing rules](2026-09-billing-v1.1.md): deferred to a version after v1.1.0, pending consultation with the main user.
-- [Untick a lesson that didn't happen](2026-09-untick-lessons.md): the teacher's answer to decision 3 of the billing rules. Approved for v1.1.0.
+- [Untick a lesson that didn't happen](2026-09-untick-lessons.md): the main user's answer to decision 3 of the billing rules. Approved for v1.1.0.
+- [Sign emails with Your name](2026-09-your-name-sign-off.md): a Your name setting replaces the hard-coded sign-off (bug audit B25, decision 5 of the billing rules). Approved for v1.1.0.

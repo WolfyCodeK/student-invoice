@@ -86,7 +86,7 @@ const stored = () => JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null')
 function selectedInvoice({ useAppStore, invoiceFor }: Awaited<ReturnType<typeof loadStore>>) {
   const s = useAppStore.getState()
   const template = s.templates.find((t) => t.id === s.currentTemplateId)
-  return template ? invoiceFor(template, s.currentTerm, s.settings.customEmailBodyTemplate) : null
+  return template ? invoiceFor(template, s.currentTerm, s.settings) : null
 }
 
 beforeEach(() => {
@@ -258,6 +258,43 @@ describe('Draft all', () => {
     await useAppStore.getState().createAllInvoiceDrafts(progress)
     expect(progress.mock.calls.map(([outcome]) => outcome.status)).toEqual(['saving', 'saved', 'saving', 'saved'])
     expect(backend.gmailCreateDraft).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('Your name signs the emails (docs/proposals/2026-09-your-name-sign-off.md)', () => {
+  /** v1.0.1 data using the standard wording (no custom email body). */
+  const standardWording = {
+    ...v101Data,
+    state: { ...v101Data.state, settings: { ...v101Data.state.settings, customEmailBodyTemplate: undefined } },
+  }
+
+  it('is empty on a new install, so the standard wording needs it', async () => {
+    const { useAppStore, needsYourName } = await loadStore(null)
+    expect(useAppStore.getState().settings.yourName).toBeUndefined()
+    expect(needsYourName(useAppStore.getState().settings)).toBe(true)
+  })
+
+  it('is never filled in for data from v1.0.1: nothing is drafted until it is set, then emails are signed with it', async () => {
+    const store = await loadStore(standardWording)
+    const { useAppStore, YOUR_NAME_NEEDED } = store
+    backend.gmailCreateDraft.mockResolvedValue({ id: 'd' })
+    expect(useAppStore.getState().settings.yourName).toBeUndefined()
+    await expect(useAppStore.getState().createAllInvoiceDrafts(vi.fn())).rejects.toThrow(YOUR_NAME_NEEDED)
+    await expect(useAppStore.getState().draftTemplate('a1')).rejects.toThrow(YOUR_NAME_NEEDED)
+    expect(backend.gmailCreateDraft).not.toHaveBeenCalled()
+
+    useAppStore.getState().updateSettings({ yourName: '  Jo Teacher ' })
+    expect(selectedInvoice(store)?.body.endsWith('Many thanks,\nJo Teacher')).toBe(true)
+    await useAppStore.getState().draftTemplate('a1')
+    expect(String(backend.gmailCreateDraft.mock.calls[0][1]).endsWith('Many thanks,\nJo Teacher')).toBe(true)
+    expect(stored().state.settings.yourName).toBe('  Jo Teacher ')
+  })
+
+  it('is never asked for when saved custom wording does not use {{yourName}}', async () => {
+    const { useAppStore, needsYourName } = await loadStore() // custom wording 'Hi {{recipient}}'
+    expect(needsYourName(useAppStore.getState().settings)).toBe(false)
+    expect(needsYourName({ customEmailBodyTemplate: 'Thanks, {{yourName}}' })).toBe(true)
+    expect(needsYourName({ yourName: '   ' })).toBe(true)
   })
 })
 

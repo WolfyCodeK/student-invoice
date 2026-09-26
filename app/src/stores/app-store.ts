@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { InvoiceTemplate, AppSettings, TermData } from '../types'
-import { generateInvoice, lessonDateKey, lessonDates, type InvoiceData } from '../utils/invoice-generator'
+import { generateInvoice, getDefaultTemplateString, lessonDateKey, lessonDates, type InvoiceData } from '../utils/invoice-generator'
 import { calculateTermData } from '../utils/terms'
 import { backend, getAppVersion, isBackendError, errorMessage, type BackupReason, type GmailStatus } from '../lib/backend'
 import { buildBackup, suggestedBackupName } from '../lib/backup'
@@ -17,6 +17,7 @@ export interface DraftOutcome {
 }
 
 const NOTHING_TO_INVOICE = 'Every lesson is unticked for this family, so there is nothing to invoice.'
+export const YOUR_NAME_NEEDED = 'Add your name first, so your emails are signed. It goes at the end of every email.'
 
 interface AppState {
   // Templates
@@ -76,13 +77,28 @@ const defaultSettings: AppSettings = {
   customEmailBodyTemplate: undefined
 }
 
+/** The settings an email's wording comes from. */
+export type EmailWording = Pick<AppSettings, 'customEmailBodyTemplate' | 'yourName'>
+
 /**
  * A family's invoice this half-term, exactly as the email says it (the
  * register's figures and every draft come from here). Null outside term time,
  * or when the lesson day isn't a weekday, which the invoice generator needs.
  */
-export function invoiceFor(template: InvoiceTemplate, term: TermData | null, customBody?: string): InvoiceData | null {
-  return term && isWeekday(template.day) ? generateInvoice(template, term, customBody) : null
+export function invoiceFor(template: InvoiceTemplate, term: TermData | null, wording: EmailWording): InvoiceData | null {
+  return term && isWeekday(template.day)
+    ? generateInvoice(template, term, wording.customEmailBodyTemplate, wording.yourName?.trim() ?? '')
+    : null
+}
+
+/**
+ * True when the email wording signs with {{yourName}} but no name is set, so
+ * nothing may be copied or drafted yet (docs/proposals/2026-09-your-name-sign-off.md).
+ * Custom wording without the placeholder never needs one.
+ */
+export function needsYourName(wording: EmailWording): boolean {
+  if (wording.yourName?.trim()) return false
+  return (wording.customEmailBodyTemplate || getDefaultTemplateString()).includes('{{yourName}}')
 }
 
 async function currentBackupText(): Promise<string> {
@@ -102,7 +118,7 @@ export async function migrateStoredData(): Promise<void> {
   const revision = settings.dataRevision ?? 0
   if (revision >= CURRENT_DATA_REVISION) return
   // A fresh install has nothing worth backing up.
-  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate) || Boolean(settings.gmailClientId || settings.gmailClientSecret)
+  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate || settings.yourName) || Boolean(settings.gmailClientId || settings.gmailClientSecret)
   // Nothing is changed unless the backup succeeded; it is retried next start.
   if (hasUserData) await useAppStore.getState().backupNow('pre-migration')
   const updates: Partial<AppSettings> = { dataRevision: CURRENT_DATA_REVISION }
@@ -181,6 +197,7 @@ export const useAppStore = create<AppState>()(
         if (drafting) return
         if (!term) throw new Error('It is outside term time, so there are no invoices to create.')
         if (templates.length === 0) throw new Error('There are no templates yet.')
+        if (needsYourName(settings)) throw new Error(YOUR_NAME_NEEDED)
         set({ drafting: true })
         try {
           for (const [i, template] of templates.entries()) {
@@ -189,7 +206,7 @@ export const useAppStore = create<AppState>()(
               onProgress({ templateId, status: 'failed', message: 'The lesson day is not set correctly. Edit the family and choose a day.' })
               continue
             }
-            const invoice = generateInvoice(template, term, settings.customEmailBodyTemplate)
+            const invoice = invoiceFor(template, term, settings)!
             if (invoice.lessonCount === 0) {
               onProgress({ templateId, status: 'nothing' })
               continue
@@ -219,8 +236,9 @@ export const useAppStore = create<AppState>()(
         const { drafting, templates, currentTerm, settings } = get()
         if (drafting) return
         const template = templates.find((t) => t.id === templateId)
-        const invoice = template && invoiceFor(template, currentTerm, settings.customEmailBodyTemplate)
+        const invoice = template && invoiceFor(template, currentTerm, settings)
         if (!invoice) throw new Error('There is no invoice to save for this family right now.')
+        if (needsYourName(settings)) throw new Error(YOUR_NAME_NEEDED)
         if (invoice.lessonCount === 0) throw new Error(NOTHING_TO_INVOICE)
         set({ drafting: true })
         try {

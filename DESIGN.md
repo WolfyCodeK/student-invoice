@@ -260,9 +260,9 @@ components:
 
 Student Invoice is a UK school register in software form. The half-term is the page. Every family is a ruled row, every lesson is a dated diagonal mark, and the tinted block at the end of the row is the invoice. A register-blue cover band runs across the title bar and header as one piece. Below it sits a white, feint-ruled page with a double margin rule between the names and the lessons. The pupil's page sits to the right as a side panel, like a slip laid on the register. The app avoids the usual invoice list with status pills. Any state it shows belongs to the register itself: a mark, a tint, or a word in the row.
 
-The density is that of a working document, not a dashboard. Rows are a generous 58px and the lettering is Atkinson Hyperlegible Next, chosen for reading figures at a glance. Tabular figures appear wherever money or dates line up. The system has three independent appearance switches on the root element: colour scheme (Student Invoice or Navy and amber), corners (Square or Rounded) and mode (Light or Dark, Light by default). The frontmatter records the default combination: Student Invoice, square, light. The other combinations swap token values and never change the structure. The Navy and amber scheme takes its navy, amber and Nunito lettering from the teacher's website.
+The density is that of a working document, not a dashboard. Rows are a generous 58px and the lettering is Atkinson Hyperlegible Next, chosen for reading figures at a glance. Tabular figures appear wherever money or dates line up. The system has three independent appearance switches on the root element: colour scheme (Student Invoice or Navy and amber), corners (Square or Rounded) and mode (Light or Dark, Light by default). The frontmatter records the default combination: Student Invoice, square, light. The other combinations swap token values and never change the structure. The Navy and amber scheme pairs slate navy and amber with the softer Nunito lettering.
 
-the teacher has basic computer confidence and uses the app by day and at night. That is why every scheme and mode keeps readable contrast, every control works from the keyboard, and all motion stops under reduced-motion.
+The teacher has basic computer confidence and uses the app by day and at night. That is why every scheme and mode keeps readable contrast, every control works from the keyboard, and all motion stops under reduced-motion.
 
 **Key Characteristics:**
 - A single cover band in the scheme's cover colour, joined to the Discord-style title bar with Windows 11 caption buttons.
@@ -282,8 +282,8 @@ The page is white, cool-ruled and near-neutral, under one saturated register-blu
 - **Pressed Register Blue** (primary-hover, #17336f): hover on primary buttons only.
 
 ### Secondary
-- **Margin Red** (margin, #d0453a): only the 4px double margin rule. It appears between the family columns and the week columns of the register, down the first-run step list, and at the left of the family editor's lesson strip. In the Navy and amber scheme the margin is Navy and amber Amber (na-amber).
-- **Navy and amber Navy** (na-cover, #2e4c6d) and **Navy and amber Amber** (na-amber, #c98a34): the other scheme's cover and accent. Amber fills the band buttons, the current term block and the margin rule. On the Navy and amber dark page, money in the pupil's page sum uses amber (#d59a45).
+- **Margin Red** (margin, #d0453a): only the 4px double margin rule. It appears between the family columns and the week columns of the register, down the first-run step list, and at the left of the family editor's lesson strip. In the Navy and amber scheme the margin is Amber (na-amber).
+- **Navy** (na-cover, #2e4c6d) and **Amber** (na-amber, #c98a34): the Navy and amber scheme's cover and accent. Amber fills the band buttons, the current term block and the margin rule. On the Navy and amber dark page, money in the pupil's page sum uses amber (#d59a45).
 
 ### Tertiary
 - **Holiday Hatch** (holiday #f4f1ea, holiday-hatch #d9ceb8, holiday-ink #6f6450): weeks after the half-term ends. A warm paper tint carries a -45deg hatch of 1.5px lines every 7px. The week's date heading turns holiday-ink.
@@ -312,7 +312,7 @@ The page is white, cool-ruled and near-neutral, under one saturated register-blu
 **Body Font:** Atkinson Hyperlegible Next (with Segoe UI, system-ui)
 **Navy and amber scheme:** Nunito for headings (weight 800, -0.01em) and Nunito Sans for everything else
 
-**Character:** In the Student Invoice scheme one hyperlegible family carries everything. It was chosen for telling similar figures and letters apart, and it works in the register's figures, dates and money. The Navy and amber scheme borrows the softer, rounder Nunito pair from his website. The fonts are bundled variable woff2 files (Latin and Latin Extended), so no system display face ever stands in.
+**Character:** In the Student Invoice scheme one hyperlegible family carries everything. It was chosen for telling similar figures and letters apart, and it works in the register's figures, dates and money. The Navy and amber scheme uses the softer, rounder Nunito pair. The fonts are bundled variable woff2 files (Latin and Latin Extended), so no system display face ever stands in.
 
 ### Hierarchy
 - **Headline** (700, 22px, 30px): the band heading, such as "Register · 1st half Autumn term 2026" or "Editing Sarah's details", and dialog titles.
@@ -356,7 +356,7 @@ The system is a flat ruled page with a small shadow vocabulary for things that s
 
 ## Shapes
 
-Corners come from six radius tokens, and the corners switch sets them all together. Square (the default) is quietly squared: 4px buttons, fields, panels and dialogs; 2px term blocks and swatches; 3px chips. Rounded is the Navy and amber shape, available with either scheme: pill buttons, segmented controls and chips (999px), 8px fields and menu items, 14px panels, toasts and the tour card, 22px dialogs, and 6px term blocks. Switches, the progress bar, scrollbar thumbs and dots are always fully round, whichever setting is on.
+Corners come from six radius tokens, and the corners switch sets them all together. Square (the default) is quietly squared: 4px buttons, fields, panels and dialogs; 2px term blocks and swatches; 3px chips. Rounded is the softer shape, available with either scheme: pill buttons, segmented controls and chips (999px), 8px fields and menu items, 14px panels, toasts and the tour card, 22px dialogs, and 6px term blocks. Switches, the progress bar, scrollbar thumbs and dots are always fully round, whichever setting is on.
 
 Borders are 1px throughout. The exceptions are the 4px double margin rule, the 1.5px outlines of switches and first-run step numbers, and the 3px focus outline (offset 2px, or 1px on fields). The Holiday Hatch is the only pattern fill, and the lesson marks are the only drawn shapes.
 
