@@ -34,6 +34,10 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `utils/terms.ts` and `utils/invoice-generator.ts`: pure, tested billing logic.
   See [billing](billing.md).
 - `types/index.ts`: shared domain types.
+- **Loaded on first use:** Settings, the template form and the feedback
+  form are code-split (`React.lazy`) and prefetched when idle. Backup
+  parsing, which needs zod, is imported on demand. See
+  [performance](performance.md).
 - `lib/backend.ts`: typed wrappers for every Rust command and the shared
   `{ kind, message }` error type. The UI calls these instead of `invoke`.
 
@@ -64,6 +68,8 @@ The feedback form calls api.emailjs.com directly from the webview.
     owner's secrets folder.
 - `tauri.conf.json` holds the window, security (CSP), updater and bundle
   settings. Several of these values are frozen; see [compatibility](compatibility.md).
+- `Cargo.toml` has a size-tuned release profile (LTO, `opt-level = "s"`,
+  stripped); see [performance](performance.md).
 - `tauri.dev.conf.json` is a development-only overlay, merged by
   `pnpm dev:mcp`, that enables the Tauri MCP bridge (see
   [development](development.md#claude-code)). Release builds never use it.

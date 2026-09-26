@@ -123,9 +123,15 @@
       "covers": [
         "app/src-tauri/src/backup.rs",
         "app/src/lib/backup.ts",
+        "app/src/lib/backup-parse.ts",
         "app/src/lib/backup.test.ts",
         "app/src/lib/schema/**",
         "app/src/components/data-section.tsx"
+      ]
+    },
+    "docs/performance.md": {
+      "covers": [
+        "scripts/perf/**"
       ]
     }
   },

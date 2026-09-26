@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildBackup, parseBackup, suggestedBackupName, type BackupSource } from './backup'
+import { buildBackup, suggestedBackupName, type BackupSource } from './backup'
+import { parseBackup } from './backup-parse'
 import type { AppSettings, InvoiceTemplate } from '../types'
 
 const settings: AppSettings = {

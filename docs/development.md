@@ -86,7 +86,8 @@ node scripts/docs/check.mjs              # all docs checks
   [documentation](documentation.md)).
 - `.githooks/pre-push`: unit tests and `cargo clippy`.
 - CI runs all of the above plus `cargo fmt --check`, `cargo test`, a frontend
-  build, dependency audits and gitleaks on every push and pull request.
+  build with bundle-size budgets ([performance](performance.md)), dependency
+  audits and gitleaks on every push and pull request.
 
 ## Claude Code
 

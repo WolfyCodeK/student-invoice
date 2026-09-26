@@ -13,13 +13,14 @@
 //       Push main + tag v<version>, create the GitHub release as a draft with
 //       the CHANGELOG section as notes, verify assets, publish it as latest,
 //       then verify what installed apps will download.
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { repoRoot } from '../lib/repo.mjs'
 import {
   REPO, assetUrl, buildEnv, capture, changelogSection, compareSemver, die, isSemver, msiName, run, step, v101CompatError,
 } from './lib.mjs'
 import { UPDATER_ENDPOINT } from '../invariants.config.mjs'
+import { INSTALLER_BUDGET_MIB } from '../perf/budgets.mjs'
 
 const root = repoRoot()
 const [cmd, version, rcNumber] = process.argv.slice(2)
@@ -61,6 +62,8 @@ if (cmd === 'prepare') {
   run('node', ['scripts/docs/links.mjs'], { cwd: root })
   run('node', ['scripts/docs/freshness.mjs', '--map-only', '--release'], { cwd: root })
   run('pnpm', ['check'], { cwd: join(root, 'app') })
+  run('pnpm', ['build'], { cwd: join(root, 'app') })
+  run('node', ['scripts/perf/check-bundle.mjs'], { cwd: root })
   run('cargo', ['fmt', '--check'], { cwd: join(root, 'app/src-tauri') })
   run('cargo', ['clippy', '--all-targets', '--', '-D', 'warnings'], { cwd: join(root, 'app/src-tauri') })
   run('cargo', ['test'], { cwd: join(root, 'app/src-tauri') })
@@ -88,6 +91,9 @@ if (cmd === 'prepare') {
   const bundleDir = join(root, 'app/src-tauri/target/release/bundle/msi')
   const built = readdirSync(bundleDir).find((f) => f.endsWith(`_${version}_x64_en-US.msi`))
   if (!built || !existsSync(join(bundleDir, `${built}.sig`))) die(`signed MSI for ${version} not found in ${bundleDir}`)
+  const msiMiB = statSync(join(bundleDir, built)).size / 1024 / 1024
+  if (msiMiB > INSTALLER_BUDGET_MIB) die(`MSI is ${msiMiB.toFixed(2)} MiB, over the ${INSTALLER_BUDGET_MIB} MiB budget (docs/performance.md)`)
+  console.log(`MSI size ${msiMiB.toFixed(2)} MiB (budget ${INSTALLER_BUDGET_MIB} MiB)`)
 
   step('Collect artifacts and write latest.json')
   mkdirSync(outDir, { recursive: true })

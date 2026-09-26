@@ -29,6 +29,12 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 - The installer is now pinned to its existing identity, so updates always
   replace the installed app in place.
 
+### Performance
+- Starts noticeably faster: the app is ready in about half a second. The
+  fixed loading screen is gone.
+- Smaller download and program size, and no light/dark flash when the app
+  opens.
+
 ### Fixed
 - Cancelling or failing Google sign-in no longer leaves the app stuck on
   "Waiting for authentication", and you can try again straight away.

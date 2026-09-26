@@ -24,6 +24,7 @@ tooling (see [documentation](documentation.md)).
 - [Gmail](gmail.md): OAuth sign-in and draft creation.
 - [Backup](backup.md): export/import between PCs, automatic backups, file format.
 - [Security](security.md): secrets handling and the webview boundary.
+- [Performance](performance.md): budgets, where memory goes, how to measure.
 - [Release](release.md): how a version is built, signed and published.
 - [Documentation](documentation.md): how these docs are kept true.
 

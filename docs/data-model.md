@@ -78,7 +78,9 @@ v1.1.0 derives the connection state from Rust (`gmail_status`) at start-up.
 ## Schema
 
 The stored shape is described in zod in `app/src/lib/schema/index.ts`
-(`persistedStateSchema`). It is lenient, because unknown fields from newer
+(`persistedStateSchema`). Shared constants such as the weekday names live in
+`app/src/lib/schema/constants.ts`, so code that only needs them doesn't pull in
+zod. It is lenient, because unknown fields from newer
 versions must survive. It is shown here as JSON Schema:
 
 <!-- GEN:persisted-schema -->

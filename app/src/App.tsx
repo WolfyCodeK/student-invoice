@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
@@ -6,10 +6,7 @@ import { Button } from "./components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./components/ui/dialog";
-import { Textarea } from "./components/ui/textarea";
 import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose } from "./components/ui/toast";
-import { TemplateForm } from "./components/template-form";
-import { SettingsDialog } from "./components/settings-dialog";
 import { Mail, Edit, Plus, Send, Copy, Users, CheckCircle, XCircle, Trash2, Settings, Loader2, Download, MessageSquare } from "lucide-react";
 import { useAppStore, ensureDailyBackup, migrateStoredData, type DraftFailure } from "./stores/app-store";
 import { useToast } from "./hooks/use-toast";
@@ -17,7 +14,15 @@ import { InvoiceTemplate } from "./types";
 import { errorMessage, isBackendError, type UpdateInfo } from "./lib/backend";
 import { listen } from '@tauri-apps/api/event';
 import { getVersion } from '@tauri-apps/api/app';
-import emailjs from '@emailjs/browser';
+
+// Rarely used screens load on first use (and are prefetched when idle), keeping
+// start-up lean. See docs/performance.md.
+const loadTemplateForm = () => import("./components/template-form");
+const loadSettingsDialog = () => import("./components/settings-dialog");
+const loadFeedbackForm = () => import("./components/feedback-form");
+const TemplateForm = lazy(() => loadTemplateForm().then((m) => ({ default: m.TemplateForm })));
+const SettingsDialog = lazy(() => loadSettingsDialog().then((m) => ({ default: m.SettingsDialog })));
+const FeedbackForm = lazy(() => loadFeedbackForm().then((m) => ({ default: m.FeedbackForm })));
 
 function App() {
   const { toast, toasts } = useToast();
@@ -44,7 +49,6 @@ function App() {
     installUpdate
   } = useAppStore();
 
-  const [isLoading, setIsLoading] = useState(true);
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<InvoiceTemplate | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -59,13 +63,14 @@ function App() {
   const [appVersion, setAppVersion] = useState<string>('1.0.0');
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState(false);
 
-  // Loading screen effect
+  // Warm up the lazily loaded screens once the app is idle.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800); // Show loading for 800ms
-
-    return () => clearTimeout(timer);
+    const id = window.requestIdleCallback(() => {
+      void loadTemplateForm();
+      void loadSettingsDialog();
+      void loadFeedbackForm();
+    });
+    return () => window.cancelIdleCallback(id);
   }, []);
 
   // Upgrade data from older versions (backed up first), then take the daily
@@ -280,28 +285,6 @@ function App() {
       addTemplate(templateData);
     }
   };
-
-  // Show loading screen initially
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-        <div className="flex flex-col items-center space-y-6">
-          <div className="p-4 bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
-          </div>
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Student Invoice</h2>
-            </div>
-            <p className="text-slate-600 dark:text-slate-400">Loading application...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <ThemeProvider defaultTheme={settings.theme} storageKey="student-invoice-theme">
@@ -603,12 +586,16 @@ function App() {
           </main>
   
           {/* Dialogs and Toasts (No changes here) */}
-          <TemplateForm
-            open={templateFormOpen}
-            onOpenChange={setTemplateFormOpen}
-            template={editingTemplate}
-            onSubmit={handleTemplateSubmit}
-          />
+          {templateFormOpen && (
+            <Suspense fallback={null}>
+              <TemplateForm
+                open={templateFormOpen}
+                onOpenChange={setTemplateFormOpen}
+                template={editingTemplate}
+                onSubmit={handleTemplateSubmit}
+              />
+            </Suspense>
+          )}
           <Dialog open={gmailConnecting} onOpenChange={(open) => {
             if (!open) void cancelGmailConnect();
           }}>
@@ -656,10 +643,14 @@ function App() {
               </div>
             </DialogContent>
           </Dialog>
-          <SettingsDialog
-            open={settingsDialogOpen}
-            onOpenChange={setSettingsDialogOpen}
-          />
+          {settingsDialogOpen && (
+            <Suspense fallback={null}>
+              <SettingsDialog
+                open={settingsDialogOpen}
+                onOpenChange={setSettingsDialogOpen}
+              />
+            </Suspense>
+          )}
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <DialogContent>
               <DialogHeader>
@@ -742,7 +733,9 @@ function App() {
                 </DialogDescription>
               </DialogHeader>
 
-              <FeedbackForm onClose={() => setFeedbackDialogOpen(false)} />
+              <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin mx-auto" />}>
+                <FeedbackForm onClose={() => setFeedbackDialogOpen(false)} />
+              </Suspense>
             </DialogContent>
           </Dialog>
         </div>
@@ -760,92 +753,6 @@ function App() {
         </ToastViewport>
       </ToastProvider>
     </ThemeProvider>
-  );
-}
-
-// Feedback Form Component
-function FeedbackForm({ onClose }: { onClose: () => void }) {
-  const [feedback, setFeedback] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
-  // EmailJS configuration - Replace these with your actual values from emailjs.com
-  const SERVICE_ID = 'service_t490keb'; // Your Gmail service ID
-  const TEMPLATE_ID = 'template_nt9cu4m'; // Create a template in EmailJS
-  const PUBLIC_KEY = 'ePN0HZnXELUkautE6'; // Get from EmailJS dashboard
-
-  const handleSubmit = async () => {
-    if (!feedback.trim()) {
-      toast({
-        title: "Feedback Required",
-        description: "Please enter your feedback before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Send feedback directly to isaack2wolf@gmail.com
-      const templateParams = {
-        to_email: 'isaack2wolf@gmail.com',
-        from_name: 'Student Invoice App User',
-        message: feedback,
-        app_info: 'Sent from Student Invoice App'
-      };
-
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
-
-      toast({
-        title: "Feedback Sent Successfully!",
-        description: "Thank you for your feedback!",
-        variant: "default",
-      });
-
-      onClose();
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to send feedback. Please email isaack2wolf@gmail.com directly.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Feedback *</label>
-        <Textarea
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          maxLength={5000}
-          className="min-h-[150px] resize-none"
-          placeholder="Tell us what you think about the app, any issues you've encountered, or suggestions for improvement..."
-        />
-      </div>
-
-      <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Sending...
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4 mr-2" />
-              Send Feedback
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
   );
 }
 

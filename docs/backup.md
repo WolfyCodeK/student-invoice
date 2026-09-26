@@ -24,7 +24,8 @@ The UI lives in Settings → **Your data** (`app/src/components/data-section.tsx
 1. `import_backup()` opens the native **Open** dialog from Rust, rejects files
    over 5 MB before reading them, strips a UTF-8 byte-order mark, requires
    valid UTF-8, and checks the envelope. It returns the file's text.
-2. `parseBackup` validates everything strictly with zod
+2. `parseBackup` (`app/src/lib/backup-parse.ts`, loaded on demand) validates
+   everything strictly with zod
    (`app/src/lib/schema/index.ts`):
    - it drops `__proto__`, `constructor` and `prototype` keys while parsing;
    - it enforces generous length limits (larger than anything the app itself

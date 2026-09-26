@@ -31,6 +31,7 @@ good intentions.
      - capabilities;
      - the compatibility invariants;
      - dependency versions;
+     - performance budgets;
      - `package.json` scripts;
      - JSON schemas of stored data.
    - Each generated section sits between `<!-- GEN:name -->` markers. Run

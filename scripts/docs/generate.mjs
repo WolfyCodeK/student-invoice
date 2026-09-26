@@ -190,7 +190,22 @@ async function genSchema(exportName) {
   return '```json\n' + JSON.stringify(schema, null, 2) + '\n```'
 }
 
+async function genPerformanceBudgets() {
+  const { BUNDLE_BUDGETS, INSTALLER_BUDGET_MIB, RUNTIME_TARGETS } = await import(pathToFileURL(join(root, 'scripts/perf/budgets.mjs')).href)
+  return [
+    '| Budget | Limit | Enforced by |',
+    '|---|---|---|',
+    `| Start-up JS (gzip) | ${BUNDLE_BUDGETS.startupJsGzipKiB} KiB | CI (\`scripts/perf/check-bundle.mjs\`) |`,
+    `| All JS (gzip) | ${BUNDLE_BUDGETS.totalJsGzipKiB} KiB | CI |`,
+    `| CSS (gzip) | ${BUNDLE_BUDGETS.cssGzipKiB} KiB | CI |`,
+    `| MSI installer | ${INSTALLER_BUDGET_MIB} MiB | release script |`,
+    `| Time to usable UI | ${RUNTIME_TARGETS.timeToUsableMs} ms | \`scripts/perf/measure.ps1\` (manual) |`,
+    `| Idle CPU | ${RUNTIME_TARGETS.idleCpuSecondsPer10s} CPU-s per 10 s | \`scripts/perf/measure.ps1\` (manual) |`,
+  ].join('\n')
+}
+
 const GENERATORS = {
+  'performance-budgets': genPerformanceBudgets,
   'tauri-commands': genTauriCommands,
   capabilities: genCapabilities,
   invariants: genInvariants,

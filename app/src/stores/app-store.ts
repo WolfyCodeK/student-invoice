@@ -4,8 +4,10 @@ import { InvoiceTemplate, AppSettings, TermData } from '../types'
 import { generateInvoice, generateAllInvoices, InvoiceData } from '../utils/invoice-generator'
 import { calculateTermData, getTermsForAcademicYear } from '../utils/terms'
 import { backend, isBackendError, errorMessage, type BackupReason, type GmailStatus, type UpdateInfo } from '../lib/backend'
-import { buildBackup, parseBackup, suggestedBackupName, type ParseResult } from '../lib/backup'
-import { WEEKDAYS, type BackupFile } from '../lib/schema'
+import { buildBackup, suggestedBackupName } from '../lib/backup'
+import type { ParseResult } from '../lib/backup-parse'
+import type { BackupFile } from '../lib/schema'
+import { WEEKDAYS } from '../lib/schema/constants'
 import { getVersion } from '@tauri-apps/api/app'
 
 /** One template's result from "Draft all". */
@@ -60,9 +62,6 @@ interface AppState {
   replaceAllData: (backup: BackupFile, safetyBackup: 'pre-import' | 'pre-restore') => Promise<void>
   backupNow: (reason: BackupReason) => Promise<void>
 
-  // UI State
-  isLoading: boolean
-  setLoading: (loading: boolean) => void
 }
 
 const defaultSettings: AppSettings = {
@@ -249,7 +248,9 @@ export const useAppStore = create<AppState>()(
 
       pickImportFile: async () => {
         const text = await backend.importBackup()
-        return text === null ? null : parseBackup(text)
+        if (text === null) return null
+        const { parseBackup } = await import('../lib/backup-parse')
+        return parseBackup(text)
       },
 
       replaceAllData: async (backup, safetyBackup) => {
@@ -356,12 +357,7 @@ export const useAppStore = create<AppState>()(
         return []
       },
 
-      // UI State
-      isLoading: false,
 
-      setLoading: (loading) => {
-        set({ isLoading: loading })
-      }
     }),
     {
       name: 'student-invoice-store',

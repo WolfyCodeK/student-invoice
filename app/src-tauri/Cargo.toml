@@ -50,3 +50,11 @@ windows-native-keyring-store = { version = "1", default-features = false }
 
 [features]
 mcp-bridge = ["dep:tauri-plugin-mcp-bridge"]
+
+# Smaller, faster release builds (docs/performance.md). Panics keep the
+# default "unwind" so a failure in a background task can't take down the app.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

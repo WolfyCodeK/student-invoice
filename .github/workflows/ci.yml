@@ -71,6 +71,9 @@ jobs:
         working-directory: app
         run: pnpm build
 
+      - name: Bundle size budgets
+        run: node scripts/perf/check-bundle.mjs
+
       - name: Dependency audit (npm)
         working-directory: app
         run: pnpm audit --audit-level high

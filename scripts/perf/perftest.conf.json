@@ -1,0 +1,4 @@
+{
+  "identifier": "com.isaac.student-invoice.perftest",
+  "bundle": { "createUpdaterArtifacts": false }
+}

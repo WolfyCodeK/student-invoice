@@ -7,7 +7,6 @@ components in `app/src/components/ui/` (built on Radix primitives), and
 
 ## Screen layout
 
-- **Loading screen:** shown for a fixed 800 ms on start.
 - **Header:** app name, version (from `getVersion()`), and the light/dark
   theme toggle.
 - **Left panel, "Invoice Generator" card:**
@@ -36,7 +35,11 @@ components in `app/src/components/ui/` (built on Radix primitives), and
 | Template form | `app/src/components/template-form.tsx` | Create or edit a template: recipient, cost, instrument (fixed list), day (Mon–Sun), students. Validated with zod and react-hook-form. The form resets every time it opens. |
 | Settings | `app/src/components/settings-dialog.tsx` | Notifications switch (unused), default template (unused), email body editor, Gmail status with an *Advanced* section for a custom Google OAuth client (saved immediately to Credential Manager, separate from the dialog's Save), "Your data" (export, import, automatic backups; see [backup](backup.md)), read-only term dates for the current academic year. |
 | Email body editor | same file (`EmailBodyEditorDialog`) | Edit the custom body with placeholders; see [billing](billing.md#invoice-text). |
-| Connect Gmail (while the browser sign-in is pending, with Cancel), Draft results (lists each failed student and why), Delete Template, Software Update (shows download progress; can't be closed while installing), Feedback | `app/src/App.tsx` | The Feedback form (`FeedbackForm`) sends a message through EmailJS (max 5,000 characters). |
+| Connect Gmail (while the browser sign-in is pending, with Cancel), Draft results (lists each failed student and why), Delete Template, Software Update (shows download progress; can't be closed while installing), Feedback | `app/src/App.tsx` | The Feedback form (`app/src/components/feedback-form.tsx`) sends a message through EmailJS (max 5,000 characters). |
+
+Settings, the template form and the feedback form are loaded on first use and
+prefetched when the app is idle ([performance](performance.md)). The app has
+no loading screen.
 
 ## Errors
 
@@ -47,7 +50,9 @@ a blank window.
 
 ## Theme
 
-`app/src/components/theme-provider.tsx` applies a `light`/`dark` class to
+A tiny inline script in `app/index.html` applies the saved theme before the
+first paint, so there is no light/dark flash. After that,
+`app/src/components/theme-provider.tsx` applies the `light`/`dark` class to
 `<html>` and stores the choice in the `student-invoice-theme` localStorage
 key. The toggle is in `app/src/components/theme-toggle.tsx`. Colours are CSS
 variables in `app/src/App.css`.

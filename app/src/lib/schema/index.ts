@@ -1,12 +1,11 @@
 // Single source of truth for the shape of stored data and backup files.
 // Also imported by scripts/docs/generate.mjs (Node type-stripping), so this
-// file must stay self-contained: only `zod` imports, erasable TS syntax only.
+// file must stay self-contained: only `zod` and `./constants.ts` imports
+// (with the .ts extension), erasable TS syntax only.
 import { z } from 'zod'
+import { WEEKDAYS } from './constants.ts'
 
-export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
-
-/** Newest backup format this version can read and the one it writes. */
-export const BACKUP_FORMAT_VERSION = 1
+export { BACKUP_FORMAT_VERSION, WEEKDAYS } from './constants.ts'
 
 const text = (max: number) => z.string().max(max)
 

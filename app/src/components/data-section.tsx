@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useAppStore } from "../stores/app-store";
 import { backend, errorMessage, type BackupInfo } from "../lib/backend";
-import { describeBackup, parseBackup } from "../lib/backup";
+import { describeBackup } from "../lib/backup";
+import { parseBackup } from "../lib/backup-parse";
 import type { BackupFile } from "../lib/schema";
 import { useToast } from "../hooks/use-toast";
 
