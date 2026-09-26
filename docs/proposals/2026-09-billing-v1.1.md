@@ -11,7 +11,7 @@ app. The decisions below will be revisited after consulting the main user
 |---|---|---|
 | 1 | Lesson count rule | **Pending**: checking with the teacher. Money logic unchanged until then. |
 | 2 | Term dates | **Approved**: editable per academic year in Settings, with today's dates as defaults. |
-| 3 | Bank holidays / days off | **the teacher's answer (2026-09-26):** let him untick any lesson that didn't happen. Proposed in [untick lessons](2026-09-untick-lessons.md), awaiting approval. |
+| 3 | Bank holidays / days off | **the teacher's answer (2026-09-26):** let him untick any lesson that didn't happen. Approved for v1.1.0 in [untick lessons](2026-09-untick-lessons.md). |
 | 4 | Invoicing between half-terms | **Pending**: checking with the teacher. |
 | 5 | Sign-off name | **Approved**: no hard-coded names anywhere. There is a "Your name" setting, empty on a fresh install; data upgraded from v1.0.1 is pre-filled with "the teacher" so existing emails are unchanged. |
 | 6 | Subject wording / pupil name | **Pending**: checking with the teacher. |

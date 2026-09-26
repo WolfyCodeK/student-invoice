@@ -1,6 +1,6 @@
 # Proposal: untick a lesson that didn't happen
 
-**Status:** awaiting the owner's approval. Nothing here is implemented.
+**Status:** approved for v1.1.0 (see Approval). Not implemented yet.
 **Author:** 2026-09-26. **Requested by:** the teacher, via the owner, after seeing
 the Register design. **Relates to:** decision 3 of the
 [billing rules proposal](2026-09-billing-v1.1.md) ("let the teacher tick off any
@@ -112,4 +112,16 @@ the teacher
 
 ## Approval
 
-Not yet approved.
+Approved by the owner on 2026-09-26, in these words: "build the app with the
+current v1.0.1 logic and with the new week deselecting system (which will
+become v1.1.0), and then the teacher can use it and report back what he thinks,
+then we'll do v1.1.1, v1.1.2, v1.1.3 etc until we've fine tuned it how he
+wants."
+
+- **a.** The rule is approved as written.
+- **b.** It ships in v1.1.0. Every other calculation stays exactly as in v1.0.1.
+- **c.** The wording stays unchanged, including the single-lesson date range,
+  because the owner specified the v1.0.1 logic.
+
+Later adjustments come from the teacher's feedback as v1.1.x patch releases. Each
+money change still needs its own approved proposal.

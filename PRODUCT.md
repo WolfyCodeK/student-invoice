@@ -70,9 +70,12 @@ Nothing leaves it except the drafts saved to his own Gmail.
 - Low memory mode.
 
 **Constraints:**
-- v1.1.0 changes no calculation and no email wording (`docs/billing.md`).
-  Changes to those wait until the owner has consulted the teacher
-  (`docs/proposals/2026-09-billing-v1.1.md`). The owner approved
+- v1.1.0 keeps v1.0.1's calculations and email wording (`docs/billing.md`).
+  The one exception is the approved **untick a lesson that didn't happen**
+  (`docs/proposals/2026-09-untick-lessons.md`).
+- After v1.1.0, the teacher uses the app and reports back. It is then fine-tuned
+  to his wishes in v1.1.x patch releases, and each money change still needs an
+  approved proposal (`docs/proposals/2026-09-billing-v1.1.md`). The owner approved
   (2026-09-26) rearranging the main screen in the redesign if that makes it
   simpler, as long as every existing function stays.
 - Installed copies must keep updating and keep their data

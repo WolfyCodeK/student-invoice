@@ -13,4 +13,4 @@ and the proposal is linked from [billing](../billing.md).
 ## Proposals
 
 - [Billing rules](2026-09-billing-v1.1.md): deferred to a version after v1.1.0, pending consultation with the main user.
-- [Untick a lesson that didn't happen](2026-09-untick-lessons.md): the teacher's answer to decision 3 of the billing rules. Awaiting approval.
+- [Untick a lesson that didn't happen](2026-09-untick-lessons.md): the teacher's answer to decision 3 of the billing rules. Approved for v1.1.0.
