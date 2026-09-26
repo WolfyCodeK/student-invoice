@@ -1,0 +1,18 @@
+# Normalise line endings: LF in the repo and in the working tree, regardless
+# of the developer's core.autocrlf setting. This stops CRLF-only "phantom"
+# modifications from showing up in `git status`.
+* text=auto eol=lf
+
+# Windows-native scripts keep CRLF so cmd.exe / Windows PowerShell are happy.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.webp binary
+*.woff binary
+*.woff2 binary
