@@ -29,7 +29,8 @@ mkdirSync(outDir, { recursive: true })
 if (cmd === 'harness') {
   const wt = join(root, 'release-artifacts', 'wt-v1.0.1')
   step('Check out v1.0.1 into a temporary worktree')
-  if (existsSync(wt)) run('git', ['worktree', 'remove', '--force', wt], { cwd: root })
+  if (existsSync(wt)) rmSync(wt, { recursive: true, force: true, maxRetries: 3 })
+  run('git', ['worktree', 'prune'], { cwd: root })
   run('git', ['worktree', 'add', '--detach', wt, 'v1.0.1'], { cwd: root })
   try {
     const app = join(wt, 'student-invoice-tauri')
@@ -47,7 +48,10 @@ if (cmd === 'harness') {
     copyFileSync(join(bundle, msi), join(outDir, 'Student.Invoice_1.0.1-localtest_x64_en-US.msi'))
     console.log(`\n✔ ${join(outDir, 'Student.Invoice_1.0.1-localtest_x64_en-US.msi')}`)
   } finally {
-    run('git', ['worktree', 'remove', '--force', wt], { cwd: root })
+    // `git worktree remove` can fail on pnpm's node_modules links; delete the
+    // folder ourselves, then let git forget the worktree.
+    rmSync(wt, { recursive: true, force: true, maxRetries: 3 })
+    run('git', ['worktree', 'prune'], { cwd: root })
   }
 } else if (cmd === 'target') {
   if (!isSemver(version ?? '')) die('usage: update-test.mjs target <x.y.z>')
