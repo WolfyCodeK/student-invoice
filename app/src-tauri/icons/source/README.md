@@ -74,3 +74,14 @@ The concept ("invoices and tick") comes from a Nano Banana Pro
 It was then redrawn by hand as SVG, keeping the composition and retuning the
 colours to the app's "Register" direction (register blue `#1D3F8A`, white
 pages, feint blue rules, success green).
+
+## Provenance
+
+Every PNG in `app/src-tauri/icons/` carries an embedded note on where it came
+from (Impeccable's provenance check). After rebuilding the set, embed it
+again and confirm nothing is missing:
+
+```
+impeccable embed-prompt <file.png> --prompt "Origin: rendered by app/src-tauri/icons/source/render.mjs from the hand-drawn vector master app/src-tauri/icons/source/icon.svg (32x32.png: icon-small.svg) ..."
+impeccable embed-prompt --scan app/src-tauri/icons app/src/assets
+```
