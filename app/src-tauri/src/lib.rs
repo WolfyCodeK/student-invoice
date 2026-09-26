@@ -1,10 +1,10 @@
 mod gmail;
 
 use std::sync::Mutex;
-use tauri::{Emitter};
+use tauri::Emitter;
 use tauri_plugin_updater::UpdaterExt;
-use tokio::net::TcpListener;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
+use tokio::net::TcpListener;
 use urlencoding::decode;
 
 #[derive(Debug)]
@@ -33,9 +33,8 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 async fn get_gmail_auth_url(
     client_id: String,
-    client_secret: String
+    client_secret: String,
 ) -> Result<(String, String), String> {
-
     // Create Gmail client
     let client = gmail::create_gmail_client(client_id.clone(), client_secret.clone());
 
@@ -59,7 +58,6 @@ async fn exchange_gmail_code(
     client_id: String,
     client_secret: String,
 ) -> Result<(), String> {
-
     let client = gmail::create_gmail_client(client_id.clone(), client_secret.clone());
 
     match client.exchange_code_for_token(code, pkce_verifier).await {
@@ -75,15 +73,24 @@ async fn exchange_gmail_code(
 }
 
 #[tauri::command]
-async fn create_gmail_draft(
-    subject: String,
-    body: String,
-) -> Result<serde_json::Value, String> {
+async fn create_gmail_draft(subject: String, body: String) -> Result<serde_json::Value, String> {
     let (token, client_id, client_secret) = {
         let state = GMAIL_STATE.lock().map_err(|e| e.to_string())?;
-        let token = state.token.as_ref().cloned().ok_or("Not authenticated".to_string())?;
-        let client_id = state.client_id.as_ref().cloned().ok_or("Client ID not found".to_string())?;
-        let client_secret = state.client_secret.as_ref().cloned().ok_or("Client secret not found".to_string())?;
+        let token = state
+            .token
+            .as_ref()
+            .cloned()
+            .ok_or("Not authenticated".to_string())?;
+        let client_id = state
+            .client_id
+            .as_ref()
+            .cloned()
+            .ok_or("Client ID not found".to_string())?;
+        let client_secret = state
+            .client_secret
+            .as_ref()
+            .cloned()
+            .ok_or("Client secret not found".to_string())?;
         (token, client_id, client_secret)
     };
 
@@ -127,7 +134,7 @@ async fn check_gmail_auth_status() -> Result<serde_json::Value, String> {
 async fn start_oauth_server(
     app: tauri::AppHandle,
     client_id: String,
-    client_secret: String
+    client_secret: String,
 ) -> Result<String, String> {
     // Start local server to capture OAuth redirect
     let listener = TcpListener::bind("127.0.0.1:3001")
@@ -138,7 +145,9 @@ async fn start_oauth_server(
 
     // Generate OAuth URL
     let client = gmail::create_gmail_client(client_id.clone(), client_secret.clone());
-    let (auth_url, pkce_verifier) = client.get_auth_url().await
+    let (auth_url, pkce_verifier) = client
+        .get_auth_url()
+        .await
         .map_err(|e| format!("Failed to generate auth URL: {}", e))?;
 
     // Store client credentials for the server task
@@ -160,23 +169,35 @@ async fn start_oauth_server(
             let mut reader = tokio::io::BufReader::new(&mut socket);
 
             let mut request = String::new();
-            if let Ok(_) = reader.read_line(&mut request).await {
+            if reader.read_line(&mut request).await.is_ok() {
                 println!("Received request: {}", request);
 
                 if request.contains("GET /auth/callback") {
                     // Extract authorization code from URL
                     if let Some(code_start) = request.find("code=") {
-                        let code_end = request[code_start..].find('&')
+                        let code_end = request[code_start..]
+                            .find('&')
                             .map(|pos| code_start + pos)
                             .unwrap_or(request.len());
                         let encoded_code = &request[code_start + 5..code_end];
-                        let code = decode(encoded_code).unwrap_or_else(|_| encoded_code.into()).to_string();
+                        let code = decode(encoded_code)
+                            .unwrap_or_else(|_| encoded_code.into())
+                            .to_string();
 
-                        println!("Extracted authorization code: {}", &code[..20.min(code.len())]);
+                        println!(
+                            "Extracted authorization code: {}",
+                            &code[..20.min(code.len())]
+                        );
 
                         // Exchange code for tokens
-                        let client = gmail::create_gmail_client(server_client_id.clone(), server_client_secret.clone());
-                        match client.exchange_code_for_token(code, pkce_verifier.clone()).await {
+                        let client = gmail::create_gmail_client(
+                            server_client_id.clone(),
+                            server_client_secret.clone(),
+                        );
+                        match client
+                            .exchange_code_for_token(code, pkce_verifier.clone())
+                            .await
+                        {
                             Ok(token_data) => {
                                 println!("Token exchange successful!");
 
@@ -228,7 +249,14 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<String, String> {
         Ok(updater) => {
             match updater.check().await {
                 Ok(Some(update)) => {
-                    println!("Update available: {} -> {}", app.config().version.as_ref().unwrap_or(&"unknown".to_string()), update.version);
+                    println!(
+                        "Update available: {} -> {}",
+                        app.config()
+                            .version
+                            .as_ref()
+                            .unwrap_or(&"unknown".to_string()),
+                        update.version
+                    );
                     Ok(format!(
                         r#"{{"available": true, "version": "{}", "body": "{}"}}"#,
                         update.version,
@@ -237,7 +265,10 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<String, String> {
                 }
                 Ok(None) => {
                     println!("No update available - already on latest version");
-                    Ok(r#"{"available": false, "message": "Already on latest version"}"#.to_string())
+                    Ok(
+                        r#"{"available": false, "message": "Already on latest version"}"#
+                            .to_string(),
+                    )
                 }
                 Err(e) => {
                     // Log the actual error for debugging
@@ -257,7 +288,7 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     println!("Starting update installation...");
-    
+
     match app.updater() {
         Ok(updater) => {
             println!("Updater obtained successfully");
@@ -265,17 +296,20 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
                 Ok(Some(update)) => {
                     println!("Update found: version {}", update.version);
                     println!("Downloading and installing update...");
-                    
-                    match update.download_and_install(
-                        |downloaded, total| {
-                            if let Some(t) = total {
-                                println!("Download progress: {}/{} bytes", downloaded, t);
-                            }
-                        },
-                        || {
-                            println!("Download finished, installing...");
-                        }
-                    ).await {
+
+                    match update
+                        .download_and_install(
+                            |downloaded, total| {
+                                if let Some(t) = total {
+                                    println!("Download progress: {}/{} bytes", downloaded, t);
+                                }
+                            },
+                            || {
+                                println!("Download finished, installing...");
+                            },
+                        )
+                        .await
+                    {
                         Ok(_) => {
                             println!("Update installed successfully!");
                             Ok(())
@@ -305,23 +339,20 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Load environment variables from .env file
-    dotenvy::dotenv().ok();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
-        greet,
-        get_gmail_auth_url,
-        exchange_gmail_code,
-        create_gmail_draft,
-        is_gmail_authenticated,
-        check_gmail_auth_status,
-        start_oauth_server,
-        check_for_updates,
-        install_update
-    ])
+            greet,
+            get_gmail_auth_url,
+            exchange_gmail_code,
+            create_gmail_draft,
+            is_gmail_authenticated,
+            check_gmail_auth_status,
+            start_oauth_server,
+            check_for_updates,
+            install_update
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

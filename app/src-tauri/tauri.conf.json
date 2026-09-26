@@ -1,62 +1,67 @@
 {
-    "$schema":  "https://schema.tauri.app/config/2",
-    "productName":  "Student Invoice",
-    "version":  "1.0.1",
-    "identifier":  "com.isaac.student-invoice",
-    "build":  {
-                  "beforeDevCommand":  "npm run dev",
-                  "devUrl":  "http://localhost:3000",
-                  "beforeBuildCommand":  "npm run build",
-                  "frontendDist":  "../dist"
-              },
-    "app":  {
-                "windows":  [
-                                {
-                                    "title":  "Student Invoice",
-                                    "width":  1500,
-                                    "height":  940,
-                                    "minWidth":  700,
-                                    "minHeight":  940,
-                                    "maxWidth":  1500,
-                                    "maxHeight":  940,
-                                    "resizable":  true,
-                                    "maximizable":  false,
-                                    "center":  true,
-                                    "decorations":  true,
-                                    "transparent":  false
-                                }
-                            ],
-                "security":  {
-                                 "csp":  null
-                             }
-            },
-    "plugins":  {
-                    "updater":  {
-                                    "active":  true,
-                                    "endpoints":  [
-                                                      "https://github.com/WolfyCodeK/student-invoice/releases/latest/download/latest.json"
-                                                  ],
-                                    "dialog":  false,
-                                    "pubkey":  "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhBNDA2RjJDQTkzQjZCQ0MKUldUTWF6dXBMRzlBaXFLNUdXRGJMWHl0Q2NWczFhcVFGbk41SndqeXczVzhEQjJSdDJSYUdTaDQK",
-                                    "windows":  {
-                                                    "installMode":  "passive"
-                                                }
-                                }
-                },
-    "bundle":  {
-                   "active":  true,
-                   "targets":  "all",
-                   "icon":  [
-                                "icons/32x32.png",
-                                "icons/128x128.png",
-                                "icons/128x128@2x.png",
-                                "icons/icon.icns",
-                                "icons/icon.ico"
-                            ],
-                   "windows":  {
-                                   "certificateThumbprint":  null,
-                                   "digestAlgorithm":  "sha256",
-                                   "timestampUrl":  "http://timestamp.digicert.com"
-                               }
-               }
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Student Invoice",
+  "version": "1.0.1",
+  "identifier": "com.isaac.student-invoice",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:3000",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Student Invoice",
+        "width": 1500,
+        "height": 940,
+        "minWidth": 700,
+        "minHeight": 940,
+        "maxWidth": 1500,
+        "maxHeight": 940,
+        "resizable": true,
+        "maximizable": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/WolfyCodeK/student-invoice/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhBNDA2RjJDQTkzQjZCQ0MKUldUTWF6dXBMRzlBaXFLNUdXRGJMWHl0Q2NWczFhcVFGbk41SndqeXczVzhEQjJSdDJSYUdTaDQK",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi"],
+    "createUpdaterArtifacts": true,
+    "publisher": "isaac",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "http://timestamp.digicert.com",
+      "wix": {
+        "upgradeCode": "236f3e14-f18d-5eff-88a5-407aa14b96c8"
+      }
+    }
+  }
 }

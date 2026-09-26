@@ -1,20 +1,12 @@
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
+use base64::{engine::general_purpose, Engine as _};
+use chrono::{DateTime, Utc};
 use oauth2::{
-    AuthorizationCode,
-    AuthUrl,
-    ClientId,
-    ClientSecret,
-    CsrfToken,
-    PkceCodeChallenge,
-    RedirectUrl,
-    Scope,
-    TokenResponse,
-    TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
+    Scope, TokenResponse, TokenUrl,
 };
 use reqwest::Client;
-use base64::{Engine as _, engine::general_purpose};
-use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GmailConfig {
@@ -63,7 +55,9 @@ impl GmailClient {
             ClientId::new(self.config.client_id.clone()),
             Some(ClientSecret::new(self.config.client_secret.clone())),
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
-            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string())?),
+            Some(TokenUrl::new(
+                "https://oauth2.googleapis.com/token".to_string(),
+            )?),
         )
         .set_redirect_uri(RedirectUrl::new(self.config.redirect_uri.clone())?);
 
@@ -71,9 +65,15 @@ impl GmailClient {
 
         let (auth_url, _csrf_token) = client
             .authorize_url(CsrfToken::new_random)
-            .add_scope(Scope::new("https://www.googleapis.com/auth/gmail.compose".to_string()))
-            .add_scope(Scope::new("https://www.googleapis.com/auth/gmail.send".to_string()))
-            .add_scope(Scope::new("https://www.googleapis.com/auth/gmail.modify".to_string()))
+            .add_scope(Scope::new(
+                "https://www.googleapis.com/auth/gmail.compose".to_string(),
+            ))
+            .add_scope(Scope::new(
+                "https://www.googleapis.com/auth/gmail.send".to_string(),
+            ))
+            .add_scope(Scope::new(
+                "https://www.googleapis.com/auth/gmail.modify".to_string(),
+            ))
             .set_pkce_challenge(pkce_challenge)
             .url();
 
@@ -89,7 +89,9 @@ impl GmailClient {
             ClientId::new(self.config.client_id.clone()),
             Some(ClientSecret::new(self.config.client_secret.clone())),
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
-            Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string())?),
+            Some(TokenUrl::new(
+                "https://oauth2.googleapis.com/token".to_string(),
+            )?),
         )
         .set_redirect_uri(RedirectUrl::new(self.config.redirect_uri.clone())?);
 
@@ -99,7 +101,10 @@ impl GmailClient {
             .request_async(oauth2::reqwest::async_http_client)
             .await?;
 
-        let expires_in_seconds = token_result.expires_in().unwrap_or(std::time::Duration::from_secs(3600)).as_secs() as i64;
+        let expires_in_seconds = token_result
+            .expires_in()
+            .unwrap_or(std::time::Duration::from_secs(3600))
+            .as_secs() as i64;
 
         let token_data = TokenData {
             access_token: token_result.access_token().secret().clone(),
@@ -129,7 +134,8 @@ impl GmailClient {
 
         draft_data.insert("message", message);
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://gmail.googleapis.com/gmail/v1/users/me/drafts")
             .bearer_auth(&current_token.access_token)
             .json(&draft_data)
@@ -153,7 +159,8 @@ impl GmailClient {
             ("client_secret", &self.config.client_secret),
         ];
 
-        let response = self.client
+        let response = self
+            .client
             .post("https://oauth2.googleapis.com/token")
             .form(&params)
             .send()
@@ -169,9 +176,7 @@ impl GmailClient {
             .ok_or_else(|| anyhow::anyhow!("No access token in refresh response"))?
             .to_string();
 
-        let expires_in = token_response["expires_in"]
-            .as_u64()
-            .unwrap_or(3600);
+        let expires_in = token_response["expires_in"].as_u64().unwrap_or(3600);
 
         Ok(TokenData {
             access_token,
@@ -185,7 +190,9 @@ impl GmailClient {
             if let Some(refresh_token) = &token.refresh_token {
                 self.refresh_access_token(refresh_token).await
             } else {
-                Err(anyhow::anyhow!("Token expired and no refresh token available"))
+                Err(anyhow::anyhow!(
+                    "Token expired and no refresh token available"
+                ))
             }
         } else {
             Ok(token.clone())
@@ -193,10 +200,7 @@ impl GmailClient {
     }
 
     fn create_email_message(&self, subject: &str, body: &str) -> String {
-        format!(
-            "Subject: {}\r\nTo: \r\n\r\n{}",
-            subject, body
-        )
+        format!("Subject: {}\r\nTo: \r\n\r\n{}", subject, body)
     }
 }
 

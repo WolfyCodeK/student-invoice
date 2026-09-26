@@ -1,8 +1,8 @@
 [package]
 name = "student-invoice-tauri"
 version = "1.0.1"
-description = "A Tauri App"
-authors = ["you"]
+description = "Student Invoice"
+authors = ["isaac"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -40,14 +40,8 @@ chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1.0"
 thiserror = "2.0"
 
-# Environment variables
-dotenvy = "0.15"
-
 # Lazy static for global state
 lazy_static = "1.4"
 
 # URL encoding/decoding
 urlencoding = "2.1"
-
-
-
