@@ -12,10 +12,10 @@ export function FeedbackForm({ onClose }: { onClose: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // EmailJS configuration - Replace these with your actual values from emailjs.com
-  const SERVICE_ID = 'service_t490keb'; // Your Gmail service ID
-  const TEMPLATE_ID = 'template_nt9cu4m'; // Create a template in EmailJS
-  const PUBLIC_KEY = 'ePN0HZnXELUkautE6'; // Get from EmailJS dashboard
+  // EmailJS IDs are public by design; v1.0.1 uses the same service and template.
+  const SERVICE_ID = 'service_t490keb';
+  const TEMPLATE_ID = 'template_nt9cu4m';
+  const PUBLIC_KEY = 'ePN0HZnXELUkautE6';
 
   const handleSubmit = async () => {
     if (!feedback.trim()) {
@@ -29,9 +29,9 @@ export function FeedbackForm({ onClose }: { onClose: () => void }) {
 
     setIsSubmitting(true);
     try {
-      // Send feedback directly to isaack2wolf@gmail.com
+      // The recipient is fixed in the EmailJS template, not sent from here
+      // (docs/security.md).
       const templateParams = {
-        to_email: 'isaack2wolf@gmail.com',
         from_name: 'Student Invoice App User',
         message: feedback,
         app_info: 'Sent from Student Invoice App'

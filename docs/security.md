@@ -92,4 +92,8 @@ private key.
 - `accounts.google.com` and `oauth2.googleapis.com`: OAuth sign-in.
 - `gmail.googleapis.com`: create drafts.
 - `github.com`: update checks and downloads (minisign-verified).
-- `api.emailjs.com`: feedback form.
+- `api.emailjs.com`: feedback form. The service, template and public key
+  IDs are public by design. The template's **To Email** is fixed to the
+  owner's address (checked 2026-09-26), so the IDs can't be used to send mail
+  anywhere else. The app sends only the message, a sender label and an app
+  note. Keep the recipient fixed if the template is ever edited.
