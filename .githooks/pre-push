@@ -1,0 +1,8 @@
+#!/bin/sh
+# Slower checks before pushing. See docs/development.md.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+node --test "scripts/**/*.test.mjs"
+(cd app && pnpm -s test)
+(cd app/src-tauri && cargo clippy --all-targets --quiet -- -D warnings)

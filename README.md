@@ -1,61 +1,13 @@
 # Student Invoice
 
-A desktop application for managing student invoices with Gmail integration and automatic updates.
+A Windows desktop app for music teachers. Keep one template per student or
+family, and each half-term the app works out the lessons and total and writes
+the invoice email for you. Copy it, or save it straight to Gmail as a draft.
+The app updates itself.
 
-## Quick Start
-
->>> FROM ROOT
-
-### Development Server
-```batch
-dev.bat
-```
-Starts the development server with hot-reload.
-
-### Set App Version
-```batch
-set-version.bat 1.2.0
-```
-Updates version in package.json, Cargo.toml, and tauri.conf.json.
-
-### For Local Development/Testing
-```batch
-build.bat
-```
-Rebuilds the current version for local testing.
-
-### For Creating New Releases
-```batch
-release.bat 1.2.0
-```
-**Fully automated:** Creates new release version, builds the app, commits changes, creates git tag, and pushes to GitHub. GitHub Actions handles the rest!
-
-## Project Structure
-
-- `student-invoice-tauri/` - Main Tauri application
-- `dev.bat` - Development server
-- `set-version.bat` - Update app version in all files
-- `build.bat` - Local build script
-- `release.bat` - Release build script
-
-## Features
-
-- Gmail integration for invoice emails
-- Automatic updates
-- Modern dark/light theme
-- Responsive design
-- Secure OAuth2 authentication
-
-## Development
-
-See `student-invoice-tauri/DEVELOPMENT_SETUP.md` for detailed setup instructions.
-
-## Releases
-
-The app uses GitHub Actions for automated releases. When you run `release.bat`, it will:
-1. Update version numbers
-2. Build the application
-3. Create installers (MSI/NSIS)
-4. Show git commands to complete the release
-
-GitHub Actions will then automatically create the GitHub release and enable auto-updates for users.
+- **Download:** the latest installer is on the
+  [Releases page](https://github.com/WolfyCodeK/student-invoice/releases/latest).
+- **What's new:** [CHANGELOG.md](CHANGELOG.md).
+- **Developers:** start at [docs/README.md](docs/README.md). Setup is in
+  [docs/development.md](docs/development.md). AI assistants: see
+  [CLAUDE.md](CLAUDE.md).

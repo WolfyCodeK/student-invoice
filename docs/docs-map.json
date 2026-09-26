@@ -1,0 +1,114 @@
+{
+  "$comment": "Which source files each doc describes. See docs/documentation.md. Every file matching 'sources' (minus 'ignore') must be covered by at least one doc, or be listed in 'pendingCoverage' (which must be empty for a release).",
+  "sources": [
+    "app/src/**",
+    "app/src-tauri/src/**",
+    "app/src-tauri/build.rs",
+    "app/src-tauri/Cargo.toml",
+    "app/src-tauri/tauri*.json",
+    "app/src-tauri/capabilities/**",
+    "app/*.{ts,js,json,html}",
+    "app/.npmrc",
+    "scripts/**",
+    ".github/**",
+    ".githooks/**",
+    ".claude/settings.json"
+  ],
+  "ignore": [
+    "app/src/assets/**",
+    "app/src/vite-env.d.ts"
+  ],
+  "records": [
+    "docs/audits/**",
+    "docs/proposals/**",
+    "docs/decisions/**"
+  ],
+  "docs": {
+    "docs/README.md": {
+      "covers": []
+    },
+    "docs/architecture.md": {
+      "covers": [
+        "app/src-tauri/src/lib.rs",
+        "app/src-tauri/src/main.rs",
+        "app/src-tauri/build.rs",
+        "app/src-tauri/Cargo.toml",
+        "app/src-tauri/tauri*.json",
+        "app/src-tauri/capabilities/**",
+        "app/src/stores/**",
+        "app/src/main.tsx",
+        "app/src/types/**",
+        "app/vite.config.ts"
+      ]
+    },
+    "docs/data-model.md": {
+      "covers": [
+        "app/src/stores/app-store.ts",
+        "app/src/types/**",
+        "app/src/components/theme-provider.tsx"
+      ]
+    },
+    "docs/billing.md": {
+      "covers": [
+        "app/src/utils/terms.ts",
+        "app/src/utils/invoice-generator.ts",
+        "app/src/utils/billing.characterization.test.ts",
+        "app/src/utils/__snapshots__/**"
+      ]
+    },
+    "docs/gmail.md": {
+      "covers": [
+        "app/src-tauri/src/gmail.rs"
+      ]
+    },
+    "docs/ui.md": {
+      "covers": [
+        "app/src/App.tsx",
+        "app/src/App.css",
+        "app/src/components/**",
+        "app/src/hooks/**",
+        "app/src/utils/cn.ts",
+        "app/index.html",
+        "app/tailwind.config.js",
+        "app/postcss.config.js"
+      ]
+    },
+    "docs/compatibility.md": {
+      "covers": [
+        "scripts/invariants.config.mjs",
+        "scripts/check-invariants.mjs"
+      ]
+    },
+    "docs/security.md": {
+      "covers": [
+        "app/src-tauri/capabilities/**",
+        "scripts/check-secrets.mjs"
+      ]
+    },
+    "docs/development.md": {
+      "covers": [
+        "app/package.json",
+        "app/eslint.config.js",
+        "app/vitest.config.ts",
+        "app/tsconfig*.json",
+        "app/.npmrc",
+        "scripts/lib/**",
+        ".githooks/**",
+        ".github/**",
+        ".claude/settings.json",
+        "scripts/tests/**"
+      ]
+    },
+    "docs/documentation.md": {
+      "covers": [
+        "scripts/docs/**"
+      ]
+    },
+    "docs/release.md": {
+      "covers": [
+        "scripts/release/**"
+      ]
+    }
+  },
+  "pendingCoverage": []
+}

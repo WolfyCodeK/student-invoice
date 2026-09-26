@@ -1,0 +1,8 @@
+#!/bin/sh
+# Fails the commit when staged code changes without the docs that describe it.
+# Add a trailer to the message if a doc is genuinely unaffected:
+#   Docs-Skip: docs/architecture.md -- reason
+# See docs/documentation.md.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+node scripts/docs/freshness.mjs --staged --msg-file "$1"
