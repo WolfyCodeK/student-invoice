@@ -89,24 +89,24 @@ session can't finish with the docs out of date. See
 <!-- GEN:versions -->
 | Package | Kind | Locked version |
 |---|---|---|
-| `react` | npm | 19.2.0 |
+| `react` | npm | 19.3.0 |
 | `typescript` | npm | 5.8.3 |
-| `vite` | npm | 7.1.9 |
-| `tailwindcss` | npm | 3.4.18 |
-| `zustand` | npm | 5.0.8 |
-| `zod` | npm | 4.1.11 |
-| `react-hook-form` | npm | 7.64.0 |
-| `date-fns` | npm | 4.1.0 |
-| `@tauri-apps/api` | npm | 2.8.0 |
-| `@tauri-apps/cli` | npm | 2.8.4 |
-| `@tauri-apps/plugin-opener` | npm | 2.5.0 |
+| `vite` | npm | 7.3.6 |
+| `tailwindcss` | npm | 3.4.19 |
+| `zustand` | npm | 5.0.15 |
+| `zod` | npm | 4.6.5 |
+| `react-hook-form` | npm | 7.89.0 |
+| `date-fns` | npm | 4.4.0 |
+| `@tauri-apps/api` | npm | 2.11.1 |
+| `@tauri-apps/cli` | npm | 2.11.5 |
+| `@tauri-apps/plugin-opener` | npm | 2.5.5 |
 | `vitest` | npm | 5.0.2 |
 | `eslint` | npm | 10.11.0 |
-| `tauri` | crate | 2.8.5 |
-| `tauri-build` | crate | 2.4.1 |
-| `tauri-plugin-updater` | crate | 2.9.0 |
-| `tauri-plugin-opener` | crate | 2.5.0 |
+| `tauri` | crate | 2.11.6 |
+| `tauri-build` | crate | 2.6.3 |
+| `tauri-plugin-updater` | crate | 2.12.0 |
+| `tauri-plugin-opener` | crate | 2.5.5 |
 | `oauth2` | crate | 4.4.2 |
-| `reqwest` | crate | 0.11.27, 0.12.23 |
-| `tokio` | crate | 1.47.1 |
+| `reqwest` | crate | 0.11.27, 0.12.28, 0.13.5 |
+| `tokio` | crate | 1.53.1 |
 <!-- /GEN:versions -->
