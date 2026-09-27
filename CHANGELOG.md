@@ -11,6 +11,9 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-28
+<!-- latest-json-summary: Student Invoice 1.1.0: a new look, untick missed lessons, editable term dates and automatic backups -->
+
 ### Added
 - **A new look: the register.** Every family is on one screen for the
   half-term, with a mark for each lesson and the total at the end of the
