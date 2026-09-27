@@ -1,7 +1,7 @@
 // The app shell: title bar, the current screen, and app-wide dialogs
 // (docs/ui.md). Screens other than the register load on first use and are
 // prefetched when idle (docs/performance.md).
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TitleBar } from "./components/title-bar";
 import { Toaster } from "./components/toaster";
 import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "./components/ui/dialog";
@@ -20,11 +20,13 @@ const loadEditor = () => import("./features/family/family-editor");
 const loadFeedback = () => import("./components/feedback-form");
 const loadWhatsNew = () => import("./features/onboarding/whats-new-dialog");
 const loadTour = () => import("./features/onboarding/tour");
+const loadAppearancePicker = () => import("./features/onboarding/appearance-picker");
 const SettingsView = lazy(() => loadSettings().then((m) => ({ default: m.SettingsView })));
 const FamilyEditor = lazy(() => loadEditor().then((m) => ({ default: m.FamilyEditor })));
 const FeedbackForm = lazy(() => loadFeedback().then((m) => ({ default: m.FeedbackForm })));
 const WhatsNewDialog = lazy(() => loadWhatsNew().then((m) => ({ default: m.WhatsNewDialog })));
 const Tour = lazy(() => loadTour().then((m) => ({ default: m.Tour })));
+const AppearancePicker = lazy(() => loadAppearancePicker().then((m) => ({ default: m.AppearancePicker })));
 
 export default function App() {
   const [view, setView] = useState<View>({ name: "register" });
@@ -37,15 +39,26 @@ export default function App() {
   const leaveGuards = useRef(new Set<() => boolean>());
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
 
-  // Warm up the screens that load on demand once the app is idle.
+  // Warm up the screens that load on demand once the app is idle, or after a
+  // second at most: start-up is busy (data upgrade, backup, update check), and
+  // a click before they're ready would otherwise wait for them.
   useEffect(() => {
-    const id = window.requestIdleCallback(() => {
-      void loadSettings();
-      void loadEditor();
-      void loadFeedback();
-    });
+    const id = window.requestIdleCallback(
+      () => {
+        void loadSettings();
+        void loadEditor();
+        void loadFeedback();
+      },
+      { timeout: 1000 },
+    );
     return () => window.cancelIdleCallback(id);
   }, []);
+
+  // Going to Settings or the editor is a transition: if that screen is still
+  // loading, the current one stays on show until it's ready (the screens share
+  // one Suspense boundary below), instead of a blank page. The register is
+  // always loaded, so going back to it is immediate.
+  const show = useCallback((next: View) => startTransition(() => setView(next)), []);
 
   // Upgrade data from older versions (backed up first), then take the daily
   // automatic backup (docs/data-model.md, docs/backup.md).
@@ -74,11 +87,11 @@ export default function App() {
     void getAppVersion().then(setAppVersion);
   }, []);
 
-  // What's new once after each update, then (after 1.1.0) the tour.
+  // What's new once after each update, then (after 1.1.0) "Choose how it looks" and the tour.
   const onboarding = useOnboarding({
     ready: dataReady && appVersion !== "" && appVersion !== "unknown",
     currentVersion: appVersion,
-    onBeforeTour: () => setView({ name: "register" }),
+    showRegister: () => setView({ name: "register" }),
   });
 
   const registerLeaveGuard = useCallback((hasUnsavedChanges: () => boolean) => {
@@ -104,7 +117,7 @@ export default function App() {
   const actions = useMemo<AppActions>(
     () => ({
       view,
-      navigate: (next) => leave(() => setView(next)),
+      navigate: (next) => leave(() => show(next)),
       back: () => leave(() => setView({ name: "register" })),
       appVersion,
       updates: { checking, available: update?.available ?? false, version: update?.version ?? null },
@@ -113,7 +126,7 @@ export default function App() {
       openFeedback: () => setFeedbackOpen(true),
       registerLeaveGuard,
     }),
-    [view, appVersion, checking, update, checkForUpdates, onboarding.startTour, leave, registerLeaveGuard],
+    [view, appVersion, checking, update, checkForUpdates, onboarding.startTour, leave, show, registerLeaveGuard],
   );
 
   return (
@@ -121,14 +134,19 @@ export default function App() {
       <div className="app">
         <TitleBar />
         <main className="view">
-          {view.name === "register" ? (
-            <RegisterView />
-          ) : (
-            // The band keeps the title bar's colour while a screen loads (normally instant: they're prefetched).
-            <Suspense fallback={<header className="band" aria-busy="true" />}>
-              {view.name === "settings" ? <SettingsView /> : <FamilyEditor key={view.templateId ?? "new"} />}
-            </Suspense>
-          )}
+          {/* One boundary for every screen, already showing the register: a
+              transition to a screen that is still loading then keeps the
+              current screen on show until it's ready, instead of a blank.
+              The band fallback only shows if nothing is on screen yet. */}
+          <Suspense fallback={<header className="band" aria-busy="true" />}>
+            {view.name === "register" ? (
+              <RegisterView />
+            ) : view.name === "settings" ? (
+              <SettingsView />
+            ) : (
+              <FamilyEditor key={view.templateId ?? "new"} />
+            )}
+          </Suspense>
         </main>
       </div>
 
@@ -159,9 +177,13 @@ export default function App() {
           </Suspense>
         </DialogContent>
       </Dialog>
-      {(onboarding.whatsNewOpen || onboarding.tourOpen) && (
+      {(onboarding.whatsNewOpen || onboarding.appearanceOpen || onboarding.tourOpen) && (
         <Suspense fallback={null}>
-          <WhatsNewDialog open={onboarding.whatsNewOpen} entries={onboarding.whatsNewEntries} hasTourNext={onboarding.hasTourNext} onClose={onboarding.closeWhatsNew} />
+          <WhatsNewDialog open={onboarding.whatsNewOpen} entries={onboarding.whatsNewEntries} next={onboarding.next} onClose={onboarding.closeWhatsNew} />
+          {/* Only in the update's flow, so the tour on demand doesn't load it. */}
+          {(onboarding.appearanceOpen || onboarding.next === "appearance") && (
+            <AppearancePicker open={onboarding.appearanceOpen} hasTourNext={onboarding.next === "tour"} onClose={onboarding.closeAppearance} />
+          )}
           <Tour open={onboarding.tourOpen} onClose={onboarding.closeTour} />
         </Suspense>
       )}

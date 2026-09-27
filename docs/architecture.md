@@ -53,8 +53,9 @@ The feedback form calls api.emailjs.com directly from the webview.
   See [billing](billing.md).
 - `types/index.ts`: shared domain types.
 - **Loaded on first use:** Settings, the family editor, the feedback form,
-  What's new and the tour are code-split (`React.lazy`), and the first three
-  are prefetched when idle. Backup
+  What's new, "Choose how it looks" and the tour are code-split
+  (`React.lazy`), and the first three are prefetched when idle (within a
+  second of start-up). Backup
   parsing, which needs zod, is only imported by the Settings screen's Data
   section, so it loads with that screen. See
   [performance](performance.md).
@@ -64,15 +65,20 @@ The feedback form calls api.emailjs.com directly from the webview.
 **Start-up side effects:**
 - **When the store module loads** (`app/src/stores/app-store.ts`): it loads
   the stored state (copying it aside first if it can't be read), sets the
-  current term from today's date, and asks Rust for the Gmail status
-  (following a sign-in that a reload left pending, see [Gmail](gmail.md#status-and-disconnect)).
+  current term from today's date and any edited term dates, and asks Rust for
+  the Gmail status (following a sign-in that a reload left pending, see
+  [Gmail](gmail.md#status-and-disconnect)). It also sets one timer to just
+  after midnight and listens for the window coming back into view, to work
+  the half-term out again if the date has moved on (`refreshCurrentTerm`;
+  [billing](billing.md#where-the-logic-lives)).
 - **When `App` mounts:** it says once if the stored data couldn't be read;
   clears v1.0.1's plaintext Google credentials and upgrades data from older
   versions, after a backup if there is data to protect
   (`migrateStoredData`); takes the daily automatic backup
   (`ensureDailyBackup`); and checks for updates (`features/updates/use-updates.ts`).
-  Once the data is ready, it shows What's new, and the tour after
-  1.1.0, if this PC hasn't seen them yet.
+  Once the data is ready, it shows What's new, and after 1.1.0 "Choose how
+  it looks" and the tour, if this PC hasn't seen them yet
+  ([UI](ui.md#whats-new-and-the-tour)).
 
 ## Backend (`app/src-tauri`)
 

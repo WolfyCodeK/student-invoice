@@ -55,8 +55,13 @@ interface AppState {
   settings: AppSettings
   updateSettings: (updates: Partial<AppSettings>) => void
 
-  /** The half-term today is in, worked out once at start-up; null outside term time. */
+  /**
+   * The half-term today is in; null outside term time. Worked out at start-up
+   * and again whenever the date may have moved on (refreshCurrentTerm).
+   */
   currentTerm: TermData | null
+  /** Works out today's half-term again; changes nothing if it's the same one. */
+  refreshCurrentTerm: () => void
 
   // Gmail (tokens live in Rust / Windows Credential Manager, never here)
   gmailConnected: boolean // persisted only for v1.0.1 compatibility
@@ -166,7 +171,7 @@ export async function migrateStoredData(): Promise<void> {
   const revision = settings.dataRevision ?? 0
   if (revision >= CURRENT_DATA_REVISION) return
   // A fresh install has nothing worth backing up.
-  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate || settings.yourName)
+  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate || settings.yourName || settings.termDates)
   // Nothing is changed unless the backup succeeded; it is retried next start.
   if (hasUserData) await useAppStore.getState().backupNow('pre-migration')
   // Revision 1 was clearing the Google credentials, now done above on every start.
@@ -424,6 +429,8 @@ export const useAppStore = create<AppState>()(
           currentTemplateId: templates.some((t) => t.id === store.currentTemplateId) ? store.currentTemplateId : (templates[0]?.id ?? null),
           settings: { ...defaultSettings, ...(store.settings as Partial<AppSettings>), gmailClientId: '', gmailClientSecret: '' },
         })
+        // Imported term dates change which half-term it is.
+        set({ currentTerm: calculateTermData(new Date(), get().settings.termDates) })
         if (theme) saveMode(theme)
         // The caller reloads the app, but the old colours shouldn't show meanwhile.
         applyAppearance(appearanceFrom(get().settings))
@@ -523,10 +530,23 @@ export const useAppStore = create<AppState>()(
 
       updateSettings: (updates) => {
         set((state) => ({ settings: { ...state.settings, ...updates } }))
+        // Edited term dates move the current half-term and its lessons.
+        if ('termDates' in updates) set({ currentTerm: calculateTermData(new Date(), get().settings.termDates) })
       },
 
       // Terms
       currentTerm: calculateTermData(new Date()),
+      refreshCurrentTerm: () => {
+        const { currentTerm, settings } = get()
+        const today = calculateTermData(new Date(), settings.termDates)
+        const same =
+          today === currentTerm ||
+          (!!today && !!currentTerm &&
+            today.weeksCount === currentTerm.weeksCount &&
+            today.term.startDate.getTime() === currentTerm.term.startDate.getTime() &&
+            today.term.endDate.getTime() === currentTerm.term.endDate.getTime())
+        if (!same) set({ currentTerm: today })
+      },
     }),
     {
       name: 'student-invoice-store', // never change (docs/compatibility.md, store-key); STORE_KEY above is the same
@@ -541,7 +561,9 @@ export const useAppStore = create<AppState>()(
       // settings added in newer versions. Merge settings one level deeper.
       merge: (persisted, current) => {
         const stored = (persisted ?? {}) as Partial<AppState>
-        return { ...current, ...stored, settings: { ...current.settings, ...(stored.settings ?? {}) } }
+        const settings = { ...current.settings, ...(stored.settings ?? {}) }
+        // The half-term follows any term dates edited in Settings.
+        return { ...current, ...stored, settings, currentTerm: calculateTermData(new Date(), settings.termDates) }
       },
       // Loading is synchronous (localStorage), so this runs before anything
       // else can write. Only then may writes happen; if loading failed
@@ -589,3 +611,25 @@ async function followPendingSignIn(): Promise<void> {
 
 // Ask Rust for the Gmail status as the app starts.
 void useAppStore.getState().refreshGmailStatus()
+
+// A new half-term can start while the app stays open, or while the PC sleeps
+// through it (docs/proposals/2026-09-rules-review-decisions.md). Check again
+// just after midnight and whenever the window comes back into view. No
+// polling: one timer to the next midnight, and the window's own events.
+function followTheDate(): void {
+  const refresh = () => useAppStore.getState().refreshCurrentTerm()
+  window.addEventListener('focus', refresh)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refresh()
+  })
+  const atMidnight = () => {
+    const now = new Date()
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5)
+    window.setTimeout(() => {
+      refresh()
+      atMidnight()
+    }, next.getTime() - now.getTime())
+  }
+  atMidnight()
+}
+if (typeof window !== 'undefined') followTheDate()

@@ -101,6 +101,6 @@ Jo Teacher`)
 
   it('custom email wording uses the ticked count', () => {
     const inv = generateInvoice(template({ skippedLessonDates: ['2026-09-21'] }), autumn1, '{{weeksCount}} {{lessonCountText}} = £{{totalCost}}')
-    expect(inv.body).toBe('7 sessions = £175.00')
+    expect(inv.body).toBe('7 lessons = £175.00')
   })
 })

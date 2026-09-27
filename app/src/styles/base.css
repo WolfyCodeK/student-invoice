@@ -442,6 +442,87 @@ textarea.field {
   color: var(--primary-ink);
 }
 
+/* Appearance tiles (features/settings/appearance-options.tsx), in Settings
+   and in "Choose how it looks"; each place sets its own layout. */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+  padding: 10px 14px;
+  border: 1px solid var(--field-line);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
+  text-align: left;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+.choice[aria-checked="true"] {
+  border-color: var(--accent-line);
+  background: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+.choice:hover:not([aria-checked="true"]) {
+  background: var(--sec-hover);
+}
+.choice strong {
+  font-weight: 600;
+}
+.choice small {
+  font-size: var(--fs-xs);
+  line-height: 1.3;
+  color: var(--muted);
+}
+.st-choice-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.st-choice-check {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  color: var(--head-ink);
+  visibility: hidden;
+}
+.choice[aria-checked="true"] .st-choice-check {
+  visibility: visible;
+}
+/* Each scheme's own colours, whatever scheme is on. */
+.swatch {
+  width: 36px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  grid-template-rows: 9px 1fr;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-block);
+}
+.swatch--si i:first-child {
+  background: #1d3f8a;
+}
+.swatch--si i:last-child {
+  background: linear-gradient(to right, #ffffff 9px, #d0453a 9px 10px, #ffffff 10px 12px, #d0453a 12px 13px, #ffffff 13px);
+}
+.swatch--na i:first-child {
+  background: #2e4c6d;
+}
+.swatch--na i:last-child {
+  background: linear-gradient(to right, #eff3f7 18px, #c98a34 18px);
+}
+.corner-demo {
+  width: 36px;
+  height: 22px;
+  flex: none;
+  border: 2px solid var(--head-ink);
+}
+.corner-demo--square {
+  border-radius: 3px;
+}
+.corner-demo--rounded {
+  border-radius: 999px;
+}
+
 /* ---- Dialogs (Radix) ------------------------------------------------- */
 .dlg-overlay {
   position: fixed;

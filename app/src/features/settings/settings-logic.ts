@@ -1,24 +1,69 @@
 // Pure helpers for the Settings screen (docs/ui.md "Settings"). No side
 // effects, so they are unit-tested in settings-logic.test.ts. Term dates come
-// from utils/terms.ts and are only displayed here, never changed.
+// from utils/terms.ts; the editing rules below are those of
+// docs/proposals/2026-09-editable-term-dates.md.
+import { format } from 'date-fns'
 import { getTermsForAcademicYear } from '../../utils/terms'
 import { capitalise } from '../../lib/format'
-import type { Term } from '../../types'
+import type { TermDateOverrides, TermDates } from '../../types'
 
-export interface SeasonTerms {
-  season: 'autumn' | 'spring' | 'summer'
-  label: string
-  halves: Term[]
+/** "Autumn, 1st half" for each of the six half-terms, in order. */
+export function halfTermName(index: number): string {
+  const season = ['autumn', 'spring', 'summer'][Math.floor(index / 2)]
+  return `${capitalise(season)}, ${index % 2 === 0 ? '1st' : '2nd'} half`
 }
 
-/** The school year's six half-terms, grouped Autumn, Spring, Summer. */
-export function termsBySeason(start: number): SeasonTerms[] {
-  const terms = getTermsForAcademicYear(start)
-  return (['autumn', 'spring', 'summer'] as const).map((season) => ({
-    season,
-    label: capitalise(season),
-    halves: terms.filter((t) => t.season === season),
+/** The six half-terms of a school year as 'yyyy-MM-dd' text: the dates in use (edited or usual). */
+export function termDateTexts(start: number, overrides?: TermDateOverrides): TermDates[] {
+  return getTermsForAcademicYear(start, overrides).map((t) => ({
+    start: format(t.startDate, 'yyyy-MM-dd'),
+    end: format(t.endDate, 'yyyy-MM-dd'),
   }))
+}
+
+export function sameTermDates(a: TermDates[], b: TermDates[]): boolean {
+  return a.length === b.length && a.every((t, i) => t.start === b[i].start && t.end === b[i].end)
+}
+
+function isRealDay(text: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text)
+  if (!m) return false
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  return d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3])
+}
+
+/**
+ * Why edited dates for the school year starting in `start` can't be saved, in
+ * plain words, or null if they can: every date filled in, each half-term's
+ * last day on or after its first, the six in order without overlapping, all
+ * from 1 August that year to 31 August the next. ('yyyy-MM-dd' compares as text.)
+ */
+export function termDatesProblem(start: number, dates: TermDates[]): string | null {
+  for (const [i, t] of dates.entries()) {
+    if (!isRealDay(t.start) || !isRealDay(t.end)) return `Fill in both dates for ${halfTermName(i)}.`
+  }
+  const earliest = `${start}-08-01`
+  const latest = `${start + 1}-08-31`
+  if (dates.some((t) => t.start < earliest || t.end > latest)) {
+    return `The dates must be between 1 August ${start} and 31 August ${start + 1}.`
+  }
+  for (const [i, t] of dates.entries()) {
+    if (t.end < t.start) return `${halfTermName(i)} ends before it starts.`
+    if (i > 0 && t.start <= dates[i - 1].end) return `${halfTermName(i)} starts before ${halfTermName(i - 1)} has ended.`
+  }
+  return null
+}
+
+/**
+ * The stored term dates with the school year starting in `start` set to
+ * `dates`. A year set back to the usual dates is removed, so only real edits
+ * are kept; undefined when nothing is left.
+ */
+export function withTermDates(overrides: TermDateOverrides | undefined, start: number, dates: TermDates[]): TermDateOverrides | undefined {
+  const next: TermDateOverrides = { ...(overrides ?? {}) }
+  if (sameTermDates(dates, termDateTexts(start))) delete next[String(start)]
+  else next[String(start)] = dates.map((t) => ({ start: t.start, end: t.end }))
+  return Object.keys(next).length > 0 ? next : undefined
 }
 
 /**
@@ -31,7 +76,7 @@ export const PLACEHOLDERS = {
   instrument: 'The instrument, such as piano',
   termInfo: 'The half-term',
   weeksCount: 'Number of lessons',
-  lessonCountText: '"session" or "sessions"',
+  lessonCountText: '"lesson" or "lessons"',
   dateRange: 'First to last lesson',
   cost: 'Cost per lesson',
   totalCost: 'Total',
@@ -86,6 +131,8 @@ export function nextRadioIndex(key: string, index: number, count: number): numbe
  * Which section the reader is on: the last one whose top has scrolled to
  * within `offset` px of the top, or the last section once the page is
  * scrolled to the bottom. `tops` are positions within the scrolling content.
+ * The Settings page leaves room after its last group (settings-view.tsx), so
+ * every section's top can reach the top and each is marked in turn.
  */
 export function activeSectionIndex(tops: number[], scrollTop: number, viewHeight: number, scrollHeight: number, offset = 96): number {
   if (tops.length === 0) return -1

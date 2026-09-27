@@ -60,7 +60,8 @@
         "app/src/utils/invoice-generator.ts",
         "app/src/utils/billing.characterization.test.ts",
         "app/src/utils/__snapshots__/**",
-        "app/src/utils/untick-lessons.test.ts"
+        "app/src/utils/untick-lessons.test.ts",
+        "app/src/utils/billing-decisions.test.ts"
       ]
     },
     "docs/gmail.md": {

@@ -39,7 +39,8 @@ export function WordingGroup() {
   useLeaveGuard(changed);
   const unknown = unknownPlaceholders(draft);
   // An example of {{termInfo}}, written the way the invoice writes it.
-  const example = currentTerm?.term ?? getTermsForAcademicYear(academicYearStart(new Date()))[0];
+  const termDates = useAppStore((s) => s.settings.termDates);
+  const example = currentTerm?.term ?? getTermsForAcademicYear(academicYearStart(new Date(), termDates), termDates)[0];
   const termInfoExample = `${example.half} half ${example.season} term ${example.startDate.getFullYear()}`;
 
   const edit = (text: string) => {
@@ -59,6 +60,12 @@ export function WordingGroup() {
     setDraft(STANDARD);
     setConfirmReset(false);
     setSavedMsg("Invoice emails use the standard wording again.");
+  };
+
+  /** Throws away unsaved edits: back to the saved wording (the standard one if none is saved). */
+  const undoEdits = () => {
+    setDraft(savedText);
+    setSavedMsg(null);
   };
 
   /** Puts a placeholder where the cursor is in the box. */
@@ -129,7 +136,12 @@ export function WordingGroup() {
           >
             Save wording
           </button>
-          {stored && (
+          {changed && (
+            <button type="button" className="btn btn--secondary" onClick={undoEdits}>
+              {stored ? "Undo changes" : "Reset to the standard wording"}
+            </button>
+          )}
+          {stored && !changed && (
             <button type="button" className="btn btn--secondary" onClick={() => setConfirmReset(true)}>
               Use the standard wording
             </button>

@@ -67,6 +67,10 @@ const backupSettingsSchema = z.looseObject({
   corners: text(40).optional(),
   lastSeenVersion: text(40).optional(),
   yourName: text(MAX_LENGTH.yourName).optional(),
+  // Edited half-term dates: school-year start ("2026") → the six half-terms in order.
+  termDates: z
+    .record(z.string().regex(/^\d{4}$/), z.array(z.strictObject({ start: z.iso.date(), end: z.iso.date() })).length(6))
+    .optional(),
 })
 
 /** The export file (`Student Invoice backup YYYY-MM-DD.json`). */

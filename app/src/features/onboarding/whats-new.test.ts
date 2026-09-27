@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compareVersions, decideOnboarding, TOUR_VERSION, WHATS_NEW, type WhatsNewEntry } from "./whats-new";
 
-const entry = (version: string): WhatsNewEntry => ({ version, items: [{ icon: "palette", text: `In ${version}` }] });
+const entry = (version: string): WhatsNewEntry => ({ version, items: [{ icon: "calendar-days", text: `In ${version}` }] });
 /** Deliberately out of order: the result must still be oldest first. */
 const CATALOGUE = [entry("1.2.0"), entry("1.1.0"), entry("1.1.1"), entry("2.0.0")];
 const versions = (entries: WhatsNewEntry[]) => entries.map((e) => e.version);

@@ -1,6 +1,6 @@
 // The Settings screen (docs/ui.md "Settings"): a blue band, a list of
 // sections on the left and one scrolling page of groups. Everything applies
-// straight away, except the email wording, which has its own Save button.
+// straight away, except the email wording and the term dates, which have their own Save buttons.
 import { useEffect, useRef, useState, type ComponentType, type MouseEvent } from "react";
 import { ArrowLeft, CalendarDays, Database, FileText, Gauge, Info, Mail, Palette, type LucideProps } from "lucide-react";
 import { useAppActions } from "../app-context";
@@ -85,6 +85,31 @@ export function SettingsView() {
 
   useEffect(() => () => window.clearTimeout(settle.current), []);
 
+  // Room after the last group, so every group, even a short one near the end,
+  // can scroll up to the top. Without it the page runs out of scroll first:
+  // the list jumped from Email wording straight to About & help, and choosing
+  // a late group couldn't bring it to the top.
+  const tail = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = page.current;
+    const pad = tail.current;
+    if (!box || !pad) return;
+    const fit = () => {
+      const last = groups.current.get(SECTIONS[SECTIONS.length - 1].id);
+      if (!last) return;
+      // Exactly enough for the last group to reach the top: less the page's
+      // bottom padding and the gap before this spacer, which already add room.
+      const style = getComputedStyle(box);
+      const extra = parseFloat(style.paddingBottom) + parseFloat(style.rowGap || "0");
+      pad.style.height = `${Math.max(0, box.clientHeight - TOP_GAP - last.offsetHeight - extra)}px`;
+    };
+    const watch = new ResizeObserver(fit);
+    watch.observe(box);
+    for (const el of groups.current.values()) watch.observe(el);
+    fit();
+    return () => watch.disconnect();
+  }, []);
+
   const onScroll = () => {
     if (chosen.current) release();
     else spy();
@@ -155,6 +180,7 @@ export function SettingsView() {
               <Body />
             </section>
           ))}
+          <div ref={tail} aria-hidden="true" style={{ flex: "none" }} />
         </div>
       </div>
     </>

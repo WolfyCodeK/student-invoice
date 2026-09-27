@@ -21,17 +21,28 @@ primitives for dialogs, selects, switches and toasts
 | Register (main screen) | `app/src/features/register/` |
 | Settings | `app/src/features/settings/` |
 | Adding or editing a family | `app/src/features/family/` |
-| What's new and the guided tour | `app/src/features/onboarding/` |
+| What's new, "Choose how it looks" and the guided tour: the dialogs (`whats-new-dialog.tsx`, `appearance-picker.tsx`, `tour.tsx`), the order of the steps (`onboarding-flow.ts`) and their state (`use-onboarding.ts`) | `app/src/features/onboarding/` |
+| The appearance choices, shared by Settings and "Choose how it looks" | `app/src/features/settings/appearance-options.tsx` |
 | Your name: the name box (`your-name-field.tsx`), and the check and dialog that ask for it before an email goes out (`use-your-name.tsx`) | `app/src/features/your-name/` |
 | Gmail sign-in dialog and the shared Connect Gmail action | `app/src/features/gmail/` |
 | Feedback form | `app/src/components/feedback-form.tsx` |
 | Crash screen | `app/src/components/error-boundary.tsx` |
-| Styles | `app/src/styles/`: `fonts.css`, `tokens.css`, `base.css`, `app.css` (loaded at start-up); each screen loaded on demand has its own: `features/settings/settings.css`, `features/family/family-editor.css`, `features/onboarding/tour.css` |
+| Styles | `app/src/styles/`: `fonts.css`, `tokens.css`, `base.css`, `app.css` (loaded at start-up); each screen loaded on demand has its own: `features/settings/settings.css`, `features/family/family-editor.css`, `features/onboarding/tour.css`, `features/onboarding/appearance-picker.css` |
 | Display helpers | `app/src/lib/format.ts` (money, lesson counts), `app/src/lib/term-display.ts` (half-term names, ranges and comparisons) |
 
 The screens are `register`, `settings` and `edit` (a family, or `null` for a new one). Settings, the editor, the
-feedback form and the onboarding pieces load on first use, and are prefetched
-when the app is idle ([performance](performance.md)).
+feedback form and the onboarding pieces load on first use. The first three
+are prefetched once the app is idle, or after a second at most
+([performance](performance.md#what-keeps-it-small)).
+
+- **Going to Settings or the editor** is a React transition
+  (`startTransition` in `App.tsx`), and all three screens sit inside one
+  `Suspense` boundary that is already showing the register. So if a click
+  comes before the screen's code has loaded, the current screen simply stays
+  on show until it's ready: there is no blank moment. The empty blue band
+  (the boundary's fallback) could only appear if nothing were on screen yet.
+- **Going back to the register** is immediate: it is part of the start-up
+  bundle.
 
 ## Title bar
 
@@ -66,6 +77,8 @@ The main screen (`register-view.tsx`) has three parts.
 **Header band.**
 - The heading "Register · <half-term>", the dates and the number of weeks.
 - A strip of the school year's six half-terms, with the current one filled.
+  The heading, the strip and the next half-term (outside term time) use the
+  term dates edited in Settings, if any ([Term dates](#term-dates)).
 - Gmail status, and **Draft all N in Gmail**. The status is the live one
   from Rust: "Checking Gmail…" until it answers (Draft all waits too), then
   the connected address, or Connect Gmail. When the button is disabled, a
@@ -146,18 +159,24 @@ the sign-in ends ([Gmail](gmail.md#status-and-disconnect)).
 ## Settings
 
 A full page (`features/settings/`) with a section list on the left. Changes
-are saved straight away, except the email wording, which has its own Save
-button. The sections:
+are saved straight away, except the email wording and the term dates, which
+have their own Save buttons. The sections:
 
 - **Appearance:** see [Appearance](#appearance) below.
 - **Gmail:** status, Connect or Disconnect, and the *Advanced* custom Google
   OAuth client ([gmail](gmail.md)).
 - **Email wording:** the Your name box at the top
-  ([Your name](#your-name)), then the custom body with placeholders, and a
-  button to go back to the standard wording
-  ([billing](billing.md#invoice-text)).
-- **Term dates:** the school year's half-terms, read-only, with the current
-  one marked.
+  ([Your name](#your-name)), then the custom body, the list of placeholders
+  and what each becomes (`{{lessonCountText}}` is '"lesson" or "lessons"'),
+  and **Save wording** ([billing](billing.md#invoice-text)). The other
+  buttons depend on the state:
+  - with unsaved edits, **Undo changes** puts back the saved wording, or
+    **Reset to the standard wording** does when none of the user's own is
+    saved;
+  - with their own wording saved and nothing unsaved, **Use the standard
+    wording** removes it, after a confirmation.
+- **Term dates:** the half-term dates for this school year and the next,
+  which can be changed ([Term dates](#term-dates) below).
 - **Your data:** export, import, automatic backups and restore
   ([backup](backup.md)).
 - **Performance:** Low memory mode. "Currently on/off" is what the running
@@ -169,6 +188,54 @@ button. The sections:
 
 The old "Show notifications" and "Default template" settings did nothing and
 are gone. Their stored fields are left untouched.
+
+**Scrolling.** The section list marks the group being read as the page
+scrolls (`activeSectionIndex` in `settings-logic.ts`), and choosing a section
+scrolls its group to the top. A spacer after the last group
+(`settings-view.tsx`), resized by a `ResizeObserver` whenever the page or a
+group changes size, leaves just enough room for the last group to reach the
+top. So every section is marked in turn while scrolling, and choosing one
+near the end still brings it to the top.
+
+### Term dates
+
+Settings → Term dates (`terms-group.tsx`) shows the six half-terms and lets
+the teacher change their first and last days, for this school year and the
+next. The rules are in [billing](billing.md#term-dates), and the decision in
+the [proposal](proposals/2026-09-editable-term-dates.md).
+
+- **Lead:** "The app counts each family's lessons between these dates. If
+  your school's dates are different, change them here: the register and the
+  emails follow straight away." Outside term time, a note says so and gives
+  the date the next half-term starts.
+- **Which year:** a switch between this school year and the next, such as
+  "2026/27 (this year)" and "2027/28 (next year)". While there are unsaved
+  changes, the other year is disabled, with the tip "Save or undo your
+  changes first".
+- **The table:** one row per half-term, with **First day** and **Last day**
+  date boxes and the Now tag on the current one. The boxes start from the
+  dates in use: the edited ones, or else the usual ones.
+- **Checks:** while the dates differ from what's saved, the first problem
+  `termDatesProblem` (`settings-logic.ts`) finds shows under the table, such
+  as "Autumn, 2nd half starts before Autumn, 1st half has ended.", and
+  **Save dates** stays disabled until it's fixed.
+- **Buttons:**
+  - **Save dates**;
+  - **Undo changes**, while anything is unsaved;
+  - **Reset to the usual dates**, when that year has been edited and nothing
+    is unsaved. It asks first: "Use the usual dates?", with **Keep my
+    dates** and **Use the usual dates**.
+- **After saving:** "Saved. The register and invoices now use these dates.",
+  or after a reset "The usual dates are back for this school year."
+  `withTermDates` stores only the years that differ from the usual dates, so
+  a year saved with the usual dates is removed from `settings.termDates`
+  ([data model](data-model.md)).
+- **Everywhere else:** the register's heading, term strip and next
+  half-term, the `{{termInfo}}` example in Email wording, and every invoice
+  use the saved dates. The store works out the current half-term again as
+  soon as they change.
+- **Unsaved dates** are guarded like unsaved wording
+  ([Unsaved changes](#unsaved-changes)).
 
 ## Your name
 
@@ -228,8 +295,8 @@ reason.
 
 Screens with unsaved changes register a check with `useLeaveGuard`
 (`features/app-context.tsx`): the family editor while any field differs from
-what it opened with (`hasChanges`), and Settings while the email wording
-differs from the saved text. While one does, leaving through `navigate`,
+what it opened with (`hasChanges`), and Settings while the email wording or
+the term dates differ from what's saved. While one does, leaving through `navigate`,
 `back` or `startTour` (the back arrow, Settings and Help in the title bar)
 first asks "Discard your changes?", with **Keep editing** and **Discard**
 (`App.tsx`).
@@ -241,20 +308,44 @@ first asks "Discard your changes?", with **Keep editing** and **Discard**
 
 ## What's new and the tour
 
-`features/onboarding/` handles both, in this order:
-- **What's new** shows once, the first time the app opens after an update.
-  It has only changes a user would notice, in a few short lines
-  (`whats-new.ts`). While Your name is missing, it also asks for it
-  ([Your name](#your-name)).
-- **The guided tour** follows only after the v1.1.0 update. It dims
-  everything except one highlighted area, with numbered steps in the order
-  a teacher works at half-term (`tour-steps.ts`). Its targets are the `data-tour` attributes
-  on the register and title bar. The Help button and Settings → **Show the
-  tour again** replay it.
+`features/onboarding/` handles them. After the v1.1.0 update (the one after
+which the tour runs by itself) there are three steps, in this order:
+1. **What's new** shows once, the first time the app opens after an update.
+   It has only changes a user would notice, in a few short lines
+   (`whats-new.ts`); for v1.1.0 these include "Set your school's term dates
+   in Settings if they differ." While Your name is missing, it also asks for
+   it ([Your name](#your-name)). Its button says what comes next: **Next**
+   when "Choose how it looks" follows, **Show me around** when only the tour
+   does, and **Got it** otherwise.
+2. **Choose how it looks** (`appearance-picker.tsx`) lets the teacher try
+   the colours, corners and light or dark on their own register. It is a
+   modal Radix dialog whose overlay is clear, not dimmed, and the panel is
+   docked bottom-right over the pupil's page, so the register stays in view
+   and changes as each choice is made. Under the title come the line "Try
+   each one and watch the register change. You can change these any time in
+   Settings.", the groups Colours, Corners and Light or dark (the same
+   choices as Settings → [Appearance](#appearance), saved the same way), and
+   **Show me around**. Escape also keeps the choices and goes on to the
+   tour; a click outside does nothing.
+3. **The guided tour** dims everything except one highlighted area, with
+   numbered steps in the order a teacher works at half-term
+   (`tour-steps.ts`). Its targets are the `data-tour` attributes on the
+   register and title bar. The page can't be clicked during the tour (so
+   nothing is unticked by accident), so the steps describe what each part
+   does rather than asking the user to try it; the first step says they can
+   try everything once the tour ends.
+
+- **How the steps follow on:** the order is decided in `onboarding-flow.ts`
+  (pure, tested in `onboarding-flow.test.ts`). `use-onboarding.ts` holds the
+  state and opens each step on the next frame once the one before has
+  closed, switching to the register first for the picker and the tour.
+- **The tour on demand:** the Help button and Settings → **Show the tour
+  again** replay the tour alone, never the picker.
 - **Later updates** show What's new only.
-- **Fresh installs** see neither; the empty register explains the steps
-  instead.
-- `settings.lastSeenVersion` records what has been shown
+- **Fresh installs** see none of them; the empty register explains the
+  steps instead.
+- `settings.lastSeenVersion` records what has been shown, once the whole
+  flow has ended (after the tour, when there is one)
   ([data model](data-model.md)).
 
 ## Appearance
@@ -278,6 +369,14 @@ as an attribute on `<html>`, which `app/src/styles/tokens.css` reads.
 - **Fonts:** bundled in `app/src/assets/fonts/` (SIL OFL, Latin and Latin
   Extended only). A face downloads only when it's used, so the Navy and
   amber fonts (Nunito) load only with that scheme.
+- **Where they're chosen:** Settings → Appearance, and "Choose how it looks"
+  after the v1.1.0 update ([What's new and the tour](#whats-new-and-the-tour)).
+  Both use the options and the `useAppearance` hook in
+  `app/src/features/settings/appearance-options.tsx`: tiles for Colours and
+  Corners (a small picture, the name, a note and a tick when chosen), and a
+  Light/Dark switch. Each place lays the tiles out itself; their look
+  (`.choice`, the scheme swatches and the corner pictures) is in
+  `app/src/styles/base.css`, so the picker doesn't need Settings' CSS.
 
 Components use only the tokens: no literal colours, radii or fonts. The
 selection colour, focus rings and scrollbars are themed too.

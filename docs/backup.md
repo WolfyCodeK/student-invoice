@@ -2,7 +2,8 @@
 
 Everything a user has set up can be exported to one file and imported on
 another PC running Student Invoice: templates, the selected template,
-settings (including the custom email body and Your name) and the theme.
+settings (including the custom email body, Your name and any edited term
+dates) and the theme.
 Gmail isn't included; the user connects Gmail again on the new PC. Neither
 is Low memory mode, which is a setting for each PC (see
 [performance](performance.md#low-memory-mode)).
@@ -36,6 +37,9 @@ The UI lives in Settings → **Your data** (`app/src/features/settings/data-grou
      export can be imported again;
    - `day` must be a weekday name, `cost` a finite number of at least 0, and
      template ids must be unique;
+   - edited term dates (`settings.termDates`) must be keyed by a four-digit
+     year, each with exactly six `{start, end}` pairs of real
+     `yyyy-MM-dd` dates;
    - no unexpected top-level fields are allowed;
    - a newer `formatVersion` is refused with "update the app first".
 3. A confirmation shows the number of templates, the date and the app version
@@ -218,6 +222,38 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                 "yourName": {
                   "type": "string",
                   "maxLength": 200
+                },
+                "termDates": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^\\d{4}$"
+                  },
+                  "additionalProperties": {
+                    "minItems": 6,
+                    "maxItems": 6,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "end": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "end"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
                 }
               },
               "additionalProperties": {}

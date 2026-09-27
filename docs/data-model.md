@@ -59,6 +59,10 @@ interface AppSettings {
   corners?: 'square' | 'rounded'    // v1.1.0
   lastSeenVersion?: string          // v1.1.0: newest "What's new" shown on this PC
   yourName?: string                 // v1.1.0: signs emails ({{yourName}}); empty on a new install (docs/ui.md "Your name")
+  termDates?: {                     // v1.1.0: half-term dates edited in Settings (docs/billing.md "Term dates")
+    [schoolYearStart: string]:      //   "2026" for 2026/27; only years that differ from the usual dates
+      { start: string; end: string }[]  // six half-terms in order, 'yyyy-MM-dd'
+  }
 }
 ```
 

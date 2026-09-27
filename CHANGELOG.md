@@ -16,7 +16,11 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   half-term, with a mark for each lesson and the total at the end of the
   row. Click a family to see its invoice email beside it.
 - **Choose how it looks:** in Settings, pick the Student Invoice colours or
-  Navy and amber, square or rounded corners, and light or dark.
+  Navy and amber, square or rounded corners, and light or dark. After this
+  update, you can try them on your own register before the tour starts.
+- **Your school's term dates:** if they differ from the usual ones, change
+  them in Settings → Term dates, for this school year and the next. The
+  register and the emails follow straight away.
 - **A new title bar** that's part of the app, with buttons for Help, Updates,
   Feedback and Settings. The window can now be resized, maximised and
   snapped, and it fits smaller laptop screens.
@@ -65,6 +69,10 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 - Opening the app while it's already open brings the open window to the
   front, instead of starting a second copy.
 - The cost per lesson takes pounds and pence only (e.g. 22.50), as before.
+- Emails say "lessons" instead of "sessions" ("7 lessons…"),
+  and so does `{{lessonCountText}}` in your own wording.
+- The email wording editor has **Undo changes** (or **Reset to the standard
+  wording**) to throw away edits you haven't saved.
 
 ### Performance
 - Starts noticeably faster: the app is ready in about half a second. The
@@ -94,6 +102,14 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   instead of waiting forever.
 - If your saved data can't be read, it is kept rather than overwritten, and
   the app tells you how to restore a backup.
+- A price with part of a penny (such as one from an imported file) is
+  rounded to the penny, so the sum in the email always adds up.
+- Spaces typed before or after a name no longer show in the email.
+- The app notices when a new half-term starts while it's left open, or while
+  the PC sleeps.
+- Settings and the family editor open without a blank moment the first time.
+- While you scroll Settings, the list on the left marks every section in
+  turn, and choosing one near the end brings it to the top.
 
 ### Security
 - Removed a Google sign-in credential that had been published by mistake in the

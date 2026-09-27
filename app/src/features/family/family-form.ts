@@ -93,8 +93,9 @@ export function hasChanges(values: FamilyFormValues, initial: FamilyFormValues):
 /** What saving stores: the five fields, with the cost read by `parseFloat` as v1.0.1 did. */
 export function toFields(values: FamilyFormValues): FamilyFields {
   return {
-    recipient: values.recipient,
-    students: values.students,
+    // Spaces at either end would show in the email ("Hi Sarah ,").
+    recipient: values.recipient.trim(),
+    students: values.students.trim(),
     instrument: values.instrument,
     day: values.day,
     cost: parseFloat(values.cost),

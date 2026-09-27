@@ -347,7 +347,7 @@ The system is a flat ruled page with a small shadow vocabulary for things that s
 ### Shadow Vocabulary
 - **Raise** (`box-shadow: 0 1px 2px rgba(16, 32, 72, 0.1)`): primary buttons, band buttons and the editor's small preview panel.
 - **Lift** (`box-shadow: 0 4px 14px rgba(16, 32, 72, 0.08)`): the family editor's record panel on the ground, and tooltips.
-- **Overlay** (`box-shadow: 0 22px 52px rgba(16, 32, 72, 0.3)`): dialogs, the What's new letter, toasts, select menus and the tour card.
+- **Overlay** (`box-shadow: 0 22px 52px rgba(16, 32, 72, 0.3)`): dialogs, the What's new letter, toasts, select menus, the tour card and the Choose how it looks panel.
 - **Slip** (`box-shadow: -6px 0 16px rgba(16, 32, 72, 0.06)`): the pupil's page, which casts a shadow onto the register to its left.
 - **Tour spotlight** (`box-shadow: 0 0 0 3px var(--focus-on-cover), 0 0 0 200vmax var(--tour-scrim)`): a white ring around the highlighted area, with the rest of the window dimmed.
 
@@ -408,6 +408,8 @@ The side panel beside the register. Its head sits on the selection wash: the Tit
 
 ### What's new and the tour
 What's new is a letter: a dialog with a letterhead (the app icon, "Student Invoice" in head-ink, and a muted version line), the headline, then 3–5 lines. Each line has an 18px head-ink icon, and feint rules separate the lines. The tour is a 340px card beside a spotlight ring. It has a 13px/700 head-ink step count ("2 of 7"), 7px progress dots, a Title heading, 15px text, and Skip tour as a link on the left of the button bar.
+
+After the v1.1.0 update, **Choose how it looks** comes between the letter and the tour. It is a small panel docked 12px from the bottom-right corner, over the pupil's page and never over the title bar, up to 380px wide and always inside the pupil's page with a 12px margin. It is Page White with a 1px Strong Rule border, the panel radius and the Overlay shadow, and it rises 8px as it fades in. Its overlay stops stray clicks but is clear, not dimmed, so the register shows each choice as it is made. Inside are a Title heading, a 14px line of text, then Colours, Corners and Light or dark, each under a feint rule with a 14px/600 label. The Colours and Corners tiles are the Settings tiles in a two-column grid, with the picture above the words and the tick in the top corner; in windows under 720px tall their notes are hidden. Show me around sits at the bottom right. Like every surface, it uses tokens only.
 
 ## Do's and Don'ts
 

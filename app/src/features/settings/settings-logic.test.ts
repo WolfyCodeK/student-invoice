@@ -1,23 +1,47 @@
 import { describe, expect, it } from 'vitest'
 import { getDefaultTemplateString } from '../../utils/invoice-generator'
-import { activeSectionIndex, nextRadioIndex, termsBySeason, unknownPlaceholders, wordingToSave } from './settings-logic'
-import { termRange } from '../../lib/term-display'
+import { activeSectionIndex, halfTermName, nextRadioIndex, termDateTexts, termDatesProblem, unknownPlaceholders, withTermDates, wordingToSave } from './settings-logic'
 
 // The school-year helpers themselves are tested in lib/term-display.test.ts.
-describe('school year', () => {
-  it('groups the six half-terms by season, 1st half first', () => {
-    const seasons = termsBySeason(2026)
-    expect(seasons.map((s) => s.label)).toEqual(['Autumn', 'Spring', 'Summer'])
-    expect(seasons.map((s) => s.halves.map((t) => t.half))).toEqual([
-      ['1st', '2nd'],
-      ['1st', '2nd'],
-      ['1st', '2nd'],
+describe('term dates (docs/proposals/2026-09-editable-term-dates.md)', () => {
+  const usual = termDateTexts(2026)
+
+  it('starts from the usual dates, in order, named for people', () => {
+    expect(usual).toEqual([
+      { start: '2026-09-01', end: '2026-10-25' },
+      { start: '2026-11-03', end: '2026-12-20' },
+      { start: '2027-01-05', end: '2027-02-14' },
+      { start: '2027-02-23', end: '2027-03-28' },
+      { start: '2027-04-13', end: '2027-05-23' },
+      { start: '2027-06-01', end: '2027-07-18' },
     ])
-    expect(seasons.map((s) => s.halves.map((t) => termRange(t.startDate, t.endDate)))).toEqual([
-      ['1 Sep – 25 Oct 2026', '3 Nov – 20 Dec 2026'],
-      ['5 Jan – 14 Feb 2027', '23 Feb – 28 Mar 2027'],
-      ['13 Apr – 23 May 2027', '1 Jun – 18 Jul 2027'],
-    ])
+    expect([0, 1, 2, 5].map(halfTermName)).toEqual(['Autumn, 1st half', 'Autumn, 2nd half', 'Spring, 1st half', 'Summer, 2nd half'])
+  })
+
+  it('accepts sensible edits and explains what is wrong with the rest', () => {
+    const edit = (i: number, t: Partial<{ start: string; end: string }>) => usual.map((u, k) => (k === i ? { ...u, ...t } : u))
+    expect(termDatesProblem(2026, usual)).toBeNull()
+    expect(termDatesProblem(2026, edit(0, { start: '2026-09-03', end: '2026-10-23' }))).toBeNull()
+    expect(termDatesProblem(2026, edit(0, { start: '2026-08-01' }))).toBeNull()
+    expect(termDatesProblem(2026, edit(0, { end: '' }))).toBe('Fill in both dates for Autumn, 1st half.')
+    expect(termDatesProblem(2026, edit(1, { start: '2026-02-30' }))).toBe('Fill in both dates for Autumn, 2nd half.')
+    expect(termDatesProblem(2026, edit(0, { end: '2026-08-31' }))).toBe('Autumn, 1st half ends before it starts.')
+    expect(termDatesProblem(2026, edit(1, { start: '2026-10-25' }))).toBe('Autumn, 2nd half starts before Autumn, 1st half has ended.')
+    expect(termDatesProblem(2026, edit(0, { start: '2026-07-31' }))).toBe('The dates must be between 1 August 2026 and 31 August 2027.')
+    expect(termDatesProblem(2026, edit(5, { end: '2027-09-01' }))).toBe('The dates must be between 1 August 2026 and 31 August 2027.')
+  })
+
+  it('keeps only real edits, per school year', () => {
+    const edited = usual.map((u, k) => (k === 0 ? { start: '2026-09-03', end: '2026-10-16' } : u))
+    const saved = withTermDates(undefined, 2026, edited)
+    expect(saved).toEqual({ '2026': edited })
+    expect(termDateTexts(2026, saved)[0]).toEqual({ start: '2026-09-03', end: '2026-10-16' })
+    expect(termDateTexts(2027, saved)).toEqual(termDateTexts(2027))
+    // Back to the usual dates: the year is forgotten, and nothing is left.
+    expect(withTermDates(saved, 2026, usual)).toBeUndefined()
+    const both = withTermDates(saved, 2027, termDateTexts(2027).map((u, k) => (k === 5 ? { ...u, end: '2028-07-14' } : u)))
+    expect(Object.keys(both ?? {})).toEqual(['2026', '2027'])
+    expect(Object.keys(withTermDates(both, 2026, usual) ?? {})).toEqual(['2027'])
   })
 })
 

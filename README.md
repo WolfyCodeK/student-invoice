@@ -30,8 +30,9 @@ Gmail as drafts for you to check and send.
 ## What it does
 
 - **One register per half-term.** Every family is a row, every lesson is a
-  dated mark, and the total is at the end of the row. The app knows the UK
-  school half-terms, so there are no dates to type.
+  dated mark, and the total is at the end of the row. The app knows the usual
+  UK school half-terms, so there are no dates to type. If your school's
+  differ, change them once in Settings.
 - **Untick a lesson that didn't happen.** Click its mark, and the lesson count,
   total and dates in the email all follow.
 - **Invoice emails written for you.** Each family's email is ready to copy, or

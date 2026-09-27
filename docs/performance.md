@@ -42,9 +42,11 @@ screen:
   total to ~131 MB, but moves all drawing to the CPU. Users choose this with
   **Low memory mode** (below); GPU rendering stays the default.
 - **Idle CPU is effectively zero:** no timers or polling run while the app
-  sits idle. The one exception: if the window was reloaded during Google
+  sits idle. The exceptions: if the window was reloaded during Google
   sign-in, the store asks `gmail_status` once a second until that sign-in
-  ends, at most 5 minutes ([Gmail](gmail.md#status-and-disconnect)).
+  ends, at most 5 minutes ([Gmail](gmail.md#status-and-disconnect)); and a
+  single timer fires once just after midnight to see whether a new
+  half-term has started ([billing](billing.md#where-the-logic-lives)).
 
 ## Low memory mode
 
@@ -102,10 +104,15 @@ scrolling and animations a little less smooth.
   - Settings, and with it export/import and zod;
   - the family editor (react-hook-form, zod);
   - the feedback form (EmailJS);
-  - What's new and the tour.
-  The first three are prefetched when the app is idle, so they still open
-  instantly. The start-up bundle went from 187 KiB (v1.0.1) to 114 KiB
-  gzipped.
+  - What's new, "Choose how it looks" and the tour.
+  The first three are prefetched when the app is idle
+  (`requestIdleCallback` with a 1-second `timeout`, so a busy start-up can't
+  put it off longer than that), so they still open instantly. Going to
+  Settings or the editor is a React transition (`startTransition`) inside a
+  `Suspense` boundary shared with the register, so the old screen stays on
+  show until the new one is ready, even if its code is still loading: no
+  blank moment ([UI](ui.md#structure)). The start-up bundle went from 187 KiB (v1.0.1)
+  to 114 KiB gzipped.
 - **No CSS framework:** the v1.1.0 redesign replaced Tailwind and the
   shadcn wrappers with plain CSS on design tokens (`app/src/styles/`). Screens
   loaded on demand bring their own small CSS files. The CSS budget went from

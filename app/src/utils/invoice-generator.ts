@@ -61,9 +61,24 @@ export function lessonDates(template: Pick<InvoiceTemplate, 'day'>, termData: Te
   })
 }
 
+/**
+ * A price rounded to the penny, so "8 x £12.35 = £98.80" always adds up
+ * (docs/proposals/2026-09-rules-review-decisions.md). Rounds the decimal as
+ * written, so 12.345 gives 12.35; an ordinary price comes back exactly as it was.
+ */
+export function roundToPenny(price: number): number {
+  const pence = Math.round(Number(`${price}e2`))
+  return Number.isFinite(pence) ? pence / 100 : Math.round(price * 100) / 100
+}
+
 /** `yourName` signs the email (settings "Your name"; docs/proposals/2026-09-your-name-sign-off.md). */
 export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string, yourName = ''): InvoiceData {
   const { term } = termData
+  // Spaces at either end of a name never reach the email, and the price is
+  // whole pence (docs/proposals/2026-09-rules-review-decisions.md).
+  const recipient = template.recipient.trim()
+  const students = template.students.trim()
+  const cost = roundToPenny(template.cost)
 
   // Lessons charged: every lesson date except the ones the teacher unticked
   // (docs/proposals/2026-09-untick-lessons.md). With nothing unticked this is
@@ -83,7 +98,7 @@ export function generateInvoice(template: InvoiceTemplate, termData: TermData, c
   const dateRange = formatDateRange(firstLessonDate, lastLessonDate)
 
   // Calculate total cost
-  const totalCost = weeksCount * template.cost
+  const totalCost = weeksCount * cost
 
   // Generate subject
   const subject = `Invoice for ${template.instrument.charAt(0).toUpperCase() + template.instrument.slice(1)} Lessons ${termInfo}`
@@ -93,27 +108,27 @@ export function generateInvoice(template: InvoiceTemplate, termData: TermData, c
   if (customBodyTemplate) {
     // Use custom template with variable substitution
     body = customBodyTemplate
-      .replace(/{{recipient}}/g, template.recipient)
-      .replace(/{{students}}/g, template.students)
+      .replace(/{{recipient}}/g, recipient)
+      .replace(/{{students}}/g, students)
       .replace(/{{instrument}}/g, template.instrument)
       .replace(/{{termInfo}}/g, termInfo)
       .replace(/{{weeksCount}}/g, weeksCount.toString())
-      .replace(/{{lessonCountText}}/g, weeksCount === 1 ? 'session' : 'sessions')
+      .replace(/{{lessonCountText}}/g, weeksCount === 1 ? 'lesson' : 'lessons')
       .replace(/{{dateRange}}/g, dateRange)
-      .replace(/{{cost}}/g, template.cost.toFixed(2))
+      .replace(/{{cost}}/g, cost.toFixed(2))
       .replace(/{{totalCost}}/g, totalCost.toFixed(2))
       .replace(/{{isAre}}/g, weeksCount === 1 ? 'is' : 'are')
       .replace(/{{yourName}}/g, () => yourName)
   } else {
     // Use default template
-    const lessonCountText = weeksCount === 1 ? 'session' : 'sessions'
-    body = `Hi ${template.recipient},
+    const lessonCountText = weeksCount === 1 ? 'lesson' : 'lessons'
+    body = `Hi ${recipient},
 
-Please find below the invoice for ${template.students}'s ${template.instrument} lessons ${termInfo}.
+Please find below the invoice for ${students}'s ${template.instrument} lessons ${termInfo}.
 
 Lessons: ${weeksCount}, from ${dateRange}
 
-${weeksCount} x £${template.cost.toFixed(2)} = £${totalCost.toFixed(2)}
+${weeksCount} x £${cost.toFixed(2)} = £${totalCost.toFixed(2)}
 
 Many thanks,
 ${yourName}`

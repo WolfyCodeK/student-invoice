@@ -58,7 +58,8 @@ Nothing leaves it except the drafts saved to his own Gmail.
 
 **Capabilities (v1.1.0):**
 - templates: add, edit and delete;
-- half-term detection, and the year's term dates in Settings;
+- half-term detection, with term dates that can be changed in Settings for
+  this school year and the next;
 - an invoice preview with copy buttons for the subject and body;
 - Gmail: connect (drafts permission only), draft one or all, with the reason
   for each failure;
@@ -73,8 +74,12 @@ Nothing leaves it except the drafts saved to his own Gmail.
 **Constraints:**
 - v1.1.0 keeps v1.0.1's calculations and email wording (`docs/billing.md`).
   The exceptions are the approved **untick a lesson that didn't happen**
-  (`docs/proposals/2026-09-untick-lessons.md`) and the sign-off, which is
-  now the user's own name (`docs/proposals/2026-09-your-name-sign-off.md`).
+  (`docs/proposals/2026-09-untick-lessons.md`), the sign-off, which is
+  now the user's own name (`docs/proposals/2026-09-your-name-sign-off.md`),
+  editable term dates (`docs/proposals/2026-09-editable-term-dates.md`), and
+  the small fixes in `docs/proposals/2026-09-rules-review-decisions.md`
+  ("lessons" instead of "sessions", whole pence, trimmed names, noticing a
+  new half-term).
 - After v1.1.0, the main user uses the app and reports back. It is then
   fine-tuned to his wishes in v1.1.x patch releases, and each money change
   still needs an approved proposal
@@ -86,7 +91,7 @@ Nothing leaves it except the drafts saved to his own Gmail.
 - It must stay lightweight and fast (`docs/performance.md` budgets).
 
 **Terminology:** template (one per student or family), recipient,
-half-term, lessons (called "sessions" in the email), **Draft All**.
+half-term, lessons (the email said "sessions" until v1.1.0), **Draft All**.
 
 **Undecided:** whether other teachers will use it. The emails are signed
 with the teacher's own "Your name" setting, which each teacher types once

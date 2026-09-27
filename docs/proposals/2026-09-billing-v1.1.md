@@ -10,11 +10,11 @@ and none of them is implemented in v1.1.0 (except where the table says so).
 | # | Decision | Outcome |
 |---|---|---|
 | 1 | Lesson count rule | **Pending**: checking with the main user. Money logic unchanged until then. |
-| 2 | Term dates | **Approved**: editable per academic year in Settings, with today's dates as defaults. |
+| 2 | Term dates | **Done in v1.1.0**: editable in Settings for this school year and the next, with today's dates as defaults ([editable term dates](2026-09-editable-term-dates.md)). |
 | 3 | Bank holidays / days off | **The main user's answer (2026-09-26):** let him untick any lesson that didn't happen. Approved for v1.1.0 in [untick lessons](2026-09-untick-lessons.md). |
 | 4 | Invoicing between half-terms | **Pending**: checking with the main user. |
 | 5 | Sign-off name | **Approved**: no hard-coded names anywhere. Implemented in v1.1.0 as the "Your name" setting, empty on every install, including data upgraded from v1.0.1; the main user types his name once (see [Your name](2026-09-your-name-sign-off.md), 2026-09-27). |
-| 6 | Subject wording / pupil name | **Pending**: checking with the main user. |
+| 6 | Subject wording / pupil name | **Decided 2026-09-27**: the subject stays as it is. The email now says "lessons" instead of "sessions", and three small fixes (part of a penny, stray spaces, noticing a new half-term) are in v1.1.0 ([rules review decisions](2026-09-rules-review-decisions.md)). |
 
 **Note on decision 2:** with editable dates, today's week formula (milliseconds ÷ 7 days) can be thrown off by clock changes (e.g. 1 Oct → 5 Nov gives 6, not 5). Whatever rule decision 1 settles on must count calendar days. For today's fixed dates, counting calendar days gives exactly the same results (checked 2023–2040), and the characterization snapshots prove it.
 **Author:** 2026-09-26. **Evidence:** bug audit B1, B2, B3, B23, B26

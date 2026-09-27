@@ -5,7 +5,7 @@
 // behind-the-scenes work, three to five very short lines per version.
 
 /** Lucide icon names used by the news lines (whats-new-dialog.tsx draws them). */
-export type NewsIcon = "layout-list" | "calendar-x" | "palette" | "hard-drive-download" | "mail-check";
+export type NewsIcon = "layout-list" | "calendar-x" | "calendar-days" | "hard-drive-download" | "mail-check";
 
 export interface NewsItem {
   icon: NewsIcon;
@@ -23,7 +23,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     items: [
       { icon: "layout-list", text: "A new look: all your families on one register." },
       { icon: "calendar-x", text: "Untick a lesson that didn't happen, and it comes off the bill." },
-      { icon: "palette", text: "Choose colours, corners and light or dark in Settings." },
+      { icon: "calendar-days", text: "Set your school's term dates in Settings if they differ." },
       { icon: "hard-drive-download", text: "Your data is backed up every day, and can move to another PC." },
       { icon: "mail-check", text: "Gmail stays connected, and connecting is simpler." },
     ],

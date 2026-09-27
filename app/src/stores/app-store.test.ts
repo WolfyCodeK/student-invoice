@@ -498,6 +498,47 @@ describe('Your name signs the emails (docs/proposals/2026-09-your-name-sign-off.
   })
 })
 
+describe('the current half-term', () => {
+  const edited = (start: string) => ({
+    '2026': [
+      { start, end: '2026-10-25' },
+      { start: '2026-11-03', end: '2026-12-20' },
+      { start: '2027-01-05', end: '2027-02-14' },
+      { start: '2027-02-23', end: '2027-03-28' },
+      { start: '2027-04-13', end: '2027-05-23' },
+      { start: '2027-06-01', end: '2027-07-18' },
+    ],
+  })
+
+  it('follows term dates edited in Settings straight away', async () => {
+    const { useAppStore } = await loadStore()
+    expect(useAppStore.getState().currentTerm?.term.startDate).toEqual(new Date(2026, 8, 1))
+    useAppStore.getState().updateSettings({ termDates: edited('2026-09-14') }) // today, 10 Sep, is now before term
+    expect(useAppStore.getState().currentTerm).toBeNull()
+    useAppStore.getState().updateSettings({ termDates: undefined })
+    expect(useAppStore.getState().currentTerm?.term.startDate).toEqual(new Date(2026, 8, 1))
+  })
+
+  it('uses saved term dates from the start', async () => {
+    const withDates = { ...v101Data, state: { ...v101Data.state, settings: { ...v101Data.state.settings, termDates: edited('2026-09-07') } } }
+    const { useAppStore } = await loadStore(withDates)
+    expect(useAppStore.getState().currentTerm?.term.startDate).toEqual(new Date(2026, 8, 7))
+  })
+
+  it('moves on by itself when a new half-term starts while the app is open', async () => {
+    const { useAppStore } = await loadStore()
+    const before = useAppStore.getState().currentTerm
+    useAppStore.getState().refreshCurrentTerm()
+    expect(useAppStore.getState().currentTerm).toBe(before) // same half-term: nothing changes
+    vi.setSystemTime(new Date(2026, 9, 28, 9)) // half-term holiday
+    useAppStore.getState().refreshCurrentTerm()
+    expect(useAppStore.getState().currentTerm).toBeNull()
+    vi.setSystemTime(new Date(2026, 10, 3, 9)) // 2nd half of autumn starts
+    window.dispatchEvent(new Event('focus')) // the window coming back is enough
+    expect(useAppStore.getState().currentTerm?.term.half).toBe('2nd')
+  })
+})
+
 describe('unticking a lesson that did not happen (docs/proposals/2026-09-untick-lessons.md)', () => {
   it('takes the lesson off the invoice, is saved, and can be ticked again', async () => {
     const store = await loadStore()

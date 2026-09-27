@@ -24,17 +24,17 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: "term",
     title: "This half-term",
-    body: "The app works out which half-term it is and its dates. There's nothing to set.",
+    body: "A quick look round first; you can try everything when the tour ends. The app works out which half-term it is. If your school's dates differ, change them in Settings.",
   },
   {
     target: "register",
     title: "Your families",
-    body: "Each row is a family you teach. Click a row to see its invoice.",
+    body: "Each row is a family you teach. Clicking a row shows that family's invoice on the right.",
   },
   {
     target: "marks",
     title: "Lessons",
-    body: "Each mark is a lesson this half-term. If a lesson didn't happen, click its mark to untick it, and it comes off the bill. Click again to put it back.",
+    body: "Each mark is a lesson this half-term. If a lesson didn't happen, clicking its mark unticks it, and it comes off the bill. Clicking it again puts it back.",
   },
   {
     target: "totals",

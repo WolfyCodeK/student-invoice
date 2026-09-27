@@ -1,93 +1,11 @@
 // Settings → Appearance: colours, corners, light or dark (docs/ui.md
-// "Appearance"). Each choice applies straight away through the store.
-import type { ReactNode } from "react";
-import { Check, Moon, Sun } from "lucide-react";
-import { useAppStore } from "../../stores/app-store";
-import { appearanceFrom, type ColourScheme, type Corners, type Mode } from "../../lib/appearance";
-import { RadioGroup, type RadioOption } from "./radio-group";
-
-function Tile({ art, name, note }: { art: ReactNode; name: string; note: string }) {
-  return (
-    <>
-      {art}
-      <span className="st-choice-text">
-        <strong>{name}</strong>
-        <small>{note}</small>
-      </span>
-      <Check className="st-choice-check" aria-hidden="true" />
-    </>
-  );
-}
-
-const SCHEMES: RadioOption<ColourScheme>[] = [
-  {
-    value: "student-invoice",
-    content: (
-      <Tile
-        art={
-          <span className="swatch swatch--si" aria-hidden="true">
-            <i />
-            <i />
-          </span>
-        }
-        name="Student Invoice"
-        note="Register blue"
-      />
-    ),
-  },
-  {
-    value: "navy-amber",
-    content: (
-      <Tile
-        art={
-          <span className="swatch swatch--na" aria-hidden="true">
-            <i />
-            <i />
-          </span>
-        }
-        name="Navy and amber"
-        note="With softer lettering"
-      />
-    ),
-  },
-];
-
-const CORNERS: RadioOption<Corners>[] = [
-  {
-    value: "square",
-    content: <Tile art={<span className="corner-demo corner-demo--square" aria-hidden="true" />} name="Square" note="Neat, straight edges" />,
-  },
-  {
-    value: "rounded",
-    content: <Tile art={<span className="corner-demo corner-demo--rounded" aria-hidden="true" />} name="Rounded" note="Round buttons, softer corners" />,
-  },
-];
-
-const MODES: RadioOption<Mode>[] = [
-  {
-    value: "light",
-    content: (
-      <>
-        <Sun aria-hidden="true" />
-        Light
-      </>
-    ),
-  },
-  {
-    value: "dark",
-    content: (
-      <>
-        <Moon aria-hidden="true" />
-        Dark
-      </>
-    ),
-  },
-];
+// "Appearance"). The choices are in appearance-options.tsx, shared with the
+// panel shown after the v1.1.0 update; each applies straight away.
+import { RadioGroup } from "./radio-group";
+import { CORNER_OPTIONS, MODE_OPTIONS, SCHEME_OPTIONS, useAppearance } from "./appearance-options";
 
 export function AppearanceGroup() {
-  const settings = useAppStore((s) => s.settings);
-  const setAppearance = useAppStore((s) => s.setAppearance);
-  const current = appearanceFrom(settings);
+  const [current, setAppearance] = useAppearance();
 
   return (
     <>
@@ -101,7 +19,7 @@ export function AppearanceGroup() {
           className="sctl st-choices"
           itemClassName="choice"
           value={current.scheme}
-          options={SCHEMES}
+          options={SCHEME_OPTIONS}
           onChange={(scheme) => setAppearance({ scheme })}
         />
       </div>
@@ -115,7 +33,7 @@ export function AppearanceGroup() {
           className="sctl st-choices"
           itemClassName="choice"
           value={current.corners}
-          options={CORNERS}
+          options={CORNER_OPTIONS}
           onChange={(corners) => setAppearance({ corners })}
         />
       </div>
@@ -125,7 +43,7 @@ export function AppearanceGroup() {
           <span>Dark is easier on the eyes at night</span>
         </div>
         <div className="sctl">
-          <RadioGroup labelledBy="st-mode" className="seg" value={current.mode} options={MODES} onChange={(mode) => setAppearance({ mode })} />
+          <RadioGroup labelledBy="st-mode" className="seg" value={current.mode} options={MODE_OPTIONS} onChange={(mode) => setAppearance({ mode })} />
         </div>
       </div>
     </>

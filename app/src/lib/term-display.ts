@@ -1,13 +1,18 @@
 // Showing half-terms on screen (the register and Settings → Term dates).
-// Term dates come from utils/terms.ts and are only displayed here, never
-// changed (docs/billing.md).
+// Term dates come from utils/terms.ts, including any edited in Settings
+// (docs/billing.md); they are only displayed here.
 import { format } from 'date-fns'
 import { getTermsForAcademicYear } from '../utils/terms'
-import type { Term } from '../types'
+import type { Term, TermDateOverrides } from '../types'
 
-/** The year the school year containing `date` started in (it starts in September). */
-export function academicYearStart(date: Date): number {
-  return date.getMonth() >= 8 ? date.getFullYear() : date.getFullYear() - 1
+/**
+ * The year the school year containing `date` started in: from September, or
+ * from an edited autumn start in August.
+ */
+export function academicYearStart(date: Date, overrides?: TermDateOverrides): number {
+  const year = date.getFullYear()
+  if (date.getMonth() >= 8) return year
+  return date >= getTermsForAcademicYear(year, overrides)[0].startDate ? year : year - 1
 }
 
 /** "2026/27" for the school year starting in 2026. */
@@ -27,8 +32,8 @@ export function isSameTerm(a: Term | null | undefined, b: Term): boolean {
 }
 
 /** The first half-term that starts after `date` (used outside term time). */
-export function nextTermAfter(date: Date): Term | null {
-  const start = academicYearStart(date)
-  const terms = [...getTermsForAcademicYear(start), ...getTermsForAcademicYear(start + 1)]
+export function nextTermAfter(date: Date, overrides?: TermDateOverrides): Term | null {
+  const start = academicYearStart(date, overrides)
+  const terms = [...getTermsForAcademicYear(start, overrides), ...getTermsForAcademicYear(start + 1, overrides)]
   return terms.find((t) => t.startDate > date) ?? null
 }

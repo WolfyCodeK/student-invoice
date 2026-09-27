@@ -26,7 +26,7 @@ const SEASON_SHORT: Record<string, string> = { autumn: "Aut", spring: "Spr", sum
 export const RegisterView = memo(function RegisterView() {
   const { navigate } = useAppActions();
   const {
-    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody, yourName,
+    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody, yourName, termDates,
     gmail, gmailConnecting, drafting, outcomes, createAllInvoiceDrafts, draftTemplate, closeDraftResults,
   } = useAppStore(
     useShallow((s) => ({
@@ -37,6 +37,7 @@ export const RegisterView = memo(function RegisterView() {
       toggleLesson: s.toggleLesson,
       customBody: s.settings.customEmailBodyTemplate,
       yourName: s.settings.yourName,
+      termDates: s.settings.termDates,
       gmail: s.gmail,
       gmailConnecting: s.gmailConnecting,
       drafting: s.drafting,
@@ -61,11 +62,11 @@ export const RegisterView = memo(function RegisterView() {
   }, [templates, currentTemplateId, setCurrentTemplate]);
 
   const now = new Date();
-  const yearStart = academicYearStart(now);
+  const yearStart = academicYearStart(now, termDates);
   const yearLabel = schoolYearLabel(yearStart);
   const weeks = useMemo(() => (currentTerm ? registerWeeks(currentTerm, templates.filter((t) => isWeekday(t.day))) : []), [currentTerm, templates]);
   const current = templates.find((t) => t.id === currentTemplateId) ?? null;
-  const nextTerm = nextTermAfter(now);
+  const nextTerm = nextTermAfter(now, termDates);
 
   // Figures always come from the billing code, so the register matches the email exactly.
   const invoices = useMemo(() => {
@@ -154,7 +155,7 @@ export const RegisterView = memo(function RegisterView() {
             </span>
             <div className="terms" role="list" aria-label={`Half-terms in the ${yearLabel} school year`}>
               <span className="terms-yr">{yearLabel}</span>
-              {getTermsForAcademicYear(yearStart).map((t) => {
+              {getTermsForAcademicYear(yearStart, termDates).map((t) => {
                 const isNow = isSameTerm(currentTerm?.term, t);
                 return (
                   <span

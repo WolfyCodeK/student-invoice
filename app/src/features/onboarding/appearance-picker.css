@@ -1,0 +1,92 @@
+/* "Choose how it looks" (appearance-picker.tsx): all of its styles, loaded
+   with it. The tiles' own look is .choice in styles/base.css.
+   Tokens only (styles/tokens.css). */
+
+/* Catches stray clicks but leaves the register undimmed. */
+.look-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+/* Docked inside the pupil's page (same width rule as .work in app.css), so
+   the register's rows stay in view. Never over the title bar. */
+.look {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 51;
+  width: min(380px, calc(clamp(340px, 30vw, 440px) - 24px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 18px 16px;
+  background: var(--page);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-panel);
+  box-shadow: var(--shadow-3);
+  animation: look-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.look-title {
+  font-size: var(--fs-l);
+  line-height: 24px;
+}
+.look-desc {
+  margin-top: -6px;
+  font-size: var(--fs-s);
+  line-height: 1.45;
+}
+.look-grp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.look-grp > strong {
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.look-grp--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.look-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+/* Narrow tiles: the picture over the words, the tick in the corner. */
+.look .choice {
+  position: relative;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+.look .st-choice-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.look-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+/* Short windows: the names are enough, the register shows the rest. */
+@media (max-height: 720px) {
+  .look .choice small {
+    display: none;
+  }
+}
+@keyframes look-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

@@ -25,6 +25,19 @@ export interface TermData {
   weeksCount: number
 }
 
+/** One half-term's edited dates, as 'yyyy-MM-dd' (first and last day). */
+export interface TermDates {
+  start: string
+  end: string
+}
+
+/**
+ * Edited half-term dates, by the year the school year starts in ("2026").
+ * Each holds all six half-terms in order: autumn, spring, summer, 1st half
+ * then 2nd. Years not listed use the usual dates (docs/billing.md).
+ */
+export type TermDateOverrides = Record<string, TermDates[]>
+
 // Settings types
 export interface AppSettings {
   theme: 'light' | 'dark'
@@ -48,4 +61,6 @@ export interface AppSettings {
   lastSeenVersion?: string
   /** v1.1.0: signs emails (`{{yourName}}`). Empty on a new install. */
   yourName?: string
+  /** v1.1.0: school years whose half-term dates were edited in Settings. */
+  termDates?: TermDateOverrides
 }
