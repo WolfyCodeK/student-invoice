@@ -36,7 +36,10 @@ fn create_main_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::
         .find(|w| w.label == "main")
         .cloned()
         .ok_or("the main window is missing from tauri.conf.json")?;
-    config.additional_browser_args = Some(preferences::browser_args(preferences::load(app)));
+    let prefs = preferences::load(app);
+    config.additional_browser_args = Some(preferences::browser_args(prefs));
+    // Settings compares this with the saved choice to offer a restart.
+    app.manage(preferences::Running(prefs));
     // Start no bigger than the screen's free area (e.g. 1366x768 laptops).
     if let Ok(Some(monitor)) = app.primary_monitor() {
         let scale = monitor.scale_factor();
@@ -55,7 +58,15 @@ fn create_main_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::
         config.width = width;
         config.height = height;
     }
-    tauri::WebviewWindowBuilder::from_config(app, &config)?.build()?;
+    let window = tauri::WebviewWindowBuilder::from_config(app, &config)?.build()?;
+    // If WebView2 fails to start (e.g. ERROR_INVALID_STATE while a copy
+    // started with other browser arguments is still closing), Tauri only logs
+    // it and `build` still succeeds. Stop instead of running on without a
+    // window: that process would hold the single-instance lock, and every
+    // later launch would hand over to it and quit.
+    window
+        .scale_factor()
+        .map_err(|_| "the main window couldn't be created")?;
     Ok(())
 }
 
@@ -69,8 +80,27 @@ fn fit_to_screen(size: (f64, f64), min: (f64, f64), screen: (f64, f64)) -> (f64,
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[allow(unused_mut)]
-    let mut builder = tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    // One copy at a time: a second launch brings the running window forward
+    // and exits. Otherwise it would start WebView2 on the same data folder,
+    // which fails after a Low memory mode change (different browser
+    // arguments) and leaves a process with no window holding the exe.
+    // Registered first, as the plugin requires. Release builds only: the lock
+    // is named after the identifier, which development builds share with the
+    // installed app, so `tauri dev` would just focus the installed app.
+    #[cfg(not(debug_assertions))]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }));
+    }
+
+    builder = builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::default().build());
@@ -88,7 +118,7 @@ pub fn run() {
 
     builder
         .setup(|app| {
-            google::store::init()?;
+            google::store::init(&app.config().identifier)?;
             app.manage(GoogleAuth::new(http_client()));
             app.manage(UpdateState::default());
             create_main_window(app.handle())?;

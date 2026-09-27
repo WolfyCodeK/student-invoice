@@ -56,3 +56,30 @@ v1.1.0. Locations refer to v1.0.1 code unless stated.
 | S18 | Low | Byte-slicing the authorization code for a log line panics on a multi-byte character; any local process or web page hitting the callback URL can kill a pending sign-in (B52). With `panic = "abort"` it would crash the app. | Fixed (v1.1.0): code no longer sliced or logged |
 | S19 | Info | Structs holding the client secret and tokens derive `Debug`, so any future `{:?}` log would leak them; a huge `expires_in` would overflow and panic (only from a compromised token endpoint). | Fixed (v1.1.0): redacting Debug; token lifetimes clamped |
 | S14 | Medium | `cargo audit` (2026-09-26): 4 advisories, all in the old HTTP stack pulled in only by `oauth2` 4.x → reqwest 0.11: `h2` 0.3.27 (RUSTSEC-2026-0258, unbounded empty DATA frames) and `rustls-webpki` 0.101.7 (RUSTSEC-2026-0098/0099 name-constraint checks, RUSTSEC-2026-0104 CRL parsing panic). They affect TLS to Google's token endpoint. 8 further "unmaintained/unsound" warnings come from Tauri's own tree (unic-*, proc-macro-error, glib — Linux-only) and are not exploitable here. | Fixed (v1.1.0): oauth2 5 on the app's reqwest 0.12; `cargo audit` reports 0 vulnerabilities (7 unmaintained-crate warnings from Tauri's own tree) |
+
+## Final review before release (2026-09-27)
+
+A security review of every change since v1.0.1 (`v1.0.1..HEAD`) found no
+exploitable issues. One finding was recorded and fixed, and some hardening
+was applied.
+
+| Id | Sev | Finding | Status |
+|---|---|---|---|
+| S20 | Low | `build.rs` passed the built-in Google client ID and secret to the compiler with `cargo:rustc-env`. Cargo shows a build script's output when the build fails (and always with `-vv`), so the secret could end up on screen, in a log or in an AI assistant's context. Every build embeds it anyway ([decision 0003](../decisions/0003-bundled-google-oauth-client.md)), but secrets must never appear in logs or chat. | Fixed (v1.1.0): `build.rs` writes it to a generated `google_client.rs` in Cargo's build folder and never prints it; a malformed secrets file gives a generic warning that doesn't quote it |
+
+**Hardening:**
+- The sign-in callback page HTML-escapes its title and message
+  (`loopback.rs`). Its text is fixed, so this is defence in depth.
+- The release script no longer lets `JSON.parse`'s error message through
+  for a malformed Google client file, since the message quotes part of the
+  file.
+- The Credential Manager entry is named after the app's identifier. The
+  perf-test build (a release build with its own identifier) used to share
+  the installed app's entry, so signing in or disconnecting there could
+  replace or revoke the installed app's Gmail sign-in. The installed app
+  keeps the name every version has used (unit-tested).
+- The plaintext Google credentials from v1.0.1 (S3) are now cleared on every
+  start, not only once ([bug audit](2026-09-bug-audit.md) B66).
+
+**Still open, as before:** S16 (the development-only MCP bridge) and S17
+(`requireSignedVersion`).

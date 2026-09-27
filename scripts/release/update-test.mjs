@@ -20,7 +20,7 @@ import { createServer } from 'node:http'
 import { copyFileSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { repoRoot } from '../lib/repo.mjs'
-import { VERSION_FILES, buildEnv, bumpVersion, capture, collectSignedMsi, die, findSignedMsi, isSemver, msiName, run, step } from './lib.mjs'
+import { VERSION_FILES, buildEnv, bumpVersion, capture, checkMsiSignature, collectSignedMsi, die, findSignedMsi, isSemver, msiName, run, step } from './lib.mjs'
 
 const root = repoRoot()
 const outDir = join(root, 'release-artifacts', 'update-test')
@@ -73,7 +73,9 @@ if (cmd === 'harness') {
   bumpVersion(root, version)
   step('Build signed MSI')
   run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env })
-  collectSignedMsi(findSignedMsi(root, version), outDir, { version, notes: `Local update test ${version}`, url: `${base}/${msiName(version)}`, minimumSupportedVersion: minimum })
+  const msi = findSignedMsi(root, version)
+  checkMsiSignature(msi)
+  collectSignedMsi(msi, outDir, { version, notes: `Local update test ${version}`, url: `${base}/${msiName(version)}`, minimumSupportedVersion: minimum })
   console.log(`\n✔ ${msiName(version)} + latest.json in ${outDir}`)
 } else if (cmd === 'serve') {
   createServer((req, res) => {

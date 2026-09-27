@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { VERSION_FILES, bumpVersion, changelogSection, collectSignedMsi, findSignedMsi } from '../release/lib.mjs'
+import { VERSION_FILES, bumpVersion, changelogSection, checkMsiSignature, collectSignedMsi, findSignedMsi } from '../release/lib.mjs'
 
 /** A temp folder with the given files, removed after the test. */
 function fixture(t, files) {
@@ -151,6 +151,16 @@ test('changelogSection reads the summary and the optional minimum supported vers
   const changelog = '# Changelog\n\n## [1.2.3] - 2026-10-01\n<!-- latest-json-summary: Fixes -->\n<!-- minimum-supported-version: 1.2.0 -->\n### Fixed\n- A thing.\n\n## [1.2.2]\n<!-- latest-json-summary: Older -->\n- Old.\n'
   assert.deepEqual(changelogSection(changelog, '1.2.3'), { body: '### Fixed\n- A thing.', summary: 'Fixes', minimumSupportedVersion: '1.2.0' })
   assert.deepEqual(changelogSection(changelog, '1.2.2'), { body: '- Old.', summary: 'Older', minimumSupportedVersion: undefined })
+})
+
+test('checkMsiSignature exits when the .sig does not verify against the updater key', (t) => {
+  const root = fixture(t, {
+    [`${BUNDLE}/Student Invoice_1.2.3_x64_en-US.msi`]: 'msi bytes',
+    [`${BUNDLE}/Student Invoice_1.2.3_x64_en-US.msi.sig`]: 'c2lnbmF0dXJl\n', // not a real signature
+  })
+  const printed = catchDie(t)
+  assert.throws(() => checkMsiSignature(findSignedMsi(root, '1.2.3')), /exit 1/)
+  assert.match(printed(), /is not a valid signature of this MSI by the updater key/)
 })
 
 test('findSignedMsi exits when the signature is missing', (t) => {

@@ -16,6 +16,7 @@ const REASON_LABELS: Record<BackupInfo["reason"], string> = {
   "pre-import": "Before an import",
   "pre-update": "Before an app update",
   "pre-restore": "Before a restore",
+  "pre-delete": "Before deleting a family",
   daily: "Daily",
 };
 
@@ -125,7 +126,7 @@ export function DataGroup() {
       <div className="srow srow--top">
         <div className="slab">
           <strong id="st-backups">Automatic backups</strong>
-          <span>Saved each day you use the app, and before an import, a restore or an update</span>
+          <span>Saved each day you use the app, and before an import, a restore, an update or deleting a family</span>
         </div>
         <div className="st-backups">
           {backups === null ? (
@@ -138,7 +139,7 @@ export function DataGroup() {
               The list of backups couldn't be read. {listError}
             </p>
           ) : list.length === 0 ? (
-            <p className="st-empty">None yet. A backup is saved automatically each day you use the app, and before imports and updates.</p>
+            <p className="st-empty">None yet. A backup is saved automatically each day you use the app, and before imports, updates and deletions.</p>
           ) : (
             <ul aria-labelledby="st-backups">
               {shown.map((b) => {

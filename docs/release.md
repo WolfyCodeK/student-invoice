@@ -43,14 +43,18 @@ You also need the GitHub CLI signed in (`gh auth login`) with push rights.
      and `Cargo.lock` (all four are checked before any is written, so a
      failed bump changes nothing), and regenerates the docs.
    - Builds the signed MSI (the key and password are passed to Tauri as
-     environment variables, never as arguments) and copies it and its `.sig`
-     to `release-artifacts/vx.y.z/` (git-ignored).
+     environment variables, never as arguments), checks that the `.sig` is a
+     valid signature of exactly that MSI by the updater key (a stale `.sig`
+     from an earlier build would make every installed copy reject the
+     update), and copies both to `release-artifacts/vx.y.z/` (git-ignored).
    - Checks the bundle and the MSI against the size budgets
      ([performance](performance.md)).
    - Writes `latest.json` and checks that v1.0.1 can parse it.
    - Commits `Release vx.y.z` locally. Nothing is pushed yet.
 3. **Release-candidate test:** `node scripts/release/release.mjs rc x.y.z 1`
    uploads the same artifacts to a GitHub **pre-release** `vx.y.z-rc.1`.
+   Its tag points at `main` as GitHub has it, because the local "Release"
+   commit isn't pushed until publish; only the assets matter for the test.
    Pre-releases are never offered to installed apps. Run the upgrade test
    below against it.
 4. **Publish:** `node scripts/release/release.mjs publish x.y.z`

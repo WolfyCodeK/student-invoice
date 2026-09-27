@@ -79,7 +79,8 @@ node scripts/docs/check.mjs              # all docs checks
   approved proposal (see [billing](billing.md)).
 - **Repo tooling tests** (`node --test "scripts/**/*.test.mjs"`) cover the
   docs tooling, the version bump and the `latest.json` the release writes
-  (byte for byte, including the v1.0.1 compatibility check), and the secret
+  (byte for byte, including the v1.0.1 compatibility check), the check that
+  refuses an MSI whose `.sig` doesn't verify against the updater key, and the secret
   scan end to end in a temporary git repository.
 
 ## Git hooks and CI

@@ -10,11 +10,20 @@ import type { InvoiceTemplate } from "../../types";
 import { useAppStore } from "../../stores/app-store";
 import { toast } from "../../hooks/use-toast";
 import { capitalise, lessonsWord, money } from "../../lib/format";
-import { WEEKDAYS } from "../../lib/schema/constants";
-import { useAppActions } from "../app-context";
+import { MAX_LENGTH, WEEKDAYS } from "../../lib/schema/constants";
+import { useAppActions, useLeaveGuard } from "../app-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { DeleteFamilyDialog } from "./delete-family-dialog";
-import { familySchema, formValuesFrom, instrumentOptions, previewFor, toFields, type FamilyFormValues, type FamilyPreview } from "./family-form";
+import {
+  familySchema,
+  formValuesFrom,
+  hasChanges,
+  instrumentOptions,
+  previewFor,
+  toFields,
+  type FamilyFormValues,
+  type FamilyPreview,
+} from "./family-form";
 import "./family-editor.css";
 
 const BAND_LINE = "One family per invoice: the parent you greet and the pupils you teach them.";
@@ -65,6 +74,13 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
   const [recipient, students, instrument, day, cost] = useWatch({ control, name: ["recipient", "students", "instrument", "day", "cost"] });
   const values = useMemo(() => ({ recipient, students, instrument, day, cost }), [recipient, students, instrument, day, cost]);
   const preview = useMemo(() => previewFor(values, currentTerm, template), [values, currentTerm, template]);
+  // Back, Settings and Help ask before throwing away what's been typed.
+  const leaveAnyway = useLeaveGuard(hasChanges(values, initial));
+  /** Leaves on purpose (saved, cancelled or deleted), without asking. */
+  const leave = () => {
+    leaveAnyway();
+    back();
+  };
 
   const describedBy = (field: keyof FamilyFormValues, withHint = true) =>
     [withHint ? hint(field) : "", errors[field] ? errorId(field) : ""].filter(Boolean).join(" ") || undefined;
@@ -80,7 +96,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
       addTemplate(fields);
       toast({ title: "Saved", description: `${fields.recipient} is on the register.` });
     }
-    back();
+    leave();
   };
 
   return (
@@ -116,6 +132,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
                   spellCheck={false}
                   // A new family starts with nothing to read, so go straight to typing.
                   autoFocus={!template}
+                  maxLength={MAX_LENGTH.recipient}
                   aria-invalid={errors.recipient ? true : undefined}
                   aria-describedby={describedBy("recipient")}
                   {...register("recipient")}
@@ -136,6 +153,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
                   type="text"
                   autoComplete="off"
                   spellCheck={false}
+                  maxLength={MAX_LENGTH.students}
                   aria-invalid={errors.students ? true : undefined}
                   aria-describedby={describedBy("students")}
                   {...register("students")}
@@ -238,7 +256,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
             </div>
 
             <div className="record-bar">
-              <button type="button" className="btn btn--secondary btn--lg" onClick={back}>
+              <button type="button" className="btn btn--secondary btn--lg" onClick={leave}>
                 Cancel
               </button>
               <button type="submit" className="btn btn--primary btn--lg">
@@ -259,7 +277,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
             <section className="danger-zone" aria-labelledby={ids.danger}>
               <div>
                 <strong id={ids.danger}>Delete {template.recipient}'s details</strong>
-                <span>Removes this family from the register. Your automatic backups keep a copy.</span>
+                <span>Removes this family from the register. A backup is saved first.</span>
               </div>
               <button type="button" className="btn btn--danger" aria-describedby={ids.danger} onClick={() => setConfirmingDelete(true)}>
                 <Trash2 aria-hidden="true" /> Delete…
@@ -271,7 +289,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
         <InvoicePreview preview={preview} values={values} />
       </div>
 
-      <DeleteFamilyDialog family={template} open={confirmingDelete} onOpenChange={setConfirmingDelete} beforeDelete={back} />
+      <DeleteFamilyDialog family={template} open={confirmingDelete} onOpenChange={setConfirmingDelete} beforeDelete={leave} />
     </>
   );
 }

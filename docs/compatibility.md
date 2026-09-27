@@ -21,6 +21,8 @@ file.
 |---|---|---|---|
 | `identifier` | `identifier` in `app/src-tauri/tauri.conf.json` | `com.isaac.student-invoice` | Names the WebView2 data folder (`%LOCALAPPDATA%\com.isaac.student-invoice`) that holds all user data. |
 | `https-scheme` | `useHttpsScheme` on every window | absent or `false` | Changing it moves the page origin away from `http://tauri.localhost`, so localStorage (all user data) appears empty. |
+| `data-directory` | `dataDirectory` on every window | absent | It moves the WebView2 profile out of `%LOCALAPPDATA%\com.isaac.student-invoice`, so localStorage (all user data) appears empty. |
+| `no-platform-config` | Platform config files next to `tauri.conf.json` (`tauri.windows.conf.json`, `Tauri.windows.toml` and the like) | none | Tauri merges them into builds automatically, so one could silently override any value on this list. (`tauri.dev.conf.json` is fine: it is only merged when named with `--config`.) |
 | `product-name` | `productName` | `Student Invoice` | Install folder, Start-menu entry and registry key derive from it. |
 | `publisher` | `bundle.publisher` | `isaac` | MSI Manufacturer and the `HKCU\Software\isaac\Student Invoice` registry path. |
 | `upgrade-code` | `bundle.windows.wix.upgradeCode` | `236f3e14-f18d-5eff-88a5-407aa14b96c8` | Must equal the code in every shipped MSI (verified against v1.0.1) or the installer adds a second copy instead of upgrading. |
@@ -74,4 +76,6 @@ The updater only offers versions strictly greater than the installed one.
 MSIs allow downgrades, so a user can reinstall an older MSI over a newer one.
 Because persisted data only ever changes additively (see
 [data model](data-model.md)), an older version still reads data written by a
-newer one.
+newer one. One visible difference after going back to v1.0.1: custom email
+wording saved by a newer version may contain the `{{yourName}}` placeholder,
+which v1.0.1 prints as it is ([data model](data-model.md)).

@@ -57,8 +57,9 @@ Gmail as drafts for you to check and send.
 2. Windows may say it "protected your PC", because the installer isn't signed
    with a paid certificate. Choose **More info**, then **Run anyway**.
 3. Add your name and your families, then **Connect Gmail**. If Google says
-   the app isn't verified, choose **Advanced**, then continue. The app only
-   asks to manage your drafts; it can't read or send your email.
+   the app isn't verified, choose **Advanced**, then continue. The app asks
+   only for Google's drafts permission, which can't read your inbox, and it
+   never sends anything itself: every draft waits in Gmail for you.
 4. At each half-term: untick any lessons that didn't happen, press **Draft
    all**, then check and send the drafts from Gmail.
 
@@ -71,7 +72,9 @@ if it's missing.
 ## Privacy
 
 - Your families, settings and backups are stored only on your PC.
-- Gmail access is limited to creating drafts. The sign-in token is kept in
+- Gmail access is limited to Google's drafts permission (`gmail.compose`):
+  the app creates drafts and never reads your inbox or sends email itself.
+  The sign-in token is kept in
   Windows Credential Manager and never leaves your PC except to talk to
   Google.
 - The app contacts three services: Google (sign-in and drafts), GitHub

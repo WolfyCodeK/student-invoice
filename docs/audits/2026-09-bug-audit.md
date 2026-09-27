@@ -122,6 +122,53 @@ Not yet exercised at runtime: Gmail sign-in and drafts (need the owner's
 Google account), the native export/import dialogs, the feedback form, and
 the updater (see the release test).
 
+## Final review before release (2026-09-27)
+
+A code review of every change since v1.0.1 (`v1.0.1..HEAD`) found 15
+issues. Fourteen are listed here; the fifteenth, the build script printing
+the OAuth secret, is S20 in the
+[security audit](2026-09-security-audit.md). All were fixed except B65, a
+documented limitation. Most fixes have tests (store, family form, Rust and
+release tests).
+
+| Id | Sev | Area | Finding | Status |
+|---|---|---|---|---|
+| B56 | High | Gmail | Draft all built every invoice from a snapshot taken when it started. The register and Settings stay usable during the run, so a lesson unticked, a family edited or deleted, or the wording changed meanwhile was drafted from the old values. | Fixed (v1.1.0): each family is read just before its draft, and one deleted meanwhile is left out; marks and Add/Edit/Delete are locked while drafting |
+| B57 | Medium | Templates | The new family editor accepted costs with more than 2 decimals (12.345), which v1.0.1's `step="0.01"` field refused, so B27's inconsistent calculation line was reachable from the UI. | Fixed (v1.1.0): "Use pounds and pence, e.g. 22.50." |
+| B58 | Medium | Window | Opening the app while it was running, after Low memory mode had been changed, started a second copy on the same WebView2 profile with different arguments. WebView2 refused, and that copy ran on with no window. | Fixed (v1.1.0): single-instance plugin in release builds (a second launch brings the open window forward), `restart_app` exits cleanly before restarting, and start-up stops if the window can't be created |
+| B59 | Medium | Updates | The installer download had no timeout (the limit counted for B55 covers only `latest.json`), so a stalled connection left the update dialog, which can't be closed mid-install, waiting forever. | Fixed (v1.1.0): 10 minutes for the whole download, then "The update took too long to download…" |
+| B60 | Medium | Billing | Unticks survived a change of lesson day: they matched no lesson, but changing the day back brought them back, although the approved [proposal](../proposals/2026-09-untick-lessons.md) says they are dropped. | Fixed (v1.1.0): `updateTemplate` drops them when the day changes, as the proposal says |
+| B61 | High | Data | Deleting a family said the automatic backups kept a copy, but no backup was taken, so a family added since the last daily backup was lost for good. | Fixed (v1.1.0): a `pre-delete` backup is saved first, and nothing is deleted if it fails |
+| B62 | Medium | Gmail | Draft all's results lived in the register screen, so going to Settings and back lost them. After a connection error they offered no way to reconnect, or to draft only the families not yet saved, so the only way on was a full re-run that duplicated drafts. | Fixed (v1.1.0): results kept in the store until closed, with Connect Gmail and "Draft the remaining N"; Try again is disabled while disconnected |
+| B63 | Low | Release | The release-candidate step tagged the local "Release vX" commit, which isn't pushed until publish, so GitHub didn't have it. | Fixed: the RC is tagged on `main` as GitHub has it; only its assets are tested |
+| B64 | High | Data | Stored data that couldn't be read (invalid JSON, the wrong shape, or another persist version) was replaced by the defaults at the next save, losing every family. | Fixed (v1.1.0): it is copied to `student-invoice-store-unreadable` first (or, with no room, left alone and nothing saved), writes wait until then, and a message stays until closed |
+| B65 | Low | Data | Custom wording saved by v1.1.0 usually contains `{{yourName}}`, which v1.0.1 doesn't know, so after a downgrade its emails would show `{{yourName}}` literally. | Not changed: documented limitation ([data model](../data-model.md#loading-and-upgrading-stored-data), [compatibility](../compatibility.md#downgrades)); changing stored wording for v1.0.1 would break it for v1.1.0 |
+| B66 | Medium | Data | v1.0.1's plaintext Google client ID and secret were cleared only by the one-time revision 1 upgrade, and only after its backup succeeded, so credentials typed again after going back to v1.0.1 stayed stored. | Fixed (v1.1.0): cleared on every start, before any backup |
+| B67 | Low | Settings | Settings → Performance showed the saved Low memory mode as the one running, and forgot a pending restart once Settings was reopened. | Fixed (v1.1.0): Rust reports what the window started with (`lowMemoryModeActive`) |
+| B68 | Low | Data | The family and wording editors had no length limits while imports did, so an export holding a longer value couldn't be imported again. | Fixed (v1.1.0): the editors stop typing at the import limits (`MAX_LENGTH`) |
+| B69 | Medium | UI | Leaving the family editor or the email wording (back arrow, Settings, Help) threw away unsaved changes without asking. | Fixed (v1.1.0): "Discard your changes?"; closing the window, installing an update and the Your name box are not guarded |
+
+**Smaller items, also fixed:**
+- The release script didn't check that an MSI's `.sig` matches it, so a
+  stale signature from an earlier build could be published and every
+  installed copy would reject the update. `prepare` and the update-test
+  harness now verify it against the updater key.
+- The invariants didn't cover platform config files next to
+  `tauri.conf.json` (which Tauri merges automatically) or a window's
+  `dataDirectory`; both are checked now (`no-platform-config`,
+  `data-directory`).
+- The README said the app "can't send" email, but `gmail.compose` allows
+  sending; it now says the app never sends anything itself.
+- The register and the pupil's page trusted the stored `gmailConnected` flag
+  until Rust answered (and for good if it didn't), and a reload during
+  sign-in lost track of the sign-in Rust was still waiting for. The UI now
+  uses the live status ("Checking Gmail…" first) and follows a pending
+  sign-in.
+- After a network error, Draft all tried every remaining family, each
+  failing the same way; it now stops and lists the rest as not tried.
+- The perf-test build shared the installed app's Credential Manager entry
+  (see the [security audit](2026-09-security-audit.md)).
+
 ## Method
 
 1. File-by-file review of `app/src` and `app/src-tauri/src`.

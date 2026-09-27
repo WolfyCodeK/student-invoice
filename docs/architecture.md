@@ -17,7 +17,8 @@ can't: the Google OAuth loopback server, Gmail API calls, and the updater.
 │ commands.rs → google/ (sign-in, drafts)    │ ───▶ │ accounts.google.com (OAuth)      │
 │             → updates.rs                   │ ───▶ │ gmail.googleapis.com (drafts)    │
 │ google/store.rs → Windows Credential Mgr   │ ───▶ │ github.com releases (updates)    │
-│ plugins: opener (Rust-side), updater       │      └──────────────────────────────────┘
+│ plugins: opener, dialog (Rust-side),       │      └──────────────────────────────────┘
+│          updater, single-instance          │
 └────────────────────────────────────────────┘
 The feedback form calls api.emailjs.com directly from the webview.
 ```
@@ -30,13 +31,17 @@ The feedback form calls api.emailjs.com directly from the webview.
   in `features/`, the title bar and shared pieces in `components/`, and the
   styles in `styles/`. See [UI](ui.md).
 - `features/app-context.tsx` gives every screen navigation and shared
-  actions. `lib/appearance.ts` handles the colour scheme, corners and light
-  or dark (and the reduced-motion check). `lib/format.ts` formats money and
+  actions, including the check that asks before unsaved changes are
+  discarded (`useLeaveGuard`). `lib/appearance.ts` handles the colour
+  scheme, corners and light or dark (and the reduced-motion check). `lib/format.ts` formats money and
   lesson counts for display, and `lib/term-display.ts` names and compares
   half-terms for the screens.
 - `stores/app-store.ts`: the single zustand store. It holds templates, settings,
-  the current term, Gmail connection state and the drafting and install
-  actions, and it persists part of itself to localStorage. See
+  the current term, the live Gmail status, Draft all's results
+  (`draftResults`, not persisted, so they survive leaving the register), and
+  the drafting, deleting (`deleteFamily`, backup first) and install actions.
+  It persists part of itself to localStorage through its own storage, which
+  sets unreadable data aside instead of overwriting it. See
   [data model](data-model.md). Invoices are never stored: `invoiceFor()`
   builds a family's invoice from its template, the current term and the
   email wording settings (the custom body and Your name) whenever a screen
@@ -58,25 +63,34 @@ The feedback form calls api.emailjs.com directly from the webview.
 
 **Start-up side effects:**
 - **When the store module loads** (`app/src/stores/app-store.ts`): it loads
-  the stored state, sets the current term from today's date, and asks Rust
-  for the Gmail status.
-- **When `App` mounts:** it upgrades data from older versions, after a backup
-  if there is data to protect (`migrateStoredData`), takes the daily automatic backup
-  (`ensureDailyBackup`) and checks for updates (`features/updates/use-updates.ts`).
+  the stored state (copying it aside first if it can't be read), sets the
+  current term from today's date, and asks Rust for the Gmail status
+  (following a sign-in that a reload left pending, see [Gmail](gmail.md#status-and-disconnect)).
+- **When `App` mounts:** it says once if the stored data couldn't be read;
+  clears v1.0.1's plaintext Google credentials and upgrades data from older
+  versions, after a backup if there is data to protect
+  (`migrateStoredData`); takes the daily automatic backup
+  (`ensureDailyBackup`); and checks for updates (`features/updates/use-updates.ts`).
   Once the data is ready, it shows What's new, and the tour after
   1.1.0, if this PC hasn't seen them yet.
 
 ## Backend (`app/src-tauri`)
 
 - `src/main.rs` calls `student_invoice_tauri_lib::run()`.
-- `src/lib.rs` registers the plugins and the commands below. It also creates
+- `src/lib.rs` registers the plugins and the commands below. In release
+  builds the single-instance plugin comes first, so opening the app again
+  focuses the running window instead of starting a second copy (see
+  [performance](performance.md#low-memory-mode)). It also creates
   the shared state: the Google sign-in manager, holding one HTTP client, and
   the updater state. It then creates the main window itself from the
   `tauri.conf.json` config (`"create": false`), so the WebView2 arguments can
   follow the user's Low memory mode choice (see
   [performance](performance.md#low-memory-mode)). It also fits the start-up
-  size to the screen's free area (`fit_to_screen`). The window has no Windows
-  frame, because the UI draws its own title bar ([UI](ui.md#title-bar)).
+  size to the screen's free area (`fit_to_screen`), and records the
+  preferences the window was started with. If WebView2 fails to create the
+  window, start-up stops rather than leaving an invisible process. The window
+  has no Windows frame, because the UI draws its own title bar
+  ([UI](ui.md#title-bar)).
 - `src/preferences.rs` holds per-PC preferences read before the window
   exists (`preferences.json`).
 - `src/commands.rs` holds every command the UI can call. They validate input
@@ -91,7 +105,8 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `build.rs` does two things:
   - declares the command allowlist (the app ACL manifest);
   - embeds the Google OAuth client from the release environment or the
-    owner's secrets folder.
+    owner's secrets folder, through a generated file it never prints (see
+    [Gmail](gmail.md#which-oauth-client-is-used)).
 - `tauri.conf.json` holds the window, security (CSP), updater and bundle
   settings. Several of these values are frozen; see [compatibility](compatibility.md).
 - `Cargo.toml` has a size-tuned release profile (LTO, `opt-level = "s"`,
@@ -110,7 +125,7 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 | `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:90` |
 | `create_auto_backup` | `reason: BackupReason`<br>`content: String` | `AppResult<BackupInfo>` | Saves an automatic backup in the app's backups folder. | `src/commands.rs:121` |
 | `export_backup` | `content: String`<br>`suggested_name: String` | `AppResult<Option<String>>` | Asks where to save and writes an export of all data; returns the file name, or null if cancelled. | `src/commands.rs:105` |
-| `get_preferences` | — | `Preferences` | Device preferences (e.g. low memory mode). | `src/commands.rs:149` |
+| `get_preferences` | — | `PreferencesStatus` | Device preferences: the saved low memory mode choice, and the one this window started with. | `src/commands.rs:149` |
 | `gmail_cancel_connect` | — | `()` | Cancels a sign-in that is waiting for the browser. | `src/commands.rs:30` |
 | `gmail_clear_custom_client` | — | `AppResult<GmailStatus>` | Goes back to the built-in Google OAuth client. | `src/commands.rs:84` |
 | `gmail_connect` | — | `AppResult<GmailStatus>` | Signs in with Google in the browser; resolves when finished, cancelled or timed out. | `src/commands.rs:24` |
@@ -124,7 +139,7 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 | `open_backups_folder` | — | `AppResult<()>` | Opens the automatic backups folder in File Explorer. | `src/commands.rs:143` |
 | `read_backup` | `name: String` | `AppResult<String>` | Reads one automatic backup by name. | `src/commands.rs:137` |
 | `restart_app` | — | `()` | Restarts the app (used to apply low memory mode). | `src/commands.rs:164` |
-| `set_low_memory_mode` | `enabled: bool` | `AppResult<Preferences>` | Turns low memory mode on or off; takes effect after a restart. | `src/commands.rs:155` |
+| `set_low_memory_mode` | `enabled: bool` | `AppResult<PreferencesStatus>` | Turns low memory mode on or off; takes effect after a restart. | `src/commands.rs:155` |
 <!-- /GEN:tauri-commands -->
 
 ### Capabilities (permissions granted to the window)
@@ -176,6 +191,9 @@ These live in `app/src-tauri/src/updates.rs`.
      dialog shows as a progress bar. Events are throttled to one per whole
      percent (or one per 100 ms when the size is unknown), plus the final
      state, so a download doesn't flood the UI with hundreds of events;
+   - the whole download must finish within 10 minutes (enough for about
+     9 KB/s); a stalled download ends with "The update took too long to
+     download…" instead of hanging the dialog;
    - it verifies the minisign signature against the public key in
      `tauri.conf.json`;
    - it runs the MSI with `msiexec /passive`, and the app exits.

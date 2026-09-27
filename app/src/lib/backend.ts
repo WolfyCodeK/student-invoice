@@ -58,7 +58,7 @@ export interface UpdateProgress {
   total: number | null
 }
 
-export type BackupReason = 'pre-migration' | 'pre-import' | 'pre-update' | 'pre-restore' | 'daily'
+export type BackupReason = 'pre-migration' | 'pre-import' | 'pre-update' | 'pre-restore' | 'pre-delete' | 'daily'
 
 export interface BackupInfo {
   name: string
@@ -70,7 +70,10 @@ export interface BackupInfo {
 
 /** Per-PC preferences, read by Rust before the window opens (not exported). */
 export interface Preferences {
+  /** The saved choice, used from the next start. */
   lowMemoryMode: boolean
+  /** What this window was started with (a change applies only after a restart). */
+  lowMemoryModeActive: boolean
 }
 
 export const backend = {

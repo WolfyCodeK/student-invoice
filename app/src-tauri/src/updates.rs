@@ -10,7 +10,13 @@ use tokio::sync::Mutex;
 
 use crate::error::{AppError, AppResult};
 
+/// Limit for fetching latest.json.
 const TIMEOUT: Duration = Duration::from_secs(60);
+/// Limit for the whole installer download (connect to last byte), so a
+/// stalled connection ends in an error the dialog shows, instead of hanging
+/// forever. The MSI is about 5.4 MB: 10 minutes still lets a link as slow as
+/// 9 KB/s finish.
+const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 /// How often `update://progress` may fire when the download size is unknown.
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 
@@ -150,12 +156,15 @@ pub async fn check(app: &AppHandle, state: &UpdateState) -> AppResult<UpdateInfo
 /// `ProgressThrottle`). On Windows the installer takes over and the app exits
 /// when the download completes.
 pub async fn install(app: &AppHandle, state: &UpdateState) -> AppResult<()> {
-    let update = state
+    let mut update = state
         .found
         .lock()
         .await
         .take()
         .ok_or_else(|| AppError::Update("Please check for updates first.".into()))?;
+    // The plugin gives a found update no timeout of its own (the check's
+    // timeout only covers latest.json).
+    update.timeout = Some(DOWNLOAD_TIMEOUT);
     // Shared by both callbacks; a std mutex keeps them `Send`.
     let throttle = StdMutex::new(ProgressThrottle::default());
     let lock = || throttle.lock().unwrap_or_else(PoisonError::into_inner);
@@ -170,7 +179,13 @@ pub async fn install(app: &AppHandle, state: &UpdateState) -> AppResult<()> {
             || emit(lock().finish(Instant::now())),
         )
         .await
-        .map_err(|e| AppError::Update(format!("The update couldn't be installed: {e}")))
+        .map_err(|e| match e {
+            tauri_plugin_updater::Error::Reqwest(e) if e.is_timeout() => AppError::Update(
+                "The update took too long to download. Please check your internet connection and try again."
+                    .into(),
+            ),
+            e => AppError::Update(format!("The update couldn't be installed: {e}")),
+        })
 }
 
 #[cfg(test)]

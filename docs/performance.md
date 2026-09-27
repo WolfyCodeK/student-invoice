@@ -42,7 +42,9 @@ screen:
   total to ~131 MB, but moves all drawing to the CPU. Users choose this with
   **Low memory mode** (below); GPU rendering stays the default.
 - **Idle CPU is effectively zero:** no timers or polling run while the app
-  sits idle.
+  sits idle. The one exception: if the window was reloaded during Google
+  sign-in, the store asks `gmail_status` once a second until that sign-in
+  ends, at most 5 minutes ([Gmail](gmail.md#status-and-disconnect)).
 
 ## Low memory mode
 
@@ -56,7 +58,22 @@ scrolling and animations a little less smooth.
   `tauri.conf.json` (`"create": false`). Instead, `create_main_window` in
   `app/src-tauri/src/lib.rs` builds it from that same config at start-up, after
   reading the preference, and passes `preferences::browser_args`. The
-  **Restart now** button calls `restart_app`.
+  **Restart now** button calls `restart_app`, which uses Tauri's
+  `request_restart`: the app exits through its normal shutdown (releasing the
+  single-instance lock) before the new copy starts.
+- **Saved choice vs running state:** `get_preferences` returns both
+  `lowMemoryMode` (the saved choice, used at the next start) and
+  `lowMemoryModeActive` (what the running window was started with, recorded
+  at start-up). Settings shows "Currently on/off" from the running state,
+  sets the switch from the saved choice, and offers **Restart now** while
+  they differ, however often it is reopened.
+- **One copy at a time:** WebView2 refuses a second window on the same
+  profile with different arguments. So release builds use
+  `tauri-plugin-single-instance`: opening the app again brings the running
+  window to the front instead of starting a second copy (development builds
+  skip it, so they can run beside the installed app). If WebView2 still fails
+  to create the window, start-up stops instead of leaving an invisible
+  process behind.
 - **Default arguments are kept.** Setting custom WebView2 arguments replaces
   wry's defaults (`--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection`),
   so `app/src-tauri/src/preferences.rs` always includes them.
@@ -64,7 +81,8 @@ scrolling and animations a little less smooth.
   (`preferences-dev.json` for development builds), e.g.
   `{"lowMemoryMode": true}`. It is a setting for this PC, so it is not part
   of exports or backups. A missing or unreadable file means the defaults. Unknown fields
-  are ignored, so older and newer versions can share the file.
+  are ignored, so older and newer versions can share the file. It is written
+  atomically (temporary file, then rename).
 - **UI:** `app/src/features/settings/performance-group.tsx`.
 
 ## What keeps it small

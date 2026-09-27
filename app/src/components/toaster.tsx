@@ -15,6 +15,7 @@ export function Toaster() {
             if (!open) closeToast(toast.id);
           }}
           variant={toast.variant}
+          duration={toast.duration}
         >
           {toast.title && <ToastTitle>{toast.title}</ToastTitle>}
           {toast.description && <ToastDescription>{toast.description}</ToastDescription>}

@@ -24,13 +24,19 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   guided tour shows how everything works; replay it any time from the
   question mark or Settings.
 - **Draft all shows each family's progress**, and one that failed can be
-  tried again on its own.
+  tried again on its own. The results stay until you close them, even if you
+  leave the register, and **Draft the remaining** saves only the families
+  not saved yet.
 - A new app icon.
 - **Move your data to another PC:** Settings → Your data → Export, then
   Import on the other PC. It includes templates, settings, the email wording
   and the theme.
 - **Automatic backups:** a copy of your data is saved every day, and before
   imports and updates. You can restore any of them from Settings.
+- **Deleting a family saves a backup first**, so it can be restored from
+  Settings. If the backup can't be saved, nothing is deleted.
+- You're asked before unsaved changes to a family or the email wording are
+  discarded.
 - **Untick a lesson that didn't happen:** click a lesson in the register to
   take it off that family's invoice (for illness, a concert or a holiday).
   The lesson count, total and dates in the email follow. Click it again to put
@@ -56,6 +62,9 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   use their own Google OAuth client.
 - The installer is now pinned to its existing identity, so updates always
   replace the installed app in place.
+- Opening the app while it's already open brings the open window to the
+  front, instead of starting a second copy.
+- The cost per lesson takes pounds and pence only (e.g. 22.50), as before.
 
 ### Performance
 - Starts noticeably faster: the app is ready in about half a second. The
@@ -69,7 +78,7 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 - Sign-in works on PCs whose antivirus or network inspects secure
   connections.
 - "Draft All" can no longer create duplicate drafts when clicked twice. If
-  some drafts fail, the app lists which students failed and why.
+  some drafts fail, the app lists which families failed and why.
 - Error messages now say what actually went wrong, instead of always "check
   your Gmail connection".
 - Draft buttons are disabled outside term time, rather than failing.
@@ -81,7 +90,10 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 - If something unexpected goes wrong, the app shows a way forward instead
   of a blank window.
 - The update window shows download progress and can't be closed halfway
-  through installing.
+  through installing. A stalled download now gives up with a message
+  instead of waiting forever.
+- If your saved data can't be read, it is kept rather than overwritten, and
+  the app tells you how to restore a backup.
 
 ### Security
 - Removed a Google sign-in credential that had been published by mistake in the

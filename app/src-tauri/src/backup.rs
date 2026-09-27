@@ -36,6 +36,8 @@ pub enum BackupReason {
     PreUpdate,
     /// Taken before an automatic backup is restored.
     PreRestore,
+    /// Taken before the user deletes something.
+    PreDelete,
     /// Taken at most once a day, on start-up.
     Daily,
 }
@@ -47,6 +49,7 @@ impl BackupReason {
             BackupReason::PreImport => "pre-import",
             BackupReason::PreUpdate => "pre-update",
             BackupReason::PreRestore => "pre-restore",
+            BackupReason::PreDelete => "pre-delete",
             BackupReason::Daily => "daily",
         }
     }
@@ -57,6 +60,7 @@ impl BackupReason {
             Self::PreImport,
             Self::PreUpdate,
             Self::PreRestore,
+            Self::PreDelete,
             Self::Daily,
         ]
         .into_iter()
@@ -117,8 +121,9 @@ fn decode(bytes: Vec<u8>) -> AppResult<String> {
 }
 
 /// Writes via a temporary file in the same folder, then renames, so a crash
-/// never leaves a half-written file under the final name.
-fn write_atomic(path: &Path, content: &str) -> AppResult<()> {
+/// never leaves a half-written file under the final name. The folder must
+/// exist. Also used for preferences.json.
+pub(crate) fn write_atomic(path: &Path, content: &str) -> AppResult<()> {
     let dir = path
         .parent()
         .ok_or_else(|| AppError::Internal("invalid path".into()))?;
@@ -433,6 +438,47 @@ mod tests {
         assert!(parse_backup_name("20260926T153000Z-unknown.json").is_none());
         assert!(parse_backup_name("2026092xT153000Z-daily.json").is_none());
         assert!(parse_backup_name("..\\x.json").is_none());
+    }
+
+    #[test]
+    fn pre_delete_reason() {
+        assert_eq!(
+            parse_backup_name("20260926T153000Z-pre-delete.json"),
+            Some(("2026-09-26T15:30:00Z".into(), BackupReason::PreDelete))
+        );
+        assert_eq!(
+            serde_json::to_value(BackupReason::PreDelete).unwrap(),
+            "pre-delete"
+        );
+        let parsed: BackupReason = serde_json::from_str(r#""pre-delete""#).unwrap();
+        assert_eq!(parsed, BackupReason::PreDelete);
+    }
+
+    #[test]
+    fn pruning_keeps_the_newest_of_one_reason() {
+        let dir = std::env::temp_dir().join(format!("si-prune-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let name = |i: u32, slug: &str| format!("202609{:02}T120000Z-{slug}.json", i + 1);
+        for i in 0..12 {
+            fs::write(dir.join(name(i, "pre-delete")), VALID).unwrap();
+        }
+        fs::write(dir.join(name(0, "daily")), VALID).unwrap();
+        fs::write(dir.join("notes.txt"), "not a backup").unwrap();
+
+        prune(&dir, BackupReason::PreDelete);
+
+        let mut left: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        left.sort();
+        let _ = fs::remove_dir_all(&dir);
+        let mut expected: Vec<String> = (2..12).map(|i| name(i, "pre-delete")).collect();
+        expected.push(name(0, "daily"));
+        expected.push("notes.txt".into());
+        expected.sort();
+        assert_eq!(left, expected);
     }
 
     #[test]

@@ -20,7 +20,8 @@ interface Props {
 }
 
 export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) {
-  const gmailConnected = useAppStore((s) => s.gmailConnected);
+  // The live status from Rust; null until it has been asked.
+  const gmail = useAppStore((s) => s.gmail);
   const drafting = useAppStore((s) => s.drafting);
   const draftTemplate = useAppStore((s) => s.draftTemplate);
   const needName = useNeedsYourName();
@@ -67,9 +68,11 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
     ? null
     : nothing
       ? "Every lesson is unticked, so there is nothing to invoice."
-      : !gmailConnected
-        ? "Connect Gmail to save drafts. You can still copy the email."
-        : null;
+      : gmail === null
+        ? "Checking the Gmail connection…"
+        : !gmail.connected
+          ? "Connect Gmail to save drafts. You can still copy the email."
+          : null;
 
   return (
     <aside className="slip" aria-label={`${template.recipient}'s invoice`} data-tour="pupil">

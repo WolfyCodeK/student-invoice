@@ -67,8 +67,18 @@ pub fn classify(target: &str, expected_state: &str) -> Callback {
     }
 }
 
+/// Escapes text for HTML, so the page can never carry markup, whatever it's given.
+fn html_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 /// A complete HTTP/1.1 response with a small self-contained HTML page.
 pub fn response(status: u16, title: &str, message: &str) -> Vec<u8> {
+    let (title, message) = (html_text(title), html_text(message));
     let reason = match status {
         200 => "OK",
         400 => "Bad Request",
@@ -174,5 +184,12 @@ mod tests {
         assert!(head.starts_with("HTTP/1.1 200 OK"));
         assert!(head.contains(&format!("Content-Length: {}", body.len())));
         assert!(head.contains("Connection: close"));
+    }
+
+    #[test]
+    fn response_text_is_escaped() {
+        let r = String::from_utf8(response(400, "<b>x</b>", "a & \"b\" 'c'")).unwrap();
+        assert!(r.contains("<h1>&lt;b&gt;x&lt;/b&gt;</h1>"));
+        assert!(r.contains("<p>a &amp; &quot;b&quot; &#39;c&#39;</p>"));
     }
 }

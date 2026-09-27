@@ -1,6 +1,7 @@
 // The toast store: one toast at a time, a newer one replacing it. Anything can
 // call `toast()`; components/toaster.tsx shows it, and Radix closes it after
-// 5 seconds or when it is dismissed (docs/ui.md "Toasts").
+// 5 seconds (or the toast's own duration) or when it is dismissed
+// (docs/ui.md "Toasts").
 import { useSyncExternalStore, type ReactNode } from "react";
 import type { ToastProps } from "../components/ui/toast";
 
@@ -8,6 +9,8 @@ export interface ToastOptions {
   title?: ReactNode;
   description?: ReactNode;
   variant?: ToastProps["variant"];
+  /** How long it shows, in milliseconds (5 seconds if not given; Infinity until closed). */
+  duration?: number;
 }
 
 export interface ShownToast extends ToastOptions {

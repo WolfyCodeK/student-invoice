@@ -3,6 +3,7 @@
 // install; nothing is copied or drafted until it's set, if the wording uses it.
 import { useId, useState, type FormEvent } from "react";
 import { useAppStore } from "../../stores/app-store";
+import { MAX_LENGTH } from "../../lib/schema/constants";
 
 interface FieldProps {
   /** Called after the name is saved. */
@@ -36,7 +37,7 @@ export function YourNameField({ onSaved, action = "Save", autoFocus }: FieldProp
           className="field"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          maxLength={200}
+          maxLength={MAX_LENGTH.yourName}
           autoComplete="name"
           autoFocus={autoFocus}
           aria-describedby={`${id}-hint`}

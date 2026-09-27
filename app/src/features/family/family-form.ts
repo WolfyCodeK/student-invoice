@@ -51,15 +51,25 @@ export function formValuesFrom(template: InvoiceTemplate | null): FamilyFormValu
 
 /**
  * What's wrong with a typed cost, or null when it's fine. Accepts what
- * v1.0.1's number field accepted: a number greater than 0 that `parseFloat`
- * saves unchanged (so "0x10" or "Infinity" can't slip through as text).
+ * v1.0.1's number field (`step="0.01"`) accepted: a number greater than 0, in
+ * whole pence, that `parseFloat` saves unchanged (so "0x10" or "Infinity"
+ * can't slip through as text).
  */
 export function costProblem(text: string): string | null {
   if (text.trim() === "") return "Enter the cost per lesson, e.g. 22.50.";
   const value = Number(text);
   if (!Number.isFinite(value) || parseFloat(text) !== value) return "Enter just the number, e.g. 22.50.";
   if (value <= 0) return "The cost per lesson must be more than £0.";
+  // More than two decimal places (12.345) would make the email's sum look wrong.
+  if (decimalPlaces(value) > 2) return "Use pounds and pence, e.g. 22.50.";
   return null;
+}
+
+/** How many decimal places a number has, written out in full (1e-3 has 3; 22.50 has 1). */
+function decimalPlaces(value: number): number {
+  // String() gives the shortest form that reads back as the same number, e.g. "1.5e-7".
+  const [digits, exponent = "0"] = String(value).split("e");
+  return Math.max(0, (digits.split(".")[1]?.length ?? 0) - Number(exponent));
 }
 
 const filledIn = (message: string) => z.string().refine((value) => value.trim() !== "", { error: message });
@@ -74,6 +84,11 @@ export const familySchema = z.object({
     if (problem) ctx.addIssue({ code: "custom", message: problem });
   }),
 });
+
+/** True when any field differs from what the form started with (so leaving would lose it). */
+export function hasChanges(values: FamilyFormValues, initial: FamilyFormValues): boolean {
+  return (Object.keys(initial) as (keyof FamilyFormValues)[]).some((field) => values[field] !== initial[field]);
+}
 
 /** What saving stores: the five fields, with the cost read by `parseFloat` as v1.0.1 did. */
 export function toFields(values: FamilyFormValues): FamilyFields {

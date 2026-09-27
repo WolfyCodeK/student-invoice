@@ -8,9 +8,11 @@ import { getDefaultTemplateString } from "../../utils/invoice-generator";
 import { getTermsForAcademicYear } from "../../utils/terms";
 import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
 import { academicYearStart } from "../../lib/term-display";
+import { MAX_LENGTH } from "../../lib/schema/constants";
 import { PLACEHOLDERS, unknownPlaceholders, wordingToSave } from "./settings-logic";
 import { YourNameField } from "../your-name/your-name-field";
 import { toast } from "../../hooks/use-toast";
+import { useLeaveGuard } from "../app-context";
 
 const STANDARD = getDefaultTemplateString();
 
@@ -33,6 +35,8 @@ export function WordingGroup() {
   }
 
   const changed = draft !== savedText;
+  // Back, Settings and Help ask before throwing away unsaved wording.
+  useLeaveGuard(changed);
   const unknown = unknownPlaceholders(draft);
   // An example of {{termInfo}}, written the way the invoice writes it.
   const example = currentTerm?.term ?? getTermsForAcademicYear(academicYearStart(new Date()))[0];
@@ -62,7 +66,10 @@ export function WordingGroup() {
     const el = box.current;
     const start = el?.selectionStart ?? draft.length;
     const end = el?.selectionEnd ?? draft.length;
-    edit(draft.slice(0, start) + token + draft.slice(end));
+    const next = draft.slice(0, start) + token + draft.slice(end);
+    // Stay within what an import accepts, as typing does.
+    if (next.length > MAX_LENGTH.emailWording) return;
+    edit(next);
     requestAnimationFrame(() => {
       if (!el) return;
       el.focus();
@@ -95,6 +102,7 @@ export function WordingGroup() {
           ref={box}
           className="field st-wording"
           rows={16}
+          maxLength={MAX_LENGTH.emailWording}
           value={draft}
           onChange={(e) => edit(e.target.value)}
           placeholder="Leave this empty to use the standard wording."

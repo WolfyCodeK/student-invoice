@@ -10,7 +10,7 @@ Open issues and their fixes are tracked in the
 |---|---|---|
 | Updater signing private key (`myapp.key`, minisign ID `8A406F2CA93B6BCC`) | `%USERPROFILE%\.secrets\student-invoice\` plus the owner's password manager | Release builds, to sign the MSI |
 | The signing key's password | The owner's password manager only. It is typed at a hidden prompt when signing, and never stored on disk | Unlocking `myapp.key` ([release](release.md#the-signing-key-password)) |
-| Google OAuth Desktop client (`google-oauth-client.json`, Google's download format) | same folder plus the password manager | Compiled into builds by `app/src-tauri/build.rs` (see [Gmail](gmail.md)) |
+| Google OAuth Desktop client (`google-oauth-client.json`, Google's download format) | same folder plus the password manager | Compiled into builds by `app/src-tauri/build.rs`, which writes it to a generated file in the git-ignored `target` folder and never prints it (see [Gmail](gmail.md)) |
 | Gemini API key (design tooling only) | same folder | The icon-generation script (planned) |
 
 Rules:
@@ -18,7 +18,9 @@ Rules:
 - Create and edit these files yourself (for example in Notepad). Never paste
   secrets into chat, issues or commit messages, and never pass them as
   command-line arguments, where they show up in process lists and logs.
-- Scripts read secret files in-process and never print them.
+- Scripts read secret files in-process and never print them. Even an
+  error about a malformed secret file is reported without the parser's
+  message, since that would quote the file.
 - Claude Code is denied read access to `~/.secrets/**` in the owner's user
   settings.
 - Commits are scanned by `scripts/check-secrets.mjs` in the pre-commit hook
@@ -51,8 +53,9 @@ private key.
 ## Secrets the app holds at runtime
 
 - **Gmail refresh token:** stored in Windows Credential Manager
-  (`com.isaac.student-invoice` / `google-account`, persistence *Local*;
-  development builds use a separate `.dev` name). The
+  (`com.isaac.student-invoice` / `google-account`, persistence *Local*; the
+  name follows the app's identifier, so test builds with another identifier
+  and development builds, which add `.dev`, never touch it). The
   access token is held only in memory in the Rust process. Neither ever
   reaches the webview.
 - **Custom Google OAuth client** (optional, advanced): stored in Credential
@@ -90,14 +93,18 @@ private key.
   `--disable-gpu` argument at the next start. It can't pass arbitrary
   browser arguments. It can also restart the app (`restart_app`), which
   is harmless. See [performance](performance.md#low-memory-mode).
-- **Input checks:** commands validate their input (length limits, email
-  address format, OAuth client ID shape) before acting.
+- **Input checks:** commands validate their input (length limits, OAuth
+  client ID shape, backup names) before acting.
 - **Text rendering:** user-entered text is rendered as text by React (no
   `dangerouslySetInnerHTML`, `innerHTML` or `eval` anywhere).
 
 ## Network destinations
 
 - `accounts.google.com` and `oauth2.googleapis.com`: OAuth sign-in.
+- `127.0.0.1` on a random port, only while signing in: the local listener
+  that receives Google's redirect. It checks `state`, reads a bounded
+  request, and replies only with fixed, HTML-escaped pages, so nothing a
+  caller sends can be reflected as markup ([Gmail](gmail.md)).
 - `gmail.googleapis.com`: create drafts.
 - `github.com`: update checks and downloads (minisign-verified).
 - `api.emailjs.com`: feedback form. The service, template and public key

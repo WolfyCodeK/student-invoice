@@ -441,8 +441,12 @@
   content: "";
   background-color: var(--mark-soft);
 }
-.mark:hover {
+.mark:hover:not(:disabled) {
   background: var(--sec-hover);
+}
+/* While drafts are being saved the marks can't be changed; they keep their look. */
+.mark:disabled {
+  cursor: default;
 }
 /* A selected row lights its ticked marks. Unticked marks stay off marks,
    lifted only enough to keep their contrast on the selection wash. */
@@ -570,6 +574,13 @@
   padding: 10px 16px 10px 20px;
   border-top: 1px solid var(--rule-strong);
   background: var(--page);
+}
+/* Why Add, Edit and Delete are unavailable (while drafts are being saved). */
+.acts-why {
+  max-width: 260px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  color: var(--muted);
 }
 .legend {
   margin-left: auto;

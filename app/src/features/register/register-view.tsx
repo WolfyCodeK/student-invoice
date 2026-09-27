@@ -27,7 +27,7 @@ export const RegisterView = memo(function RegisterView() {
   const { navigate } = useAppActions();
   const {
     templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody, yourName,
-    gmail, gmailConnected, gmailConnecting, drafting, createAllInvoiceDrafts, draftTemplate,
+    gmail, gmailConnecting, drafting, outcomes, createAllInvoiceDrafts, draftTemplate, closeDraftResults,
   } = useAppStore(
     useShallow((s) => ({
       templates: s.templates,
@@ -38,16 +38,20 @@ export const RegisterView = memo(function RegisterView() {
       customBody: s.settings.customEmailBodyTemplate,
       yourName: s.settings.yourName,
       gmail: s.gmail,
-      gmailConnected: s.gmailConnected,
       gmailConnecting: s.gmailConnecting,
       drafting: s.drafting,
+      // Draft all's results live in the store, so they survive going to Settings and back.
+      outcomes: s.draftResults,
       createAllInvoiceDrafts: s.createAllInvoiceDrafts,
       draftTemplate: s.draftTemplate,
+      closeDraftResults: s.closeDraftResults,
     })),
   );
   const onConnect = useConnectGmail();
+  // The live status from Rust (the stored flag can be out of date until it arrives).
+  const checkingGmail = gmail === null;
+  const gmailConnected = gmail?.connected ?? false;
 
-  const [outcomes, setOutcomes] = useState<Record<string, DraftOutcome> | null>(null);
   const [deleting, setDeleting] = useState<InvoiceTemplate | null>(null);
   const [changed, setChanged] = useState<string | null>(null);
 
@@ -82,33 +86,30 @@ export const RegisterView = memo(function RegisterView() {
     ? "It's outside term time."
     : templates.length === 0
       ? "Add a family first."
-      : !gmailConnected
-        ? "Connect Gmail first."
-        : chargeable === 0
-          ? "Every lesson is unticked."
-          : null;
-
-  const setOutcome = (outcome: DraftOutcome) => setOutcomes((prev) => ({ ...prev, [outcome.templateId]: outcome }));
+      : checkingGmail
+        ? null // the Gmail line says "Checking Gmail…"
+        : !gmailConnected
+          ? "Connect Gmail first."
+          : chargeable === 0
+            ? "Every lesson is unticked."
+            : null;
 
   const { gate, dialog: askName } = useYourNameGate();
 
-  const onDraftAll = async () => {
-    setOutcomes({});
+  /** Draft all, or (with `remainingOnly`) only the families not saved yet in the results showing. */
+  const onDraftAll = async (remainingOnly = false) => {
     try {
-      await createAllInvoiceDrafts(setOutcome);
+      await createAllInvoiceDrafts({ remainingOnly });
     } catch (error) {
-      setOutcomes(null);
       toast({ title: "Couldn't save the drafts", description: errorMessage(error), variant: "destructive" });
     }
   };
 
   const onRetry = async (templateId: string) => {
-    setOutcome({ templateId, status: "saving" });
     try {
       await draftTemplate(templateId);
-      setOutcome({ templateId, status: "saved" });
-    } catch (error) {
-      setOutcome({ templateId, status: "failed", message: errorMessage(error) });
+    } catch {
+      // The row shows what went wrong.
     }
   };
 
@@ -123,9 +124,16 @@ export const RegisterView = memo(function RegisterView() {
   };
 
   const results = outcomes !== null;
-  const list = outcomes ? Object.values(outcomes) : [];
+  // Only families still on the register count.
+  const list = outcomes ? templates.flatMap((t) => outcomes[t.id] ?? []) : [];
   const saved = list.filter((o) => o.status === "saved").length;
   const finished = results && !drafting;
+  // Families with something to invoice that haven't been saved in these results yet.
+  const remaining = outcomes
+    ? templates.filter((t) => (invoices.get(t.id)?.lessonCount ?? 0) > 0 && outcomes[t.id]?.status !== "saved").length
+    : 0;
+  // While drafts are being saved, nothing that changes an invoice can be used.
+  const lockedWhy = drafting ? "Families and lessons can't be changed while saving to Gmail." : undefined;
 
   return (
     <>
@@ -172,13 +180,38 @@ export const RegisterView = memo(function RegisterView() {
                 {saved} of {list.filter((o) => o.status !== "nothing").length} saved as drafts in Gmail.
                 <span>Check and send them from Gmail.</span>
               </p>
-              <button type="button" className="bbtn bbtn--ghost" onClick={() => setOutcomes(null)}>
+              {!gmailConnected && gmail?.configured !== false && (
+                <button type="button" className="bbtn" onClick={onConnect} disabled={gmailConnecting}>
+                  <Mail /> Connect Gmail
+                </button>
+              )}
+              {remaining > 0 && (
+                <button
+                  type="button"
+                  className={gmailConnected ? "bbtn" : "bbtn bbtn--ghost"}
+                  onClick={() => gate(() => void onDraftAll(true))}
+                  disabled={!gmailConnected}
+                  aria-describedby={gmailConnected ? undefined : "draft-why"}
+                >
+                  <Mails /> Draft the remaining {remaining} in Gmail
+                </button>
+              )}
+              <button type="button" className="bbtn bbtn--ghost" onClick={closeDraftResults}>
                 Close results
               </button>
+              {remaining > 0 && !gmailConnected && (
+                <p className="band-why" id="draft-why">
+                  Connect Gmail first, then draft the rest.
+                </p>
+              )}
             </>
           ) : (
             <>
-              {gmail?.configured === false ? (
+              {checkingGmail ? (
+                <p className="gmail">
+                  <Loader2 className="spin" aria-hidden="true" /> Checking Gmail…
+                </p>
+              ) : gmail.configured === false ? (
                 <p className="gmail is-off">
                   <MailX aria-hidden="true" /> Gmail isn't set up in this copy of the app
                 </p>
@@ -186,8 +219,8 @@ export const RegisterView = memo(function RegisterView() {
                 <p className="gmail">
                   <MailCheck aria-hidden="true" />
                   <span>
-                    Gmail connected{gmail?.email ? " · " : ""}
-                    {gmail?.email && <strong>{gmail.email}</strong>}
+                    Gmail connected{gmail.email ? " · " : ""}
+                    {gmail.email && <strong>{gmail.email}</strong>}
                   </span>
                 </p>
               ) : (
@@ -199,7 +232,7 @@ export const RegisterView = memo(function RegisterView() {
                 type="button"
                 className={gmailConnected ? "bbtn" : "bbtn bbtn--ghost"}
                 onClick={() => gate(() => void onDraftAll())}
-                disabled={draftWhy !== null || drafting}
+                disabled={draftWhy !== null || checkingGmail || drafting}
                 aria-describedby={draftWhy ? "draft-why" : undefined}
               >
                 {drafting ? <Loader2 className="spin" /> : <Mails />}
@@ -295,7 +328,8 @@ export const RegisterView = memo(function RegisterView() {
                               type="button"
                               className={`mark${changed === `${t.id}:${l.key}` ? " is-changed" : ""}`}
                               aria-pressed={l.ticked}
-                              title={`${format(l.date, "EEE d MMM")}: ${l.ticked ? "lesson" : "no lesson (not charged)"}`}
+                              disabled={drafting}
+                              title={`${format(l.date, "EEE d MMM")}: ${l.ticked ? "lesson" : "no lesson (not charged)"}${lockedWhy ? `. ${lockedWhy}` : ""}`}
                               aria-label={l.ticked ? `${label}: lesson. Untick if it didn't happen.` : `${label}: unticked, not charged. Tick to charge it again.`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -322,7 +356,9 @@ export const RegisterView = memo(function RegisterView() {
                     <div className="c tcell end tot" role="cell" data-tour={selected ? "totals" : undefined}>
                       {inv ? money(inv.totalCost) : "–"}
                     </div>
-                    {results && <StatusCell outcome={outcome} onRetry={() => gate(() => void onRetry(t.id))} busy={drafting} />}
+                    {results && (
+                      <StatusCell outcome={outcome} onRetry={() => gate(() => void onRetry(t.id))} busy={drafting} gmailConnected={gmailConnected} />
+                    )}
                   </div>
                 );
               })}
@@ -344,18 +380,41 @@ export const RegisterView = memo(function RegisterView() {
 
           {templates.length > 0 && (
             <div className="acts" data-tour="family-actions">
-              <button type="button" className="btn btn--secondary" onClick={() => navigate({ name: "edit", templateId: null })}>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => navigate({ name: "edit", templateId: null })}
+                disabled={drafting}
+                aria-describedby={lockedWhy ? "acts-why" : undefined}
+              >
                 <UserPlus /> Add a family
               </button>
               {current && (
                 <>
-                  <button type="button" className="btn btn--secondary" onClick={() => navigate({ name: "edit", templateId: current.id })}>
+                  <button
+                    type="button"
+                    className="btn btn--secondary"
+                    onClick={() => navigate({ name: "edit", templateId: current.id })}
+                    disabled={drafting}
+                    aria-describedby={lockedWhy ? "acts-why" : undefined}
+                  >
                     <Pencil /> Edit {current.recipient}
                   </button>
-                  <button type="button" className="btn btn--danger" onClick={() => setDeleting(current)}>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => setDeleting(current)}
+                    disabled={drafting}
+                    aria-describedby={lockedWhy ? "acts-why" : undefined}
+                  >
                     <Trash2 /> Delete {current.recipient}…
                   </button>
                 </>
+              )}
+              {lockedWhy && (
+                <p className="acts-why" id="acts-why">
+                  {lockedWhy}
+                </p>
               )}
               <p className="legend">
                 <span>
@@ -390,7 +449,7 @@ export const RegisterView = memo(function RegisterView() {
   );
 });
 
-function StatusCell({ outcome, onRetry, busy }: { outcome?: DraftOutcome; onRetry: () => void; busy: boolean }) {
+function StatusCell({ outcome, onRetry, busy, gmailConnected }: { outcome?: DraftOutcome; onRetry: () => void; busy: boolean; gmailConnected: boolean }) {
   if (!outcome) return <div className="c status" role="cell" />;
   switch (outcome.status) {
     case "saving":
@@ -421,7 +480,8 @@ function StatusCell({ outcome, onRetry, busy }: { outcome?: DraftOutcome; onRetr
           <button
             type="button"
             className="btn btn--secondary btn--sm"
-            disabled={busy}
+            disabled={busy || !gmailConnected}
+            title={gmailConnected ? undefined : "Connect Gmail first."}
             onClick={(e) => {
               e.stopPropagation();
               onRetry();
@@ -448,7 +508,7 @@ function EmptyRegister({ onAdd, onConnect, gmailConnected }: { onAdd: () => void
         </span>
         <p className="step-d">For each family: the name you greet, the pupils, the instrument, the lesson day and the cost per lesson.</p>
         <button type="button" className="btn btn--primary btn--lg" onClick={onAdd} data-tour="family-actions">
-          <UserPlus /> Add your first student
+          <UserPlus /> Add your first family
         </button>
       </div>
       <div className="step">

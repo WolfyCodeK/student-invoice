@@ -4,7 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { EOL, homedir } from 'node:os'
 import { join } from 'node:path'
 import { LATEST_JSON_NOTES_PATTERN } from '../invariants.config.mjs'
-import { unlock } from './signing-key.mjs'
+import { unlock, verifySignature } from './signing-key.mjs'
 
 export const REPO = 'WolfyCodeK/student-invoice'
 export const SECRETS_DIR = process.env.SI_SECRETS_DIR ?? join(homedir(), '.secrets', 'student-invoice')
@@ -103,6 +103,17 @@ export function findSignedMsi(root, version) {
   const built = readdirSync(bundleDir).find((f) => f.endsWith(`_${version}_x64_en-US.msi`))
   if (!built || !existsSync(join(bundleDir, `${built}.sig`))) die(`signed MSI for ${version} not found in ${bundleDir}`)
   return join(bundleDir, built)
+}
+
+/**
+ * Exits unless `msi`'s .sig is a valid signature of exactly that file by the
+ * updater key installed copies trust. Catches a stale .sig left over from an
+ * earlier build, which would make every installed copy reject the update.
+ */
+export function checkMsiSignature(msi) {
+  if (!verifySignature(readFileSync(msi), readFileSync(`${msi}.sig`, 'utf8'))) {
+    die(`${msi}.sig is not a valid signature of this MSI by the updater key. Rebuild before releasing.`)
+  }
 }
 
 /**
@@ -229,7 +240,13 @@ export async function buildEnv() {
   if (!existsSync(p.signingKey)) die(`Signing key not found at ${p.signingKey}. Restore it from your password manager (see docs/release.md).`)
   // Release builds must have Gmail: build.rs embeds this client (docs/gmail.md).
   if (!existsSync(p.googleClient)) die(`Google OAuth client file not found at ${p.googleClient}. Restore it from your password manager.`)
-  const c = JSON.parse(readFileSync(p.googleClient, 'utf8'))
+  let c
+  try {
+    c = JSON.parse(readFileSync(p.googleClient, 'utf8'))
+  } catch {
+    // Never let the parser's message through: it quotes the file, which holds the secret.
+    die(`${p.googleClient} isn't valid JSON. Download it again from Google Cloud Console or restore it from your password manager.`)
+  }
   const creds = c.installed ?? c
   if (!creds.client_id || !creds.client_secret) die(`${p.googleClient} has no installed.client_id/client_secret (is it a Desktop app client?)`)
   return {

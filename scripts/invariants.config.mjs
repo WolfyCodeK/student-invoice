@@ -35,6 +35,18 @@ export const INVARIANTS = [
     why: 'Changing it moves the page origin away from `http://tauri.localhost`, so localStorage (all user data) appears empty.',
   },
   {
+    id: 'data-directory',
+    what: '`dataDirectory` on every window',
+    expected: 'absent',
+    why: 'It moves the WebView2 profile out of `%LOCALAPPDATA%\\com.isaac.student-invoice`, so localStorage (all user data) appears empty.',
+  },
+  {
+    id: 'no-platform-config',
+    what: 'Platform config files next to `tauri.conf.json` (`tauri.windows.conf.json`, `Tauri.windows.toml` and the like)',
+    expected: 'none',
+    why: 'Tauri merges them into builds automatically, so one could silently override any value on this list. (`tauri.dev.conf.json` is fine: it is only merged when named with `--config`.)',
+  },
+  {
     id: 'product-name',
     what: '`productName`',
     expected: '`Student Invoice`',

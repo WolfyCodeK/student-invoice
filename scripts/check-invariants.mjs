@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Enforces scripts/invariants.config.mjs. Exit code 1 lists every violation.
 // Usage: node scripts/check-invariants.mjs
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { INVARIANTS, UPDATER_ENDPOINT, UPDATER_PUBKEY } from './invariants.config.mjs'
 import { gitLines, readRepoFile, repoRoot } from './lib/repo.mjs'
 import { secretFileKinds } from './lib/secret-files.mjs'
@@ -20,6 +22,14 @@ const checks = {
   identifier: () => (conf.identifier === 'com.isaac.student-invoice' ? null : `identifier is ${conf.identifier}`),
   'https-scheme': () =>
     (conf.app?.windows ?? []).some((w) => w.useHttpsScheme === true) ? 'a window sets useHttpsScheme: true' : null,
+  'data-directory': () =>
+    (conf.app?.windows ?? []).some((w) => w.dataDirectory !== undefined) ? 'a window sets dataDirectory' : null,
+  'no-platform-config': () => {
+    // Checks the folder, not just tracked files: local release builds merge untracked ones too.
+    const platform = /^(tauri\.(windows|linux|macos|android|ios)\.conf\.json5?|Tauri\.(windows|linux|macos|android|ios)\.toml)$/i
+    const found = readdirSync(join(root, 'app/src-tauri')).filter((f) => platform.test(f))
+    return found.length ? `platform config present: ${found.join(', ')}` : null
+  },
   'product-name': () => (conf.productName === 'Student Invoice' ? null : `productName is ${conf.productName}`),
   publisher: () => (conf.bundle?.publisher === 'isaac' ? null : `bundle.publisher is ${conf.bundle?.publisher}`),
   'upgrade-code': () =>

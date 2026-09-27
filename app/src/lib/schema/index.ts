@@ -3,7 +3,7 @@
 // file must stay self-contained: only `zod` and `./constants.ts` imports
 // (with the .ts extension), erasable TS syntax only.
 import { z } from 'zod'
-import { WEEKDAYS } from './constants.ts'
+import { MAX_LENGTH, WEEKDAYS } from './constants.ts'
 
 export { BACKUP_FORMAT_VERSION } from './constants.ts'
 
@@ -43,16 +43,16 @@ export const persistedStateSchema = z.looseObject({
 /**
  * A template inside an imported file: strictly validated, because the file
  * may come from anywhere. Unknown fields (from a newer version) are kept.
- * Length limits are generous on purpose: the app itself doesn't limit these
- * fields, and every export must be importable again.
+ * Length limits are generous, and the editors stop typing at the same ones
+ * (MAX_LENGTH), so every export can be imported again.
  */
 const backupTemplateSchema = z.looseObject({
   id: text(100).min(1),
-  recipient: text(5_000),
+  recipient: text(MAX_LENGTH.recipient),
   cost: z.number().finite().min(0),
-  instrument: text(1_000),
+  instrument: text(MAX_LENGTH.instrument),
   day: z.enum(WEEKDAYS),
-  students: text(5_000),
+  students: text(MAX_LENGTH.students),
   skippedLessonDates: z.array(z.iso.date()).max(500).optional(),
   createdAt: z.string().max(40).optional(),
   updatedAt: z.string().max(40).optional(),
@@ -61,12 +61,12 @@ const backupTemplateSchema = z.looseObject({
 /** Settings inside an imported file. Google credentials are never included. */
 const backupSettingsSchema = z.looseObject({
   theme: z.enum(['light', 'dark']).optional(),
-  customEmailBodyTemplate: text(200_000).optional(),
+  customEmailBodyTemplate: text(MAX_LENGTH.emailWording).optional(),
   // Strings, not enums: a file from a newer version may name a newer choice.
   colourScheme: text(40).optional(),
   corners: text(40).optional(),
   lastSeenVersion: text(40).optional(),
-  yourName: text(200).optional(),
+  yourName: text(MAX_LENGTH.yourName).optional(),
 })
 
 /** The export file (`Student Invoice backup YYYY-MM-DD.json`). */

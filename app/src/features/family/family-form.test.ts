@@ -7,6 +7,7 @@ import {
   costText,
   familySchema,
   formValuesFrom,
+  hasChanges,
   instrumentOptions,
   INSTRUMENTS,
   previewFor,
@@ -86,19 +87,33 @@ describe("validation (v1.0.1's rules)", () => {
     expect(errorsFor({ ...valid, instrument: "violin" })).toEqual({});
   });
 
-  it.each(["22.50", "22", "0.5", " 22.5 ", "1e2"])("accepts the cost %j", (cost) => {
+  it.each(["22.50", "22", "0.5", " 22.5 ", "1e2", "19.99", "0.01", "22.500", "123456789.12"])("accepts the cost %j", (cost) => {
     expect(costProblem(cost)).toBeNull();
   });
 
-  it.each(["", "  ", "0", "0.00", "-5", "abc", "£22", "22,50", "0x10", "Infinity"])("rejects the cost %j", (cost) => {
-    expect(costProblem(cost)).not.toBeNull();
-    expect(errorsFor({ ...valid, cost })).toHaveProperty("cost");
-  });
+  it.each(["", "  ", "0", "0.00", "-5", "abc", "£22", "22,50", "0x10", "Infinity", "12.345", "22.505", "0.001", "1e-3"])(
+    "rejects the cost %j",
+    (cost) => {
+      expect(costProblem(cost)).not.toBeNull();
+      expect(errorsFor({ ...valid, cost })).toHaveProperty("cost");
+    },
+  );
 
   it("says what to do about a cost", () => {
     expect(costProblem("")).toMatch(/Enter the cost/);
     expect(costProblem("£22")).toMatch(/just the number/);
     expect(costProblem("0")).toMatch(/more than £0/);
+    // v1.0.1's number field (step 0.01) refused these too.
+    expect(costProblem("12.345")).toBe("Use pounds and pence, e.g. 22.50.");
+  });
+});
+
+describe("hasChanges", () => {
+  it("is false for what the form started with, and true once any field differs", () => {
+    expect(hasChanges({ ...valid }, valid)).toBe(false);
+    expect(hasChanges({ ...valid, cost: "22.5" }, valid)).toBe(true);
+    expect(hasChanges({ ...valid, day: "Tuesday" }, valid)).toBe(true);
+    expect(hasChanges(formValuesFrom(null), formValuesFrom(null))).toBe(false);
   });
 });
 

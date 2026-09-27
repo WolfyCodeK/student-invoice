@@ -31,8 +31,9 @@ The UI lives in Settings → **Your data** (`app/src/features/settings/data-grou
    everything strictly with zod
    (`app/src/lib/schema/index.ts`):
    - it drops `__proto__`, `constructor` and `prototype` keys while parsing;
-   - it enforces generous length limits (larger than anything the app itself
-     allows, so every export can be imported again);
+   - it enforces generous length limits, the same ones the editors stop
+     typing at (`MAX_LENGTH` in `app/src/lib/schema/constants.ts`), so every
+     export can be imported again;
    - `day` must be a weekday name, `cost` a finite number of at least 0, and
      template ids must be unique;
    - no unexpected top-level fields are allowed;
@@ -56,6 +57,7 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
 | `pre-restore` | Before restoring an automatic backup |
 | `pre-update` | Before installing an app update (best effort) |
 | `pre-migration` | Before stored data from an older version is upgraded (only if there is data to protect) |
+| `pre-delete` | Before a family is deleted. If it can't be saved, nothing is deleted |
 
 - **Retention:** the newest 10 of each reason are kept.
 - **One at a time:** writing a backup and pruning old ones is serialised in
@@ -63,7 +65,8 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
   double-run) can't collide. The work runs off the main thread.
 - **Development builds** use a separate `backups-dev` folder, so testing
   never mixes with the installed app's backups.
-- **Restoring:** Settings lists the backups, and **Restore** works like an
+- **Restoring:** Settings lists the backups, each labelled with its reason
+  (such as "Before deleting a family"), and **Restore** works like an
   import.
 - **Opening the folder:** **Open folder** shows the backups in File Explorer.
 - **Security:** backup names from the UI must match the exact pattern above,

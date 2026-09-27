@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildBackup, suggestedBackupName, type BackupSource } from './backup'
 import { parseBackup } from './backup-parse'
+import { MAX_LENGTH } from './schema/constants'
 import type { AppSettings, InvoiceTemplate } from '../types'
 
 const settings: AppSettings = {
@@ -54,6 +55,24 @@ describe('backup files', () => {
     const reloaded = { ...template(), createdAt: '2025-01-02T03:04:05.000Z' } as unknown as InvoiceTemplate
     const parsed = parseBackup(buildBackup({ ...source, templates: [reloaded] }, '1.1.0'))
     expect(parsed.ok && parsed.backup.data.store.templates[0].createdAt).toBe('2025-01-02T03:04:05.000Z')
+  })
+
+  it('imports every field at the longest the editors let you type (so every export imports again)', () => {
+    const longest = (ch: string, n: number) => ch.repeat(n)
+    const full = {
+      ...source,
+      templates: [template({ recipient: longest('r', MAX_LENGTH.recipient), students: longest('s', MAX_LENGTH.students) })],
+      settings: { ...settings, customEmailBodyTemplate: longest('w', MAX_LENGTH.emailWording), yourName: longest('n', MAX_LENGTH.yourName) },
+    }
+    expect(parseBackup(buildBackup(full, '1.1.0')).ok).toBe(true)
+    for (const over of [
+      { templates: [template({ recipient: longest('r', MAX_LENGTH.recipient + 1) })] },
+      { templates: [template({ students: longest('s', MAX_LENGTH.students + 1) })] },
+      { settings: { ...settings, customEmailBodyTemplate: longest('w', MAX_LENGTH.emailWording + 1) } },
+      { settings: { ...settings, yourName: longest('n', MAX_LENGTH.yourName + 1) } },
+    ]) {
+      expect(parseBackup(buildBackup({ ...source, ...over }, '1.1.0')).ok).toBe(false)
+    }
   })
 
   it('accepts a byte-order mark', () => {

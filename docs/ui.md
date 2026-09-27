@@ -14,9 +14,9 @@ primitives for dialogs, selects, switches and toasts
 
 | Part | Where |
 |---|---|
-| Shell: title bar, current screen, app-wide dialogs, start-up data upgrade and backup | `app/src/App.tsx` |
+| Shell: title bar, current screen, app-wide dialogs (including "Discard your changes?"), start-up data upgrade and backup | `app/src/App.tsx` |
 | Update checks (`useUpdates`) and the update dialog | `app/src/features/updates/` |
-| Navigation and shared actions (`useAppActions`) | `app/src/features/app-context.tsx` |
+| Navigation and shared actions (`useAppActions`), and the unsaved-changes check (`useLeaveGuard`) | `app/src/features/app-context.tsx` |
 | Title bar | `app/src/components/title-bar.tsx` |
 | Register (main screen) | `app/src/features/register/` |
 | Settings | `app/src/features/settings/` |
@@ -66,9 +66,11 @@ The main screen (`register-view.tsx`) has three parts.
 **Header band.**
 - The heading "Register · <half-term>", the dates and the number of weeks.
 - A strip of the school year's six half-terms, with the current one filled.
-- Gmail status (or Connect Gmail), and **Draft all N in Gmail**. When the
-  button is disabled, a line under it gives the reason. N counts the families
-  with at least one ticked lesson.
+- Gmail status, and **Draft all N in Gmail**. The status is the live one
+  from Rust: "Checking Gmail…" until it answers (Draft all waits too), then
+  the connected address, or Connect Gmail. When the button is disabled, a
+  line under it gives the reason. N counts the families with at least one
+  ticked lesson.
 
 **The register grid.**
 - One row per family: the recipient, then pupils and instrument. The
@@ -91,30 +93,55 @@ The main screen (`register-view.tsx`) has three parts.
   band and Draft all steps back.
 - Below the grid: Add a family, Edit, Delete… (with confirmation), and a
   legend.
+- **Locked while saving to Gmail:** while drafts are being saved, the marks
+  and Add, Edit and Delete are disabled, with "Families and lessons can't be
+  changed while saving to Gmail."
 
 **The pupil's page** (`pupil-page.tsx`), beside the grid.
 - The selected family's lessons × cost = total, and which lessons aren't
   charged.
 - The subject with **Copy subject**, and the full email.
 - **Copy email text** and **Save as Gmail draft**, each disabled with a
-  reason when it can't be used.
+  reason when it can't be used (for Save as Gmail draft, "Checking the Gmail
+  connection…" until Rust has answered).
 - Until Your name is set (and the wording uses it), a reminder with the name
   box ([Your name](#your-name)).
 
 **Draft all.**
 - The pupil's page closes and a status column appears.
 - Each family moves through Saving…, Draft saved, Not saved (with the reason
-  and **Try again**), Not tried, or Nothing to invoice, as it happens.
-- The band then says how many drafts were saved, and **Close results** ends
-  the view.
+  and **Try again**), Not tried, or Nothing to invoice, as it happens. A
+  connection or network error stops the run, and the families after it show
+  Not tried ([Gmail](gmail.md#creating-a-draft)).
+- The results are kept in the store (`draftResults`), so they stay until
+  **Close results**, even if you go to Settings and back. **Try again**
+  drafts that one family and updates its row.
+- The band then says how many drafts were saved, counting only families
+  still on the register. While any family with something to invoice isn't
+  saved yet, **Draft the remaining N in Gmail** drafts only those: saved
+  families are never drafted twice, and families with nothing to invoice
+  stay that way.
+- With Gmail disconnected (say after a `ReauthRequired` error), the band
+  offers **Connect Gmail**, and Draft the remaining and every **Try again**
+  are disabled until it is connected ("Connect Gmail first").
 
 **Other states.**
 - **No families:** the three steps of how the app works, with **Add your
-  first student** and **Connect Gmail**.
+  first family** and **Connect Gmail**.
 - **Outside term time:** a note, the date the next half-term starts, and no
   marks or totals. Draft buttons are disabled with the reason.
 - **Narrow windows** (container queries on the register): the Day and Per
   lesson columns fold away, and the weeks narrow.
+
+## Connecting Gmail
+
+Every Connect Gmail button (the register band, the empty register, Draft
+all's results and Settings) uses `useConnectGmail` (`features/gmail/`).
+While the browser sign-in runs, the "Connect Gmail" dialog
+(`connect-dialog.tsx`) shows the steps and **Cancel**; a toast then says how
+it went, and cancelling says nothing. If the window is reloaded during
+sign-in (F5), Rust is still waiting, so the dialog comes back and stays until
+the sign-in ends ([Gmail](gmail.md#status-and-disconnect)).
 
 ## Settings
 
@@ -133,7 +160,9 @@ button. The sections:
   one marked.
 - **Your data:** export, import, automatic backups and restore
   ([backup](backup.md)).
-- **Performance:** Low memory mode, with **Restart now**
+- **Performance:** Low memory mode. "Currently on/off" is what the running
+  window was started with, as Rust reports it; the switch shows the saved
+  choice, and **Restart now** appears while the two differ
   ([performance](performance.md#low-memory-mode)).
 - **About & help:** the version, Check for updates, **Show the tour again**
   and Send feedback.
@@ -170,11 +199,45 @@ doesn't use `{{yourName}}` the name is never asked for.
 `features/family/` is a form page. Its fields are the name you greet, the
 pupils, the instrument (fixed list, plus the family's own if it isn't on it),
 the lesson day and the cost per lesson. It has the same validation as
-v1.0.1, and every field has a plain hint.
+v1.0.1, and every field has a plain hint (`family-form.ts`).
 
+- **Cost:** a number greater than £0 in pounds and pence. More than two
+  decimal places is refused with "Use pounds and pence, e.g. 22.50.", as
+  v1.0.1's number field (`step="0.01"`) did (bug audit B27).
+- **Length limits:** the name you greet and the pupils stop typing at the
+  import limits (`MAX_LENGTH` in `app/src/lib/schema/constants.ts`), as do
+  the email wording and the Your name box, so every export can be imported
+  again ([backup](backup.md#import)).
 - A live preview of this half-term's invoice sits beside the form.
-- Saving keeps anything else on the family, such as unticked lessons.
-- Delete sits in a separate danger zone and asks for confirmation.
+- Saving keeps anything else on the family, such as unticked lessons, except
+  that changing the lesson day drops the unticks
+  ([billing](billing.md#unticked-lessons-v110)).
+- Delete sits in a separate danger zone ("Removes this family from the
+  register. A backup is saved first.") and asks for confirmation.
+
+**Deleting a family** (`delete-family-dialog.tsx`, from the editor or the
+register) says "This removes … from the register. A backup is saved first,
+so you can restore it from Settings, under Your data." **Delete** shows
+"Deleting…" while the store's `deleteFamily` saves a `pre-delete` automatic
+backup ([backup](backup.md#automatic-backups)); only then is the family
+removed. If the backup fails, nothing is deleted and the dialog stays open
+with "Nothing was deleted, because the backup couldn't be saved." and the
+reason.
+
+## Unsaved changes
+
+Screens with unsaved changes register a check with `useLeaveGuard`
+(`features/app-context.tsx`): the family editor while any field differs from
+what it opened with (`hasChanges`), and Settings while the email wording
+differs from the saved text. While one does, leaving through `navigate`,
+`back` or `startTour` (the back arrow, Settings and Help in the title bar)
+first asks "Discard your changes?", with **Keep editing** and **Discard**
+(`App.tsx`).
+
+- **Not asked:** the editor's Cancel, Save and Delete, which leave on
+  purpose.
+- **Not guarded:** closing the window, installing an update, and the Your
+  name box (it saves on its own button).
 
 ## What's new and the tour
 
@@ -225,7 +288,15 @@ selection colour, focus rings and scrollbars are themed too.
 one replacing the last. Code shows one by calling `toast()` directly, so
 firing a toast doesn't re-render the caller. `components/toaster.tsx`
 renders it with the styled Radix toast in `components/ui/toast.tsx`. Toasts
-close after 5 seconds, which is Radix Toast's default (bug audit B34).
+close after 5 seconds, which is Radix Toast's default (bug audit B34),
+unless the toast sets its own `duration` in milliseconds.
+
+- **"Your saved data couldn't be read":** shown once at start-up if the
+  stored data had to be set aside ([data model](data-model.md#loading-and-upgrading-stored-data)).
+  It uses `duration: Infinity`, so it stays until closed. It says the app
+  started empty and a copy was kept, or, when there was no room for a copy,
+  that changes won't be saved; either way it points to restoring an automatic
+  backup in Settings, under Your data.
 
 ## Errors
 

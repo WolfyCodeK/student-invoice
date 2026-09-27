@@ -28,11 +28,11 @@ pub enum ClientSource {
     Custom,
 }
 
+// `BUILT_IN_ID` and `BUILT_IN_SECRET`, written by build.rs (never printed).
+include!(concat!(env!("OUT_DIR"), "/google_client.rs"));
+
 fn built_in() -> Option<ClientCredentials> {
-    match (
-        option_env!("SI_GOOGLE_CLIENT_ID"),
-        option_env!("SI_GOOGLE_CLIENT_SECRET"),
-    ) {
+    match (BUILT_IN_ID, BUILT_IN_SECRET) {
         (Some(id), Some(secret)) if !id.is_empty() && !secret.is_empty() => {
             Some(ClientCredentials {
                 client_id: id.to_string(),

@@ -19,7 +19,7 @@ listed at the end; they are not fixed until a proposal is approved.
 |---|---|
 | Term dates and "which term is it?" | `app/src/utils/terms.ts` (`getTermsForAcademicYear`, `calculateTermData`) |
 | Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`lessonDates`, `generateInvoice`) |
-| Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts`; tests in `app/src/utils/untick-lessons.test.ts` |
+| Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts`, and `updateTemplate` there, which drops unticks when the lesson day changes; tests in `app/src/utils/untick-lessons.test.ts` and `app/src/stores/app-store.test.ts` |
 | When the current term is computed | once at start-up (the store's initial `currentTerm`, from `calculateTermData(new Date())` in `app/src/stores/app-store.ts`) |
 | Which invoice a screen or draft uses | `invoiceFor(template, term, wording)` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term with the email wording settings (the custom body and Your name), or none outside term time or for an invalid lesson day |
 | Whether an email can go out yet | `needsYourName()` in `app/src/stores/app-store.ts`: true while the wording uses `{{yourName}}` and no name is set ([UI](ui.md#your-name)) |
@@ -68,8 +68,14 @@ Approved in [untick lessons](proposals/2026-09-untick-lessons.md).
   skips it and names it.
 - `toggleLesson` accepts only a date that is one of the current half-term's
   lessons for that template. While saving, it drops unticks that no longer
-  match a lesson (from past half-terms, or from before the lesson day was
-  changed). Dates that don't match are ignored by the calculation anyway.
+  match a lesson (from past half-terms). Dates that don't match are ignored
+  by the calculation anyway.
+- **Changing the lesson day** (`updateTemplate`, when the family editor
+  saves a different day) keeps only the unticks that match the new day's
+  lessons this half-term. Those never share a date with the old day's, so in
+  practice every untick is dropped, and changing the day back later doesn't
+  bring them back. This is the proposal's rule that unticks for the old day
+  are dropped.
 - With nothing unticked, the output is byte-identical to v1.0.1, and the
   characterization snapshots prove it.
 
@@ -112,5 +118,8 @@ in the [bug audit](audits/2026-09-bug-audit.md):
 - **B14:** cost validation, and floating-point totals.
 - **B23:** bank holidays are billed.
 - **B26:** there are no invoices between half-terms.
-- **B27:** costs with more than 2 decimals.
+- **B27:** costs with more than 2 decimals. The family editor refuses them
+  again, as v1.0.1's did (`costProblem` in
+  `app/src/features/family/family-form.ts`), so only stored or imported data
+  can reach the calculation with one.
 - **B29, B31:** wording.

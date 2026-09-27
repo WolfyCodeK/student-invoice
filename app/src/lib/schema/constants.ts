@@ -10,3 +10,15 @@ export function isWeekday(day: string): boolean {
 
 /** Newest backup format this version can read and the one it writes. */
 export const BACKUP_FORMAT_VERSION = 1
+
+/**
+ * The longest text each field can hold. Imports accept exactly these, and the
+ * editors stop typing at them, so every export can be imported again.
+ */
+export const MAX_LENGTH = {
+  recipient: 5_000,
+  students: 5_000,
+  instrument: 1_000,
+  emailWording: 200_000,
+  yourName: 200,
+} as const

@@ -6,8 +6,10 @@ import { Switch } from "../../components/ui/switch";
 import { backend, errorMessage } from "../../lib/backend";
 
 export function PerformanceGroup() {
+  // The saved choice (used from the next start), and what this window was
+  // started with, as Rust reports them: reopening Settings can't lose a pending restart.
   const [saved, setSaved] = useState<boolean | null>(null);
-  const [atStartup, setAtStartup] = useState<boolean | null>(null);
+  const [active, setActive] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [restarting, setRestarting] = useState(false);
@@ -16,7 +18,7 @@ export function PerformanceGroup() {
     backend.getPreferences().then(
       (p) => {
         setSaved(p.lowMemoryMode);
-        setAtStartup(p.lowMemoryMode);
+        setActive(p.lowMemoryModeActive);
       },
       (e) => setError(`The setting couldn't be read. ${errorMessage(e)}`),
     );
@@ -26,7 +28,9 @@ export function PerformanceGroup() {
     setError(null);
     setSaving(true);
     try {
-      setSaved((await backend.setLowMemoryMode(enabled)).lowMemoryMode);
+      const p = await backend.setLowMemoryMode(enabled);
+      setSaved(p.lowMemoryMode);
+      setActive(p.lowMemoryModeActive);
     } catch (e) {
       setError(`The change wasn't saved. ${errorMessage(e)}`);
     } finally {
@@ -45,8 +49,8 @@ export function PerformanceGroup() {
     }
   };
 
-  const needsRestart = saved !== null && atStartup !== null && saved !== atStartup;
-  const state = saved === null ? (error ? "Unavailable" : "Checking…") : saved ? "On" : "Off";
+  const needsRestart = saved !== null && active !== null && saved !== active;
+  const state = active === null ? (error ? "Unavailable" : "Checking…") : active ? "On" : "Off";
 
   return (
     <div className="srow srow--top">

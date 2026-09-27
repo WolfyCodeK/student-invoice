@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'no
 import { join } from 'node:path'
 import { repoRoot } from '../lib/repo.mjs'
 import {
-  REPO, VERSION_FILES, assetUrl, buildEnv, bumpVersion, capture, changelogSection, collectSignedMsi, compareSemver, die, findSignedMsi,
+  REPO, VERSION_FILES, assetUrl, buildEnv, bumpVersion, capture, changelogSection, checkMsiSignature, collectSignedMsi, compareSemver, die, findSignedMsi,
   isSemver, msiName, run, step, v101CompatError,
 } from './lib.mjs'
 import { UPDATER_ENDPOINT } from '../invariants.config.mjs'
@@ -79,6 +79,7 @@ if (cmd === 'prepare') {
   step('Build signed MSI')
   run('pnpm', ['tauri', 'build'], { cwd: join(root, 'app'), env })
   const msi = findSignedMsi(root, version)
+  checkMsiSignature(msi)
   const msiMiB = statSync(msi).size / 1024 / 1024
   if (msiMiB > INSTALLER_BUDGET_MIB) die(`MSI is ${msiMiB.toFixed(2)} MiB, over the ${INSTALLER_BUDGET_MIB} MiB budget (docs/performance.md)`)
   console.log(`MSI size ${msiMiB.toFixed(2)} MiB (budget ${INSTALLER_BUDGET_MIB} MiB)`)
@@ -112,7 +113,9 @@ if (cmd === 'rc') {
   const rcDir = join(outDir, rcTag)
   mkdirSync(rcDir, { recursive: true })
   writeFileSync(join(rcDir, LATEST), JSON.stringify(latest, null, 2) + '\n')
-  run('gh', ['release', 'create', rcTag, '--repo', REPO, '--prerelease', '--latest=false', '--target', capture('git', ['rev-parse', 'HEAD'], { cwd: root }),
+  // The "Release vX" commit isn't pushed until publish, so GitHub doesn't know
+  // it yet: tag the RC on main as GitHub has it. Only its assets are tested.
+  run('gh', ['release', 'create', rcTag, '--repo', REPO, '--prerelease', '--latest=false', '--target', 'main',
     '--title', `Student Invoice ${version} (release candidate ${rcNumber})`, '--notes', 'Release candidate for update testing. Not offered to installed apps.',
     join(outDir, MSI), join(outDir, SIG), join(rcDir, LATEST)])
   console.log(`\n✔ RC uploaded. Test latest.json: ${assetUrl(rcTag, LATEST)}`)
