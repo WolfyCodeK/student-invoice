@@ -141,11 +141,11 @@ export function TermsGroup() {
         })}
       </div>
       {problem && (
-        <p className="msg-bad" role="alert">
+        <p className="msg-bad st-terms-after" role="alert">
           {problem}
         </p>
       )}
-      <div className="sctl">
+      <div className="sctl st-terms-after">
         <button
           type="button"
           className="btn btn--primary"

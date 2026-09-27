@@ -354,6 +354,13 @@ details.adv[open] summary {
   max-width: 170px;
   font-variant-numeric: tabular-nums;
 }
+/* Room between the table's last rule and what follows it. */
+.st-terms-after {
+  margin-top: 18px;
+}
+.msg-bad.st-terms-after + .st-terms-after {
+  margin-top: 10px;
+}
 .st-terms .trow:last-child {
   border-bottom-color: var(--rule-strong);
 }

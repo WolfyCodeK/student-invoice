@@ -318,12 +318,12 @@ which the tour runs by itself) there are three steps, in this order:
    when "Choose how it looks" follows, **Show me around** when only the tour
    does, and **Got it** otherwise.
 2. **Choose how it looks** (`appearance-picker.tsx`) lets the teacher try
-   the colours, corners and light or dark on their own register. It is a
-   modal Radix dialog whose overlay is clear, not dimmed, and the panel is
-   docked bottom-right over the pupil's page, so the register stays in view
-   and changes as each choice is made. Under the title come the line "Try
-   each one and watch the register change. You can change these any time in
-   Settings.", the groups Colours, Corners and Light or dark (the same
+   the colours, corners and light or dark on their own register. It is the
+   standard centred dialog over the dimmed page, like What's new; the
+   register behind it changes as each choice is made. Under the title come
+   the line "Try each one and watch the register change behind this box. You
+   can change these any time in Settings.", the groups Colours, Corners and
+   Light or dark (the same
    choices as Settings → [Appearance](#appearance), saved the same way), and
    **Show me around**. Escape also keeps the choices and goes on to the
    tour; a click outside does nothing.
