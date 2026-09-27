@@ -32,6 +32,11 @@ the intended way to understand the codebase without re-reading all of it.
 5. **Commits belong to the owner.** Commit as the configured git user
    (WolfyCodeK) only. Never add `Co-Authored-By` or any other AI attribution
    to commit messages or pull request descriptions.
+6. **The repo is generic.** No user's name, brand, website or details in
+   code, comments, docs, tests, screenshots or commit messages. Anything
+   specific to one user (such as the email sign-off, "Your name") is a
+   setting stored in their own data, and a new install starts empty. Use
+   made-up names in tests and screenshots.
 
 ## Commands
 
