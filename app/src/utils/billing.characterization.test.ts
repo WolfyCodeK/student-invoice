@@ -1,7 +1,9 @@
 /**
  * Characterization tests: they pin the invoice maths EXACTLY as shipped in
  * v1.0.1 — including known issues recorded in docs/audits — so any change to
- * lesson counts, totals, dates or wording shows up as a snapshot diff.
+ * lesson counts, totals or dates shows up as a snapshot diff. The saved results
+ * read the figures through a neutral line of test wording (FIGURES); the
+ * standard email wording itself is pinned by the inline snapshot below.
  *
  * Billing rule (CLAUDE.md): do not update these snapshots without the owner's
  * written approval of the change (see docs/proposals/).
@@ -31,9 +33,8 @@ function template(overrides: Partial<InvoiceTemplate> = {}): InvoiceTemplate {
   }
 }
 
-function dateRangeLine(body: string): string {
-  return body.split('\n').find((l) => l.startsWith('Lessons: ')) ?? '<missing>'
-}
+/** A neutral line the figures and dates are read through (no particular email wording). */
+const FIGURES = '{{weeksCount}} {{lessonCountText}}, {{dateRange}}'
 
 describe('test environment', () => {
   it('runs in the UK time zone the app is used in', () => {
@@ -53,10 +54,8 @@ describe('v1.0.1 billing characterization', () => {
         lines.push(header)
         for (const day of WEEKDAYS) {
           for (const cost of [20, 12.5]) {
-            const inv = generateInvoice(template({ day, cost }), termData!)
-            lines.push(
-              `  ${day.padEnd(9)} £${cost.toFixed(2).padStart(5)} -> ${inv.lessonCount} x = £${inv.totalCost.toFixed(2)} | ${dateRangeLine(inv.body)}`,
-            )
+            const inv = generateInvoice(template({ day, cost }), termData!, FIGURES)
+            lines.push(`  ${day.padEnd(9)} £${cost.toFixed(2).padStart(5)} -> ${inv.lessonCount} x = £${inv.totalCost.toFixed(2)} | ${inv.body}`)
           }
         }
       }
@@ -92,11 +91,11 @@ describe('v1.0.1 billing characterization', () => {
     expect(inv.body).toMatchInlineSnapshot(`
       "Hi Alex Parent,
 
-      Please find below the invoice for Sam's bass guitar lessons 1st half autumn term 2026.
+      Please find below the invoice for Sam's bass guitar lessons, 1st half autumn term 2026.
 
       Lessons: 8, from Thursday 3rd September to and including Thursday 22nd October
-
-      8 x £22.50 = £180.00
+      Cost per lesson: £22.50
+      Total: £180.00
 
       Many thanks,
       Jo Teacher"

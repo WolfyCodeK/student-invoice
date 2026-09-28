@@ -11,6 +11,13 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+### Changed
+- **New standard email wording:** "Please find below the invoice for …",
+  then the lessons and dates, the cost per lesson and the total, each on its
+  own line. Lesson counts, dates and totals are exactly as before, and your
+  own wording, if you saved some, is kept. To keep using the previous
+  wording, paste it into Settings → Email wording.
+
 ## [1.1.0] - 2026-09-28
 <!-- latest-json-summary: Student Invoice 1.1.0: a new look, untick missed lessons, editable term dates and automatic backups -->
 

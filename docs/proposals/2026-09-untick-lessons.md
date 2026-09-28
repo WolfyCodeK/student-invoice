@@ -59,19 +59,23 @@ Priya (Amara and Tobi, guitar, Tuesday, £22.50). Lessons: Tue 1, 8, 15, 22,
 | none (today) | 8 | £180.00 | Tuesday 1st September to and including Tuesday 20th October |
 | Tue 1 Sep and Tue 20 Oct | 6 | £135.00 | Tuesday 8th September to and including Tuesday 13th October |
 
-Sarah's email with Mon 26 Oct unticked (only the figures differ from today):
+Sarah's email with Mon 26 Oct unticked (only the figures differ from today).
+This example is shown in the generic standard wording from v1.1.1
+([proposal](2026-09-generic-standard-wording.md)); when this proposal was
+approved it was written in the standard wording of the time, with the same
+figures and dates.
 
 ```
 Hi Sarah,
 
-Please find below the invoice for Oliver's piano lessons 1st half autumn term 2026.
+Please find below the invoice for Oliver's piano lessons, 1st half autumn term 2026.
 
 Lessons: 7, from Monday 7th September to and including Monday 19th October
-
-7 x £25.00 = £175.00
+Cost per lesson: £25.00
+Total: £175.00
 
 Many thanks,
-[the teacher's first name]
+[Your name]
 ```
 
 ## Things the main user will notice

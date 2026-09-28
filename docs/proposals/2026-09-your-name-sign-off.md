@@ -19,8 +19,8 @@ their PC, kept in backups, and moved between PCs with Export and Import.
 1. **A new setting, "Your name"**, in Settings under Email wording. It is
    empty on a new install and is used only to sign emails.
 2. **The built-in wording ends with Your name** instead of the hard-coded
-   name. Everything else in the email (greeting, figures, dates, "Thank you")
-   is unchanged.
+   name. Everything else in the email (greeting, figures, dates) is
+   unchanged.
 3. **A new placeholder, `{{yourName}}`**, is available for custom wording. The
    built-in wording that "Reset to default" restores uses it.
 4. **Custom wording is left alone.** A teacher who saved their own wording
@@ -37,13 +37,16 @@ their PC, kept in backups, and moved between PCs with Export and Import.
 
 | | Before | After |
 |---|---|---|
-| Sign-off | `Many thanks,` / *(hard-coded first name)* | `Many thanks,` / *(Your name)* |
+| Sign-off | *(closing line)* / *(hard-coded first name)* | *(closing line)* / *(Your name)* |
 | Your name empty | n/a | Copy, Save and Draft all ask for the name first |
 | Custom wording saved | Unchanged | Unchanged |
 
 Lesson counts, dates, costs, totals and the subject line do not change. The
 characterization snapshots change only in their last line, which now shows
 the test's made-up name.
+
+The wording itself was made generic later, in v1.1.1
+([proposal](2026-09-generic-standard-wording.md)).
 
 ## What users will notice
 

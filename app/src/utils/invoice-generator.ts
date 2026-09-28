@@ -62,7 +62,7 @@ export function lessonDates(template: Pick<InvoiceTemplate, 'day'>, termData: Te
 }
 
 /**
- * A price rounded to the penny, so "8 x £12.35 = £98.80" always adds up
+ * A price rounded to the penny, so 8 lessons at £12.35 always total £98.80
  * (docs/proposals/2026-09-rules-review-decisions.md). Rounds the decimal as
  * written, so 12.345 gives 12.35; an ordinary price comes back exactly as it was.
  */
@@ -120,15 +120,15 @@ export function generateInvoice(template: InvoiceTemplate, termData: TermData, c
       .replace(/{{isAre}}/g, weeksCount === 1 ? 'is' : 'are')
       .replace(/{{yourName}}/g, () => yourName)
   } else {
-    // Use default template
-    const lessonCountText = weeksCount === 1 ? 'lesson' : 'lessons'
+    // The standard wording: generic, the same text as getDefaultTemplateString()
+    // (docs/proposals/2026-09-generic-standard-wording.md).
     body = `Hi ${recipient},
 
-Please find below the invoice for ${students}'s ${template.instrument} lessons ${termInfo}.
+Please find below the invoice for ${students}'s ${template.instrument} lessons, ${termInfo}.
 
 Lessons: ${weeksCount}, from ${dateRange}
-
-${weeksCount} x £${cost.toFixed(2)} = £${totalCost.toFixed(2)}
+Cost per lesson: £${cost.toFixed(2)}
+Total: £${totalCost.toFixed(2)}
 
 Many thanks,
 ${yourName}`
@@ -146,11 +146,11 @@ ${yourName}`
 export function getDefaultTemplateString(): string {
   return `Hi {{recipient}},
 
-Please find below the invoice for {{students}}'s {{instrument}} lessons {{termInfo}}.
+Please find below the invoice for {{students}}'s {{instrument}} lessons, {{termInfo}}.
 
 Lessons: {{weeksCount}}, from {{dateRange}}
-
-{{weeksCount}} x £{{cost}} = £{{totalCost}}
+Cost per lesson: £{{cost}}
+Total: £{{totalCost}}
 
 Many thanks,
 {{yourName}}`

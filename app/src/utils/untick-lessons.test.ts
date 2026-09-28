@@ -16,8 +16,11 @@ function template(overrides: Partial<InvoiceTemplate>): InvoiceTemplate {
   }
 }
 
-const sarah = (skipped?: string[]) => generateInvoice(template({ skippedLessonDates: skipped }), autumn1, undefined, 'Jo Teacher')
-const rangeLine = (body: string) => body.split('\n').find((l) => l.startsWith('Lessons: ')) ?? ''
+/** A neutral line the figures and dates are read through (no particular email wording). */
+const FIGURES = '{{weeksCount}} {{lessonCountText}}, {{dateRange}} | {{weeksCount}} x £{{cost}} = £{{totalCost}}'
+const sarah = (skipped?: string[]) => generateInvoice(template({ skippedLessonDates: skipped }), autumn1, FIGURES, 'Jo Teacher')
+const sarahEmail = (skipped?: string[]) => generateInvoice(template({ skippedLessonDates: skipped }), autumn1, undefined, 'Jo Teacher')
+const rangeLine = (body: string) => body.split(' | ')[0]
 
 describe('lesson dates', () => {
   it('are the dates the v1.0.1 date range is built from', () => {
@@ -35,9 +38,7 @@ describe('unticked lessons (proposal worked examples)', () => {
     expect(sarah()).toEqual(sarah([]))
     expect(sarah().lessonCount).toBe(8)
     expect(sarah().totalCost).toBe(200)
-    expect(rangeLine(sarah().body)).toBe(
-      'Lessons: 8, from Monday 7th September to and including Monday 26th October',
-    )
+    expect(rangeLine(sarah().body)).toBe('8 lessons, Monday 7th September to and including Monday 26th October')
   })
 
   it.each([
@@ -49,7 +50,7 @@ describe('unticked lessons (proposal worked examples)', () => {
     const inv = sarah(skipped)
     expect(inv.lessonCount).toBe(lessons)
     expect(inv.totalCost).toBe(total)
-    expect(rangeLine(inv.body)).toBe(`Lessons: ${lessons}, from ${range}`)
+    expect(rangeLine(inv.body)).toBe(`${lessons} lessons, ${range}`)
     expect(inv.body).toContain(`${lessons} x £25.00 = £${total.toFixed(2)}`)
   })
 
@@ -57,34 +58,31 @@ describe('unticked lessons (proposal worked examples)', () => {
     const inv = generateInvoice(
       template({ recipient: 'Priya', students: 'Amara and Tobi', instrument: 'guitar', day: 'Tuesday', cost: 22.5, skippedLessonDates: ['2026-09-01', '2026-10-20'] }),
       autumn1,
+      FIGURES,
     )
     expect(inv.lessonCount).toBe(6)
     expect(inv.totalCost).toBe(135)
-    expect(rangeLine(inv.body)).toBe(
-      'Lessons: 6, from Tuesday 8th September to and including Tuesday 13th October',
-    )
+    expect(rangeLine(inv.body)).toBe('6 lessons, Tuesday 8th September to and including Tuesday 13th October')
   })
 
   it("Sarah's full email with Mon 26 Oct unticked: only the figures change", () => {
-    expect(sarah(['2026-10-26']).body).toBe(`Hi Sarah,
+    expect(sarahEmail(['2026-10-26']).body).toBe(`Hi Sarah,
 
-Please find below the invoice for Oliver's piano lessons 1st half autumn term 2026.
+Please find below the invoice for Oliver's piano lessons, 1st half autumn term 2026.
 
 Lessons: 7, from Monday 7th September to and including Monday 19th October
-
-7 x £25.00 = £175.00
+Cost per lesson: £25.00
+Total: £175.00
 
 Many thanks,
 Jo Teacher`)
   })
 
-  it('one lesson left: the existing singular wording, range unchanged in form', () => {
+  it('one lesson left: singular wording, range unchanged in form', () => {
     const all = lessonDates(template({}), autumn1).map(lessonDateKey)
     const inv = sarah(all.slice(1))
     expect(inv.lessonCount).toBe(1)
-    expect(rangeLine(inv.body)).toBe(
-      'Lessons: 1, from Monday 7th September to and including Monday 7th September',
-    )
+    expect(rangeLine(inv.body)).toBe('1 lesson, Monday 7th September to and including Monday 7th September')
     expect(inv.body).toContain('1 x £25.00 = £25.00')
   })
 

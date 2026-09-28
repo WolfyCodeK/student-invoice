@@ -3,8 +3,10 @@
  * - docs/proposals/2026-09-editable-term-dates.md (edited term dates);
  * - docs/proposals/2026-09-rules-review-decisions.md (part of a penny, stray
  *   spaces, "lessons" wording).
- * With no edits and ordinary data, invoices are exactly as before: that part is
- * pinned by billing.characterization.test.ts.
+ * Figures and dates are read through a neutral line of test wording (FIGURES),
+ * so the tests don't depend on the standard wording. With no edits and ordinary
+ * data, invoices are exactly as before: that part is pinned by
+ * billing.characterization.test.ts.
  */
 import { describe, expect, it } from 'vitest'
 import { calculateTermData, getTermsForAcademicYear } from './terms'
@@ -32,28 +34,30 @@ const edit = (start: string, end: string): TermDateOverrides => {
   usual[0] = { start, end }
   return { '2026': usual }
 }
-const summary = (inv: ReturnType<typeof generateInvoice>) => [inv.lessonCount, inv.totalCost, inv.body.split('\n').find((l) => l.startsWith('Lessons: '))]
+/** A neutral line the figures and dates are read through (no particular email wording). */
+const FIGURES = '{{weeksCount}} {{lessonCountText}}, {{dateRange}}'
+const summary = (inv: ReturnType<typeof generateInvoice>) => [inv.lessonCount, inv.totalCost, inv.body]
 
 describe('edited term dates (proposal worked examples)', () => {
   it("today's dates give today's invoices", () => {
-    expect(summary(generateInvoice(family(), autumn1(), undefined, 'N'))).toEqual([
-      8, 200, 'Lessons: 8, from Monday 7th September to and including Monday 26th October',
+    expect(summary(generateInvoice(family(), autumn1(), FIGURES, 'N'))).toEqual([
+      8, 200, '8 lessons, Monday 7th September to and including Monday 26th October',
     ])
   })
 
   it('3 Sep to 23 Oct changes nothing for Monday or Friday', () => {
     const term = autumn1(edit('2026-09-03', '2026-10-23'))
     expect(term.term.startDate).toEqual(new Date(2026, 8, 3))
-    expect(summary(generateInvoice(family(), term, undefined, 'N'))[0]).toBe(8)
-    expect(summary(generateInvoice(family({ day: 'Friday', cost: 26 }), term, undefined, 'N')).slice(0, 2)).toEqual([8, 208])
+    expect(summary(generateInvoice(family(), term, FIGURES, 'N'))[0]).toBe(8)
+    expect(summary(generateInvoice(family({ day: 'Friday', cost: 26 }), term, FIGURES, 'N')).slice(0, 2)).toEqual([8, 208])
   })
 
   it('3 Sep to 16 Oct (a two-week break) is one lesson fewer', () => {
     const term = autumn1(edit('2026-09-03', '2026-10-16'))
-    expect(summary(generateInvoice(family(), term, undefined, 'N'))).toEqual([
-      7, 175, 'Lessons: 7, from Monday 7th September to and including Monday 19th October',
+    expect(summary(generateInvoice(family(), term, FIGURES, 'N'))).toEqual([
+      7, 175, '7 lessons, Monday 7th September to and including Monday 19th October',
     ])
-    expect(summary(generateInvoice(family({ day: 'Friday', cost: 26 }), term, undefined, 'N')).slice(0, 2)).toEqual([7, 182])
+    expect(summary(generateInvoice(family({ day: 'Friday', cost: 26 }), term, FIGURES, 'N')).slice(0, 2)).toEqual([7, 182])
   })
 
   it('only the edited school year changes, and unusable edits fall back to the usual dates', () => {
@@ -80,8 +84,9 @@ describe('edited term dates (proposal worked examples)', () => {
 
 describe('part of a penny', () => {
   it('rounds a price to the penny first, so the sum adds up', () => {
-    const inv = generateInvoice(family({ cost: 12.345 }), autumn1(), undefined, 'N')
-    expect(inv.body).toContain('8 x £12.35 = £98.80')
+    const inv = generateInvoice(family({ cost: 12.345 }), autumn1(), '{{weeksCount}} x £{{cost}} = £{{totalCost}}', 'N')
+    expect(inv.body).toBe('8 x £12.35 = £98.80')
+    expect(generateInvoice(family({ cost: 12.345 }), autumn1(), undefined, 'N').body).toContain('Cost per lesson: £12.35\nTotal: £98.80')
     expect(inv.totalCost).toBeCloseTo(98.8, 10)
     expect(roundToPenny(19.999)).toBe(20)
   })
@@ -106,8 +111,10 @@ describe('stray spaces around names', () => {
 
 describe('"lessons" everywhere', () => {
   it('says lesson or lessons, never sessions', () => {
-    const one = generateInvoice(family({ skippedLessonDates: ['2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26'] }), autumn1(), undefined, 'N')
-    expect(one.body).toContain('Lessons: 1, from')
+    const oneLeft = family({ skippedLessonDates: ['2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26'] })
+    expect(generateInvoice(oneLeft, autumn1(), '{{weeksCount}} {{lessonCountText}}', 'N').body).toBe('1 lesson')
     expect(generateInvoice(family(), autumn1(), '{{weeksCount}} {{lessonCountText}}', 'N').body).toBe('8 lessons')
+    expect(generateInvoice(oneLeft, autumn1(), undefined, 'N').body).toContain('Lessons: 1, from')
+    expect(generateInvoice(family(), autumn1(), undefined, 'N').body).not.toMatch(/session/i)
   })
 })

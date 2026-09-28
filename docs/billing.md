@@ -17,6 +17,9 @@ logic plus these approved changes in v1.1.0:
   instead of "sessions", and noticing a new half-term while the app is open
   ([proposal](proposals/2026-09-rules-review-decisions.md)).
 
+In v1.1.1 the standard email wording became generic; only the wording
+changed, not the figures ([proposal](proposals/2026-09-generic-standard-wording.md)).
+
 Known problems are listed at the end; they are not fixed until a proposal is
 approved.
 
@@ -31,7 +34,7 @@ approved.
 | When the current term is computed | at start-up (with the saved term dates), whenever the term dates change, and again just after midnight and whenever the window comes back into view (`refreshCurrentTerm` in `app/src/stores/app-store.ts`) |
 | Which invoice a screen or draft uses | `invoiceFor(template, term, wording)` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term with the email wording settings (the custom body and Your name), or none outside term time or for an invalid lesson day |
 | Whether an email can go out yet | `needsYourName()` in `app/src/stores/app-store.ts`: true while the wording uses `{{yourName}}` and no name is set ([UI](ui.md#your-name)) |
-| Locked-in expected output | `app/src/utils/billing.characterization.test.ts` and its snapshots in `app/src/utils/__snapshots__/`; the v1.1.0 decisions in `app/src/utils/billing-decisions.test.ts` |
+| Locked-in expected output | `app/src/utils/billing.characterization.test.ts` and its snapshots in `app/src/utils/__snapshots__/` (figures and dates read through a neutral test line, `{{weeksCount}} {{lessonCountText}}, {{dateRange}}`, so they don't depend on the wording); the v1.1.0 decisions in `app/src/utils/billing-decisions.test.ts` |
 
 ## Term dates
 
@@ -109,12 +112,28 @@ Approved in [untick lessons](proposals/2026-09-untick-lessons.md).
   e.g. `Invoice for Bass guitar Lessons 1st half autumn term 2026`.
 - **Names** have spaces at either end removed (when a family is saved, and
   again when the email is written, so older families are fixed too).
-- **Body (default):** greeting to the recipient, the students' names and
-  instrument, `Lessons: N, from <first lesson> to and including <last lesson>`
-  ("Lessons: 1" for one; v1.0.1 said "sessions"),
-  the calculation line `N x £cost = £total`, and the sign-off `Many thanks,` /
-  `{{yourName}}`. The exact text is pinned in the characterization test,
-  which signs with a made-up name.
+- **Body (standard wording, v1.1.1):** the same text as
+  `getDefaultTemplateString()`, generic and not any one teacher's
+  ([proposal](proposals/2026-09-generic-standard-wording.md)):
+
+  ```
+  Hi {{recipient}},
+
+  Please find below the invoice for {{students}}'s {{instrument}} lessons, {{termInfo}}.
+
+  Lessons: {{weeksCount}}, from {{dateRange}}
+  Cost per lesson: £{{cost}}
+  Total: £{{totalCost}}
+
+  Many thanks,
+  {{yourName}}
+  ```
+
+  `{{dateRange}}` reads `<first lesson> to and including <last lesson>`, e.g.
+  `Thursday 3rd September to and including Thursday 22nd October`. The exact
+  text is pinned by an inline snapshot in the characterization test, which
+  signs with a made-up name. Up to v1.1.0 the standard wording was one
+  teacher's own; that teacher now keeps it as their custom wording.
 - **Your name (v1.1.0):** the sign-off used to be a hard-coded first name.
   It is now the "Your name" setting, trimmed, passed as the last argument of
   `generateInvoice(template, term, customBody?, yourName = '')`
