@@ -2,10 +2,10 @@
 // (docs/ui.md). Pure: no React, no store. use-onboarding.ts wires it up.
 //
 // Rules for the wording: only changes a user would notice, never
-// behind-the-scenes work, three to five very short lines per version.
+// behind-the-scenes work, at most five very short lines per version.
 
 /** Lucide icon names used by the news lines (whats-new-dialog.tsx draws them). */
-export type NewsIcon = "layout-list" | "calendar-x" | "calendar-days" | "hard-drive-download" | "mail-check";
+export type NewsIcon = "layout-list" | "calendar-x" | "calendar-days" | "hard-drive-download" | "mail-check" | "mail" | "clipboard-paste";
 
 export interface NewsItem {
   icon: NewsIcon;
@@ -26,6 +26,13 @@ export const WHATS_NEW: WhatsNewEntry[] = [
       { icon: "calendar-days", text: "Set your school's term dates in Settings if they differ." },
       { icon: "hard-drive-download", text: "Your data is backed up every day, and can move to another PC." },
       { icon: "mail-check", text: "Gmail stays connected, and connecting is simpler." },
+    ],
+  },
+  {
+    version: "1.1.1",
+    items: [
+      { icon: "mail", text: "A new standard email wording. The figures are the same." },
+      { icon: "clipboard-paste", text: "To keep your previous wording, paste it in Settings → Email wording." },
     ],
   },
 ];

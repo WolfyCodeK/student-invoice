@@ -313,7 +313,10 @@ which the tour runs by itself) there are three steps, in this order:
 1. **What's new** shows once, the first time the app opens after an update.
    It has only changes a user would notice, in a few short lines
    (`whats-new.ts`); for v1.1.0 these include "Set your school's term dates
-   in Settings if they differ." While Your name is missing, it also asks for
+   in Settings if they differ.", and v1.1.1 says the standard email wording
+   is new and that a previous wording can be pasted in Settings → Email
+   wording. Updating across several versions shows every version's lines,
+   newest first, in one list. While Your name is missing, it also asks for
    it ([Your name](#your-name)). Its button says what comes next: **Next**
    when "Choose how it looks" follows, **Show me around** when only the tour
    does, and **Got it** otherwise.

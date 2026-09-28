@@ -25,13 +25,21 @@ describe("compareVersions", () => {
 });
 
 describe("WHATS_NEW", () => {
-  it("has the 1.1.0 letter: five short lines, each with an icon", () => {
-    const v110 = WHATS_NEW.find((e) => e.version === "1.1.0");
-    expect(v110?.items).toHaveLength(5);
-    for (const item of v110?.items ?? []) {
-      expect(item.icon).toBeTruthy();
-      expect(item.text.length).toBeLessThanOrEqual(70);
+  it("has one to five short lines per version, each with an icon", () => {
+    expect(WHATS_NEW.find((e) => e.version === "1.1.0")?.items).toHaveLength(5);
+    for (const entry of WHATS_NEW) {
+      expect(entry.items.length).toBeGreaterThanOrEqual(1);
+      expect(entry.items.length).toBeLessThanOrEqual(5);
+      for (const item of entry.items) {
+        expect(item.icon).toBeTruthy();
+        expect(item.text.length).toBeLessThanOrEqual(70);
+      }
     }
+  });
+
+  it("points 1.1.1 readers to where their previous wording goes", () => {
+    const v111 = WHATS_NEW.find((e) => e.version === "1.1.1");
+    expect(v111?.items.map((i) => i.text).join(" ")).toContain("Settings → Email wording");
   });
 
   it("lists each version once, and the tour's version has an entry", () => {

@@ -11,6 +11,9 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-28
+<!-- latest-json-summary: Student Invoice 1.1.1: a new standard email wording, with the same figures -->
+
 ### Changed
 - **New standard email wording:** "Please find below the invoice for …",
   then the lessons and dates, the cost per lesson and the total, each on its
