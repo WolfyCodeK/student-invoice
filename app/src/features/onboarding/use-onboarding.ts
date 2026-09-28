@@ -29,6 +29,8 @@ export interface Onboarding {
   /** Shows the tour now (stable identity). */
   startTour: () => void;
   closeTour: () => void;
+  /** Decided, and nothing showing or still to come (other notices can wait for this). */
+  finished: boolean;
 }
 
 export function useOnboarding({ ready, currentVersion, showRegister }: UseOnboardingOptions): Onboarding {
@@ -96,5 +98,6 @@ export function useOnboarding({ ready, currentVersion, showRegister }: UseOnboar
     tourOpen: flow.showing === "tour",
     startTour,
     closeTour,
+    finished,
   };
 }

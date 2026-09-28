@@ -622,6 +622,13 @@ textarea.field {
   grid-column: 1;
   color: var(--ink);
 }
+.toast-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
 .toast-close {
   grid-column: 2;
   grid-row: 1 / span 2;

@@ -49,4 +49,10 @@ export const ToastClose = React.forwardRef<
 ));
 ToastClose.displayName = "ToastClose";
 
+/** A button that closes the toast, styled by its child (asChild). */
+export const ToastDismiss = ToastPrimitives.Close;
+
+/** The toast's action; `altText` says how to do the same without the toast. */
+export const ToastAction = ToastPrimitives.Action;
+
 export type ToastProps = ToastRootProps;

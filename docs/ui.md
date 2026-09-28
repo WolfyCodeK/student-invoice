@@ -58,10 +58,13 @@ not as Windows chrome.
   below carries the full heading.
 - **Right:**
   - Help (starts the tour);
-  - Check for updates (a refresh arrow; it becomes an "Update ready" pill
-    when one is available). An update the release marks as important opens
-    the update dialog at every start, with "This is an important update";
-    "Not now" still closes it ([architecture](architecture.md#updates));
+  - Check for updates (a refresh arrow). When an update is ready, the same
+    button gets a small dot (`.tb-dot`, colour `--cover-dot`), its tooltip
+    says "Version x.y.z is ready to install", and clicking it opens the
+    update dialog ([architecture](architecture.md#updates)). An update the
+    release marks as important opens the update dialog at every start
+    instead, with "This is an important update"; "Not now" still closes it.
+    Until v1.1.0 the button became a wide "Update ready" pill;
   - Feedback;
   - Settings;
   - then a divider and thin minimise, maximise/restore and close buttons.
@@ -393,6 +396,17 @@ renders it with the styled Radix toast in `components/ui/toast.tsx`. Toasts
 close after 5 seconds, which is Radix Toast's default (bug audit B34),
 unless the toast sets its own `duration` in milliseconds.
 
+- **"A new version is ready":** shown once per start when the start-up
+  check finds an ordinary update, after What's new, the look picker and the
+  tour have closed (`App.tsx`, `useUpdates().toAnnounce`). It says "Version
+  x.y.z can be installed now, or later from the Updates button." and has
+  **Not now** and **Install update** instead of the close cross; Install
+  update opens the update dialog already installing. It closes by itself
+  after 20 seconds (paused while pointed at), and the dot on the Updates
+  button stays. It is skipped if another toast is on screen, and never
+  shown for an important update, which opens the dialog instead.
+- **Toasts with a button:** `toast({ action: { label, onClick } })` shows
+  **Not now** and the action, both closing the toast.
 - **"Your saved data couldn't be read":** shown once at start-up if the
   stored data had to be set aside ([data model](data-model.md#loading-and-upgrading-stored-data)).
   It uses `duration: Infinity`, so it stays until closed. It says the app

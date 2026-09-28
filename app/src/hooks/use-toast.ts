@@ -11,6 +11,8 @@ export interface ToastOptions {
   variant?: ToastProps["variant"];
   /** How long it shows, in milliseconds (5 seconds if not given; Infinity until closed). */
   duration?: number;
+  /** A button that does something (the toast closes too), shown with "Not now" instead of the close cross. */
+  action?: { label: string; onClick: () => void };
 }
 
 export interface ShownToast extends ToastOptions {
@@ -29,6 +31,11 @@ function show(next: ShownToast) {
 
 export function toast(options: ToastOptions): void {
   show({ ...options, id: ++lastId, open: true });
+}
+
+/** A toast is on screen now. */
+export function toastShowing(): boolean {
+  return current?.open ?? false;
 }
 
 /** Marks the toast closed (it stays until the next one, so Radix can animate it out). */

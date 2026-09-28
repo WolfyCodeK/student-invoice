@@ -188,9 +188,13 @@ These live in `app/src-tauri/src/updates.rs`.
 
 1. **On start-up** the UI calls `check_for_updates`. This asks GitHub for
    `latest.json`, with a 60-second timeout, and remembers the update it found.
-   If a newer version exists, the title bar shows "Update ready".
-2. **When the user clicks it**, the dialog (`features/updates/update-dialog.tsx`)
-   shows the version and notes.
+   If a newer version exists, the Updates button in the title bar gets a
+   dot, and once What's new and the tour are out of the way a notice in the
+   bottom corner says so, once ([UI](ui.md#toasts)). Nothing opens by itself
+   unless the update is marked important.
+2. **When the user clicks the Updates button** (or Install update on the
+   notice), the dialog (`features/updates/update-dialog.tsx`) shows the
+   version and notes; from the notice it starts installing straight away.
 3. **"Install update"** calls `install_update`, which installs exactly the
    update that was shown:
    - it downloads the MSI and sends `update://progress` events, which the

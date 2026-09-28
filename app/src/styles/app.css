@@ -72,6 +72,7 @@
   text-overflow: ellipsis;
 }
 .tb-btn {
+  position: relative;
   height: 32px;
   min-width: 32px;
   display: inline-flex;
@@ -105,13 +106,17 @@
   outline: 2px solid var(--focus-on-cover);
   outline-offset: -2px;
 }
-.tb-btn--pill {
-  padding: 0 12px 0 10px;
-  background: var(--band-btn);
-  color: var(--band-btn-ink);
-}
-.tb-btn--pill:hover:not(:disabled) {
-  background: var(--band-btn-hover);
+/* "An update is ready" on the Updates button. */
+.tb-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cover-dot);
+  box-shadow: 0 0 0 2px var(--cover);
+  pointer-events: none;
 }
 .tb-actions {
   display: flex;

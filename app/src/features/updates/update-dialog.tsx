@@ -1,6 +1,6 @@
 // "An update is ready": install with download progress (docs/release.md).
 // Can't be closed while installing; the installer then restarts the app.
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { Download, Loader2 } from "lucide-react";
 import { useAppStore } from "../../stores/app-store";
@@ -12,10 +12,12 @@ interface Props {
   /** The update found. The dialog is only opened when one is available. */
   info: UpdateInfo | null;
   open: boolean;
+  /** Start installing as soon as it opens ("Install update" on the start-up notice). */
+  installNow?: boolean;
   onClose: () => void;
 }
 
-export function UpdateDialog({ info, open, onClose }: Props) {
+export function UpdateDialog({ info, open, installNow = false, onClose }: Props) {
   const installUpdate = useAppStore((s) => s.installUpdate);
   const [installing, setInstalling] = useState(false);
   const [progress, setProgress] = useState<UpdateProgress | null>(null);
@@ -26,7 +28,7 @@ export function UpdateDialog({ info, open, onClose }: Props) {
     return () => void unlisten.then((f) => f());
   }, []);
 
-  const onInstall = async () => {
+  const onInstall = useCallback(async () => {
     setInstalling(true);
     setProgress(null);
     try {
@@ -37,7 +39,16 @@ export function UpdateDialog({ info, open, onClose }: Props) {
       setInstalling(false);
       onClose();
     }
-  };
+  }, [installUpdate, onClose]);
+
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (!open) startedRef.current = false;
+    else if (installNow && !startedRef.current) {
+      startedRef.current = true;
+      void onInstall();
+    }
+  }, [open, installNow, onInstall]);
 
   const percent = progress?.total ? Math.round((progress.downloaded / progress.total) * 100) : null;
   return (

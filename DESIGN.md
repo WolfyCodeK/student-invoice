@@ -6,6 +6,7 @@ colors:
   cover-ink: "#ffffff"
   cover-muted: "#c9d6f2"
   cover-ok: "#8be0ae"
+  cover-dot: "#ffb547"
   primary: "#1d3f8a"
   primary-ink: "#ffffff"
   primary-hover: "#17336f"
@@ -394,7 +395,7 @@ Plain and confident: 600 weight, an icon on the left, never uppercase.
 - **Switch and segmented control:** the switch is a 42×24px pill that fills with primary when on. The segmented control is a 3px-padded field-line tray whose chosen segment is filled with primary.
 
 ### Navigation
-- **Title bar:** 40px high on the cover colour. The app name and icon sit on the left, the current place with an 18px muted icon in the centre, and icon buttons (the tour, updates, feedback, Settings) on the right. Each has a data-tip tooltip. When an update is waiting, the updates button becomes an "Update ready" pill in the band button colours. Windows 11 caption buttons are 46px wide, and close turns Windows red (#c42b1c) on hover.
+- **Title bar:** 40px high on the cover colour. The app name and icon sit on the left, the current place with an 18px muted icon in the centre, and icon buttons (the tour, updates, feedback, Settings) on the right. Each has a data-tip tooltip. When an update is waiting, the updates button keeps its icon and gets a 9px dot at its top right in `--cover-dot` (a warm amber, ringed in the cover colour), and a toast with Not now and Install update says so once at start-up. Windows 11 caption buttons are 46px wide, and close turns Windows red (#c42b1c) on hover.
 - **Settings rail:** on the Ground colour with 40px items, 18px head-ink icons and 600-weight labels. The current item takes the selection wash with a 1px inset sel-line outline. Below 860px it becomes a 64px icon-only rail with side tooltips.
 
 ### The Register Row (signature)

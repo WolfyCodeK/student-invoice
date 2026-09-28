@@ -20,6 +20,10 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   own line. Lesson counts, dates and totals are exactly as before, and your
   own wording, if you saved some, is kept. To keep using the previous
   wording, paste it into Settings → Email wording.
+- **When an update is ready**, the Updates button in the title bar gets a
+  small dot instead of turning into a wide "Update ready" button, and a
+  notice in the bottom corner says so when the app starts. Install it from
+  the notice, or later from the Updates button; nothing is forced.
 
 ## [1.1.0] - 2026-09-28
 <!-- latest-json-summary: Student Invoice 1.1.0: a new look, untick missed lessons, editable term dates and automatic backups -->

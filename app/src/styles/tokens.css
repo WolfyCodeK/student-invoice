@@ -39,6 +39,7 @@
   --cover-press: rgba(255, 255, 255, 0.2);
   --cover-ghost: rgba(255, 255, 255, 0.46);
   --cover-ok: #8be0ae;
+  --cover-dot: #ffb547;
   --cover-off: rgba(255, 255, 255, 0.12);
   --cover-off-ink: rgba(255, 255, 255, 0.66);
   --band-btn: #ffffff;
@@ -110,6 +111,7 @@
   --cover-press: rgba(255, 255, 255, 0.18);
   --cover-ghost: rgba(255, 255, 255, 0.42);
   --cover-ok: #8be0ae;
+  --cover-dot: #ffc062;
   --cover-off: rgba(255, 255, 255, 0.1);
   --cover-off-ink: rgba(255, 255, 255, 0.62);
   --band-btn: #dce6fa;
@@ -180,6 +182,7 @@
   --cover-press: rgba(255, 255, 255, 0.2);
   --cover-ghost: rgba(255, 255, 255, 0.44);
   --cover-ok: #9fe0b8;
+  --cover-dot: #f0b25c;
   --cover-off: rgba(255, 255, 255, 0.12);
   --cover-off-ink: rgba(255, 255, 255, 0.66);
   --band-btn: #c98a34;
@@ -232,6 +235,7 @@
   --page: #16212c;
   --ground: #0f1720;
   --cover: #223a56;
+  --cover-dot: #f0b25c;
   --cover-muted: #b9c9da;
   --cover-line: rgba(255, 255, 255, 0.12);
   --cover-hover: rgba(255, 255, 255, 0.1);

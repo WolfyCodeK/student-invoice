@@ -7,7 +7,7 @@ import { Toaster } from "./components/toaster";
 import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "./components/ui/dialog";
 import { ensureDailyBackup, migrateStoredData, takeStartupDataProblem } from "./stores/app-store";
 import { errorMessage, getAppVersion } from "./lib/backend";
-import { toast } from "./hooks/use-toast";
+import { toast, toastShowing } from "./hooks/use-toast";
 import { AppActionsContext, type AppActions, type View } from "./features/app-context";
 import { RegisterView } from "./features/register/register-view";
 import { GmailConnectDialog } from "./features/gmail/connect-dialog";
@@ -28,13 +28,16 @@ const WhatsNewDialog = lazy(() => loadWhatsNew().then((m) => ({ default: m.Whats
 const Tour = lazy(() => loadTour().then((m) => ({ default: m.Tour })));
 const AppearancePicker = lazy(() => loadAppearancePicker().then((m) => ({ default: m.AppearancePicker })));
 
+/** How long the "A new version is ready" notice stays (paused while pointed at). */
+const UPDATE_NOTICE_MS = 20_000;
+
 export default function App() {
   const [view, setView] = useState<View>({ name: "register" });
   const [appVersion, setAppVersion] = useState("");
   const [dataReady, setDataReady] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  // Checked quietly at start; the title bar then shows "Update ready".
-  const { info: update, checking, dialogOpen: updateOpen, closeDialog: closeUpdate, check: checkForUpdates } = useUpdates();
+  // Checked quietly at start; the Updates button then shows a dot, and a notice says so once.
+  const { info: update, checking, check: checkForUpdates, dialogOpen: updateOpen, installing, closeDialog: closeUpdate, install, toAnnounce, announced } = useUpdates();
   // Screens with unsaved changes (the family editor, the email wording) register a check here.
   const leaveGuards = useRef(new Set<() => boolean>());
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
@@ -94,6 +97,21 @@ export default function App() {
     showRegister: () => setView({ name: "register" }),
   });
 
+  // An update found at start-up: a notice in the bottom corner, once What's new
+  // and the tour are out of the way. It closes by itself; the dot stays
+  // (docs/ui.md "Title bar"). Skipped if another notice is showing.
+  useEffect(() => {
+    if (!toAnnounce || !onboarding.finished) return;
+    announced();
+    if (toastShowing()) return;
+    toast({
+      title: "A new version is ready",
+      description: `Version ${toAnnounce.version ?? ""} can be installed now, or later from the Updates button.`,
+      duration: UPDATE_NOTICE_MS,
+      action: { label: "Install update", onClick: install },
+    });
+  }, [toAnnounce, onboarding.finished, announced, install]);
+
   const registerLeaveGuard = useCallback((hasUnsavedChanges: () => boolean) => {
     const guards = leaveGuards.current;
     guards.add(hasUnsavedChanges);
@@ -151,7 +169,7 @@ export default function App() {
       </div>
 
       <GmailConnectDialog />
-      <UpdateDialog info={update} open={updateOpen} onClose={closeUpdate} />
+      <UpdateDialog info={update} open={updateOpen} installNow={installing} onClose={closeUpdate} />
       <Dialog open={pendingLeave !== null} onOpenChange={(open) => !open && setPendingLeave(null)}>
         <DialogContent>
           <DialogTitle>Discard your changes?</DialogTitle>

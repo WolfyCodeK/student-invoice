@@ -4,7 +4,7 @@
 // close. Empty areas drag the window; double-click maximises.
 import { memo, useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ArrowLeft, CircleHelp, Download, MessageSquareText, NotebookText, PencilLine, RefreshCw, Settings, UserPlus } from "lucide-react";
+import { ArrowLeft, CircleHelp, MessageSquareText, NotebookText, PencilLine, RefreshCw, Settings, UserPlus } from "lucide-react";
 import appIcon from "../assets/app-icon.svg";
 import { useAppActions } from "../features/app-context";
 import { useAppStore } from "../stores/app-store";
@@ -87,16 +87,18 @@ export const TitleBar = memo(function TitleBar() {
           <button type="button" className="tb-btn" onClick={startTour} data-tip="Show the tour" aria-label="Show the tour">
             <CircleHelp />
           </button>
-          {updates.available ? (
-            <button type="button" className="tb-btn tb-btn--pill" onClick={checkForUpdates} data-tip={`Version ${updates.version ?? ""} is ready to install`}>
-              <Download />
-              Update ready
-            </button>
-          ) : (
-            <button type="button" className="tb-btn" onClick={checkForUpdates} disabled={updates.checking} data-tip="Check for updates" aria-label="Check for updates">
-              <RefreshCw className={updates.checking ? "spin" : undefined} />
-            </button>
-          )}
+          {/* A dot on the same button when an update is ready (docs/ui.md "Title bar"). */}
+          <button
+            type="button"
+            className="tb-btn"
+            onClick={checkForUpdates}
+            disabled={updates.checking}
+            data-tip={updates.available ? `Version ${updates.version ?? ""} is ready to install` : "Check for updates"}
+            aria-label={updates.available ? `Update ready: version ${updates.version ?? ""}` : "Check for updates"}
+          >
+            <RefreshCw className={updates.checking ? "spin" : undefined} />
+            {updates.available && <span className="tb-dot" aria-hidden="true" />}
+          </button>
           <button type="button" className="tb-btn" onClick={openFeedback} data-tip="Send feedback" aria-label="Send feedback">
             <MessageSquareText />
           </button>
