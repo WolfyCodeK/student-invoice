@@ -177,6 +177,12 @@ each `latest.json` only carries what its own section says.
 ## If something goes wrong after publishing
 
 - `gh release edit v<previous> --latest` makes the previous release *latest*
-  again, so no more installs pick up the bad version.
+  again, so no more installs pick up the bad version. This needs the previous
+  release's three assets. v1.0.0, v1.0.1 and v1.1.0 no longer have theirs
+  ([compatibility](compatibility.md#things-that-would-break-older-installs-dont)):
+  re-upload them first from the owner's private copies with
+  `gh release upload`.
 - Fix forward with a higher version number; the updater never downgrades.
-- Never delete old releases or their assets.
+- Never delete old releases, or the latest release's assets. Older releases'
+  assets can go if there's a reason, since updates never use them, but
+  keep private copies.

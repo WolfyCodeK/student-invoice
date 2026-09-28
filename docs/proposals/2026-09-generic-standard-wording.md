@@ -76,4 +76,11 @@ snapshot is unchanged.
 
 Approved by the owner in chat on 2026-09-28, with three choices: use the
 wording above, the main user pastes their own wording once after updating,
-and git history is left as it is.
+and git history is left as it is. Released in v1.1.1 the same day.
+
+Later that day the owner chose to remove the old wording from the history
+as well: the git history was rewritten (the old wording's lines replaced by
+generic ones in every commit, and the old README screenshots removed) and
+force-pushed with all version tags, and the installers of v1.0.0, v1.0.1
+and v1.1.0 were taken off their release pages
+([compatibility](../compatibility.md#things-that-would-break-older-installs-dont)).

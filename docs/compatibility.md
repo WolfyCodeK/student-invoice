@@ -52,8 +52,14 @@ the GitHub release description instead, which the app never parses.
 
 - Making the GitHub repository or its releases private: installed copies
   download `latest.json` and the MSI anonymously.
-- Deleting old release assets or the EmailJS service/template used by
-  v1.0.1's feedback form.
+- Deleting the **latest** release's assets, or the EmailJS service/template
+  used by v1.0.1's feedback form. Installed copies, v1.0.1 included, only
+  ever download the latest release's `latest.json` and MSI, so older
+  releases' assets aren't needed for updates; they only make a rollback
+  possible (see [release](release.md#if-something-goes-wrong-after-publishing)).
+  The installers of v1.0.0, v1.0.1 and v1.1.0 were removed on 2026-09-28,
+  because they contained one teacher's personal email wording; the owner
+  keeps private copies.
 - Deleting the Google OAuth client that users have pasted into v1.0.1's
   Settings without first giving them the replacement credentials.
 - Rotating the updater signing key: v1.0.1 would reject every future update.
