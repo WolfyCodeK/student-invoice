@@ -1,5 +1,6 @@
-import { InvoiceTemplate, TermData } from '../types'
+import { ChargingOptions, InvoiceTemplate, TermData } from '../types'
 import { format, addDays } from 'date-fns'
+import { isBankHoliday } from './bank-holidays'
 
 export interface InvoiceData {
   subject: string
@@ -48,16 +49,56 @@ function findFirstLessonDate(termStart: Date, lessonDay: string): Date {
 /** A lesson date as stored in `skippedLessonDates`, e.g. "2026-10-26". */
 export const lessonDateKey = (date: Date): string => format(date, 'yyyy-MM-dd')
 
+/** The charging options that decide which lessons are charged (docs/proposals/2026-09-v1.1.2-feedback.md). */
+export type ChargeOptions = Pick<ChargingOptions, 'insideHalfTermOnly' | 'skipBankHolidays'>
+
 /**
- * Every lesson the half-term charges for (v1.0.1 rule): the first lesson day
- * on or after the half-term's start, then every 7 days, `weeksCount` times.
+ * Every lesson date the half-term can charge for (v1.0.1 rule): the first
+ * lesson day on or after the half-term's start, then every 7 days,
+ * `weeksCount` times. With `insideHalfTermOnly`, every lesson day from the
+ * first day of the half-term to its last day instead.
  */
-export function lessonDates(template: Pick<InvoiceTemplate, 'day'>, termData: TermData): Date[] {
+export function lessonDates(template: Pick<InvoiceTemplate, 'day'>, termData: TermData, options: ChargeOptions = {}): Date[] {
   const first = findFirstLessonDate(termData.term.startDate, template.day)
+  if (options.insideHalfTermOnly) {
+    const dates: Date[] = []
+    for (let date = first; date <= termData.term.endDate; date = addDays(date, 7)) dates.push(date)
+    return dates
+  }
   return Array.from({ length: termData.weeksCount }, (_, i) => {
     const date = new Date(first)
     date.setDate(date.getDate() + i * 7)
     return date
+  })
+}
+
+/** One lesson date, and whether it is charged. */
+export interface LessonCharge {
+  date: Date
+  /** As `lessonDateKey`. */
+  key: string
+  charged: boolean
+  /** Why it isn't charged: unticked by the teacher, or a bank holiday (with that option on). */
+  reason?: 'unticked' | 'bank-holiday'
+}
+
+/**
+ * Every lesson date of the half-term, charged unless unticked
+ * (docs/proposals/2026-09-untick-lessons.md) or, with `skipBankHolidays`, on
+ * a bank holiday that wasn't ticked back on.
+ */
+export function lessonCharges(
+  template: Pick<InvoiceTemplate, 'day' | 'skippedLessonDates' | 'chargedBankHolidays'>,
+  termData: TermData,
+  options: ChargeOptions = {},
+): LessonCharge[] {
+  const skipped = new Set(template.skippedLessonDates ?? [])
+  const bankHolidaysCharged = new Set(template.chargedBankHolidays ?? [])
+  return lessonDates(template, termData, options).map((date): LessonCharge => {
+    const key = lessonDateKey(date)
+    if (skipped.has(key)) return { date, key, charged: false, reason: 'unticked' }
+    if (options.skipBankHolidays && isBankHoliday(key) && !bankHolidaysCharged.has(key)) return { date, key, charged: false, reason: 'bank-holiday' }
+    return { date, key, charged: true }
   })
 }
 
@@ -71,8 +112,11 @@ export function roundToPenny(price: number): number {
   return Number.isFinite(pence) ? pence / 100 : Math.round(price * 100) / 100
 }
 
-/** `yourName` signs the email (settings "Your name"; docs/proposals/2026-09-your-name-sign-off.md). */
-export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string, yourName = ''): InvoiceData {
+/**
+ * `yourName` signs the email (settings "Your name"; docs/proposals/2026-09-your-name-sign-off.md).
+ * `options` are the v1.1.2 charging options; with none on, this is the v1.1.1 invoice.
+ */
+export function generateInvoice(template: InvoiceTemplate, termData: TermData, customBodyTemplate?: string, yourName = '', options: ChargeOptions = {}): InvoiceData {
   const { term } = termData
   // Spaces at either end of a name never reach the email, and the price is
   // whole pence (docs/proposals/2026-09-rules-review-decisions.md).
@@ -81,15 +125,18 @@ export function generateInvoice(template: InvoiceTemplate, termData: TermData, c
   const cost = roundToPenny(template.cost)
 
   // Lessons charged: every lesson date except the ones the teacher unticked
-  // (docs/proposals/2026-09-untick-lessons.md). With nothing unticked this is
-  // exactly the v1.0.1 calculation.
-  const allDates = lessonDates(template, termData)
-  const skipped = new Set(template.skippedLessonDates ?? [])
-  const charged = allDates.filter((date) => !skipped.has(lessonDateKey(date)))
+  // (docs/proposals/2026-09-untick-lessons.md) and those the charging options
+  // leave out. With nothing unticked and no option on this is exactly the
+  // v1.0.1 calculation.
+  const lessons = lessonCharges(template, termData, options)
+  const allDates = lessons.map((l) => l.date)
+  const charged = lessons.filter((l) => l.charged).map((l) => l.date)
   const weeksCount = charged.length
   const rangeDates = charged.length > 0 ? charged : allDates
-  const firstLessonDate = rangeDates[0]
-  const lastLessonDate = rangeDates[rangeDates.length - 1]
+  // A half-term too short to hold the lesson day has no lessons: the range is
+  // then the half-term itself (nothing can be invoiced, so it isn't sent).
+  const firstLessonDate = rangeDates[0] ?? term.startDate
+  const lastLessonDate = rangeDates[rangeDates.length - 1] ?? term.endDate
 
   // Generate term info
   const termInfo = `${term.half} half ${term.season} term ${format(term.startDate, 'yyyy')}`

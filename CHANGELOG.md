@@ -11,6 +11,40 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+### Added
+- **Paid and Thanks:** two tick boxes for each family on the register,
+  beside the lesson day, for who has paid and who you've sent a thank-you.
+- **A half-term total** at the bottom of the register: the lessons, what's
+  paid, what's outstanding and the total, with "3 of 6 paid".
+- **Every half-term is kept.** Open an earlier one from the half-term buttons
+  in the blue band (the arrows change the school year) to see each family,
+  every lesson, what was charged, and the Paid and Thanks ticks, which can
+  still be ticked. A half-term is saved as it changes, and once it ends it
+  stays exactly as it was, whatever changes later. Half-terms before this
+  version are worked out from your families and prices, and say so. The
+  history is never deleted, goes in every backup and export, and Import and
+  Restore add to it rather than replace it.
+- **Settings → How lessons are charged**, with three options, all off to
+  begin with, so nothing changes unless you turn one on: only charge lessons
+  inside the half-term; don't charge lessons on bank holidays (tick one on
+  the register to charge it if the lesson went ahead); and in the holidays,
+  show the next half-term, ready to invoice.
+
+### Changed
+- The app says **Drums** instead of Drum. Emails still say "drum lessons".
+- **Term dates** shows one school year: the current one, moving on to the
+  next on 1 August. The dates start as the app's best guess, so check them
+  against your school's calendar. "Reset to the usual dates" has gone,
+  because half-term dates change every year.
+
+- The window can't be made quite as narrow as before (1040 pixels instead
+  of 960), so the register never has to scroll sideways, and it folds its
+  columns sooner as the window narrows.
+
+### Fixed
+- The app icon's paper is centred on its blue tile, in the taskbar and
+  everywhere else, with the same size as before.
+
 ## [1.1.1] - 2026-09-28
 <!-- latest-json-summary: Student Invoice 1.1.1: a new standard email wording, with the same figures -->
 

@@ -2,8 +2,8 @@
 
 Everything a user has set up can be exported to one file and imported on
 another PC running Student Invoice: templates, the selected template,
-settings (including the custom email body, Your name and any edited term
-dates) and the theme.
+settings (including the custom email body, Your name, any edited term
+dates, the charging options and every half-term's record) and the theme.
 Gmail isn't included; the user connects Gmail again on the new PC. Neither
 is Low memory mode, which is a setting for each PC (see
 [performance](performance.md#low-memory-mode)).
@@ -40,11 +40,19 @@ The UI lives in Settings → **Your data** (`app/src/features/settings/data-grou
    - edited term dates (`settings.termDates`) must be keyed by a four-digit
      year, each with exactly six `{start, end}` pairs of real
      `yyyy-MM-dd` dates;
+   - half-term records (`settings.halfTerms`, v1.1.2) must be keyed like
+     `2026-0` (a school year and a half-term from 0 to 5), with real dates,
+     an ISO `savedAt`, figures that are finite and not negative, and the
+     same length limits as families; a reason for an uncharged lesson is any
+     short text, so a newer version's reasons still import;
    - no unexpected top-level fields are allowed;
    - a newer `formatVersion` is refused with "update the app first".
 3. A confirmation shows the number of templates, the date and the app version
    of the file. **Replace everything** replaces all current data with the
-   file's: there is no merge.
+   file's, except the half-term records: those are merged (`mergeRecords`),
+   keeping every half-term in either copy and, where both have one, the one
+   saved most recently, so history is never lost
+   ([data model](data-model.md#half-term-records)).
 4. Before replacing, a `pre-import` automatic backup of the current data is
    saved. If that fails, nothing is replaced. The app then reloads.
 
@@ -56,7 +64,7 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
 
 | Reason | When |
 |---|---|
-| `daily` | On start-up, at most once per UTC day, if there are any templates |
+| `daily` | On start-up, at most once per UTC day, if there are any templates or half-term records |
 | `pre-import` | Before an import replaces the data |
 | `pre-restore` | Before restoring an automatic backup |
 | `pre-update` | Before installing an app update (best effort) |
@@ -71,7 +79,7 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
   never mixes with the installed app's backups.
 - **Restoring:** Settings lists the backups, each labelled with its reason
   (such as "Before deleting a family"), and **Restore** works like an
-  import.
+  import, merging the half-term records in the same way.
 - **Opening the folder:** **Open folder** shows the backups in File Explorer.
 - **Security:** backup names from the UI must match the exact pattern above,
   so no paths can be passed.
@@ -154,6 +162,15 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                     "maxLength": 5000
                   },
                   "skippedLessonDates": {
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "date",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                    }
+                  },
+                  "chargedBankHolidays": {
                     "maxItems": 500,
                     "type": "array",
                     "items": {
@@ -253,6 +270,178 @@ files named `<UTC timestamp>-<reason>.json` (e.g.
                       ],
                       "additionalProperties": false
                     }
+                  }
+                },
+                "charging": {
+                  "type": "object",
+                  "properties": {
+                    "insideHalfTermOnly": {
+                      "type": "boolean"
+                    },
+                    "skipBankHolidays": {
+                      "type": "boolean"
+                    },
+                    "nextHalfTermInHolidays": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": {}
+                },
+                "halfTerms": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-[0-5]$"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "end": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "half": {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      "season": {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      "families": {
+                        "maxItems": 2000,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "recipient": {
+                              "type": "string",
+                              "maxLength": 5000
+                            },
+                            "students": {
+                              "type": "string",
+                              "maxLength": 5000
+                            },
+                            "instrument": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "day": {
+                              "type": "string",
+                              "maxLength": 20
+                            },
+                            "cost": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "lessons": {
+                              "maxItems": 60,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "date": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                  },
+                                  "charged": {
+                                    "type": "boolean"
+                                  },
+                                  "reason": {
+                                    "type": "string",
+                                    "maxLength": 40
+                                  }
+                                },
+                                "required": [
+                                  "date",
+                                  "charged"
+                                ],
+                                "additionalProperties": {}
+                              }
+                            },
+                            "lessonCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 60
+                            },
+                            "total": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "paid": {
+                              "type": "boolean"
+                            },
+                            "thanked": {
+                              "type": "boolean"
+                            },
+                            "removedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "recipient",
+                            "students",
+                            "instrument",
+                            "day",
+                            "cost",
+                            "lessons",
+                            "lessonCount",
+                            "total"
+                          ],
+                          "additionalProperties": {}
+                        }
+                      },
+                      "charging": {
+                        "type": "object",
+                        "properties": {
+                          "insideHalfTermOnly": {
+                            "type": "boolean"
+                          },
+                          "skipBankHolidays": {
+                            "type": "boolean"
+                          },
+                          "nextHalfTermInHolidays": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": {}
+                      },
+                      "ended": {
+                        "type": "boolean"
+                      },
+                      "workedOut": {
+                        "type": "boolean"
+                      },
+                      "savedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      }
+                    },
+                    "required": [
+                      "start",
+                      "end",
+                      "half",
+                      "season",
+                      "families",
+                      "savedAt"
+                    ],
+                    "additionalProperties": {}
                   }
                 }
               },

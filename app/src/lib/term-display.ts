@@ -15,6 +15,14 @@ export function academicYearStart(date: Date, overrides?: TermDateOverrides): nu
   return date >= getTermsForAcademicYear(year, overrides)[0].startDate ? year : year - 1
 }
 
+/**
+ * The school year whose dates Settings shows: the one starting this autumn
+ * from 1 August, so its dates can be filled in over the summer.
+ */
+export function termDatesYear(date: Date): number {
+  return date.getMonth() >= 7 ? date.getFullYear() : date.getFullYear() - 1
+}
+
 /** "2026/27" for the school year starting in 2026. */
 export function schoolYearLabel(start: number): string {
   return `${start}/${String(start + 1).slice(2)}`

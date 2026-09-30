@@ -5,7 +5,17 @@
 // behind-the-scenes work, at most five very short lines per version.
 
 /** Lucide icon names used by the news lines (whats-new-dialog.tsx draws them). */
-export type NewsIcon = "layout-list" | "calendar-x" | "calendar-days" | "hard-drive-download" | "mail-check" | "mail" | "clipboard-paste";
+export type NewsIcon =
+  | "layout-list"
+  | "calendar-x"
+  | "calendar-days"
+  | "hard-drive-download"
+  | "mail-check"
+  | "mail"
+  | "clipboard-paste"
+  | "list-checks"
+  | "history"
+  | "pound-sterling";
 
 export interface NewsItem {
   icon: NewsIcon;
@@ -33,6 +43,15 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     items: [
       { icon: "mail", text: "A new standard email wording. The figures are the same." },
       { icon: "clipboard-paste", text: "To keep your previous wording, paste it in Settings → Email wording." },
+    ],
+  },
+  {
+    version: "1.1.2",
+    items: [
+      { icon: "list-checks", text: "Tick who has paid and who you've thanked. The total is at the bottom." },
+      { icon: "history", text: "Open earlier half-terms from the blue band. Every one is kept." },
+      { icon: "pound-sterling", text: "New in Settings: how lessons are charged. Each option starts off." },
+      { icon: "calendar-days", text: "Settings shows this year's term dates: check them with your school." },
     ],
   },
 ];

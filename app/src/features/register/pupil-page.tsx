@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Copy, Loader2, MailPlus } from "lucide-react";
 import { invoiceFor, useAppStore } from "../../stores/app-store";
 import { errorMessage } from "../../lib/backend";
-import { capitalise, lessonsWord, money } from "../../lib/format";
+import { instrumentLabel, lessonsWord, money } from "../../lib/format";
 import { toast } from "../../hooks/use-toast";
 import type { InvoiceTemplate } from "../../types";
 import type { InvoiceData } from "../../utils/invoice-generator";
@@ -67,7 +67,7 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
   const draftWhy = !invoice
     ? null
     : nothing
-      ? "Every lesson is unticked, so there is nothing to invoice."
+      ? "No lesson is charged, so there is nothing to invoice."
       : gmail === null
         ? "Checking the Gmail connection…"
         : !gmail.connected
@@ -80,7 +80,7 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
         <div className="slip-id">
           <h2>{template.recipient}</h2>
           <span>
-            {template.students} · {capitalise(template.instrument)} · {template.day}
+            {template.students} · {instrumentLabel(template.instrument)} · {template.day}
           </span>
         </div>
         {invoice ? (
@@ -90,7 +90,7 @@ export function PupilPage({ template, invoice, lessons, nextTermStart }: Props) 
             </p>
             {unticked.length > 0 && (
               <p className="sum-note">
-                Not charged: {unticked.map((l) => format(l.date, "EEE d MMM")).join(", ")}
+                Not charged: {unticked.map((l) => `${format(l.date, "EEE d MMM")}${l.reason === "bank-holiday" ? " (bank holiday)" : ""}`).join(", ")}
               </p>
             )}
           </>

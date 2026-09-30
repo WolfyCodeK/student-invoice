@@ -232,30 +232,78 @@
 }
 .terms {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 3px;
 }
 .terms-yr {
-  padding-right: 7px;
+  min-width: 52px;
   font-size: var(--fs-xs);
+  text-align: center;
 }
+/* The year arrows and half-term buttons: a half-term that has started opens
+   its record; the one on screen is filled; this half-term carries a dot. */
+.terms-arrow,
 .term {
   height: 26px;
-  min-width: 52px;
-  padding: 0 8px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--cover-ghost);
+  border: 1px solid transparent;
   border-radius: var(--r-block);
+  background: transparent;
+  color: var(--cover-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.terms-arrow {
+  width: 24px;
+  padding: 0;
+}
+.terms-arrow .lucide {
+  width: 16px;
+  height: 16px;
+}
+.term {
+  min-width: 52px;
+  padding: 0 8px;
+  border-color: var(--cover-ghost);
   font-size: var(--fs-xs);
   font-weight: 600;
-  color: var(--cover-muted);
   white-space: nowrap;
 }
+.terms-arrow:hover:not(:disabled),
+.term:hover:not(:disabled) {
+  background: var(--cover-hover);
+  color: var(--cover-ink);
+}
+.terms-arrow:disabled,
+.term:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.term.is-now::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
 .term.is-now {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.term.is-open,
+.term.is-open:hover {
   background: var(--band-btn);
   border-color: var(--band-btn);
   color: var(--band-btn-ink);
+}
+.terms-arrow:focus-visible,
+.term:focus-visible {
+  outline: 2px solid var(--focus-on-cover);
+  outline-offset: 1px;
 }
 .gmail {
   display: flex;
@@ -302,6 +350,8 @@
   background: var(--page);
   --wk: 40px;
   --fam: minmax(150px, 1fr);
+  --paid: 56px;
+  --thanks: 64px;
   --day: 96px;
   --les: 70px;
   --per: 88px;
@@ -316,7 +366,7 @@
   /* Rows never shrink to fit the sheet; the sheet scrolls instead. */
   flex: none;
   display: grid;
-  grid-template-columns: var(--fam) var(--day) calc(var(--weeks) * var(--wk) + 4px) var(--les) var(--per) var(--tot) var(--status);
+  grid-template-columns: var(--fam) var(--paid) var(--thanks) var(--day) calc(var(--weeks) * var(--wk) + 4px) var(--les) var(--per) var(--tot) var(--status);
   min-height: 58px;
   border-bottom: 1px solid var(--rule);
 }
@@ -353,6 +403,32 @@
   line-height: 1.2;
   color: var(--head-ink);
   white-space: nowrap;
+}
+/* The lesson day is set right, against the margin rule, as the label for
+   its row of lesson marks. */
+.c-day {
+  justify-content: flex-end;
+  padding-right: 14px;
+  text-align: right;
+}
+/* Paid and Thanks (sent). */
+.c-tick {
+  justify-content: center;
+  padding: 0 4px;
+  text-align: center;
+}
+.tick {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--mark);
+}
+.tick--paid {
+  accent-color: var(--success);
+}
+.tick:disabled {
+  cursor: default;
 }
 .fam {
   flex-direction: column;
@@ -464,6 +540,10 @@
 .mark:focus-visible {
   outline-offset: -3px;
 }
+/* An earlier half-term's marks can't be changed. */
+.mark.is-static {
+  cursor: default;
+}
 .mark.is-changed::before {
   animation: mark-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -516,11 +596,51 @@
 .row.is-selected .wk.is-holiday {
   background-color: color-mix(in srgb, var(--holiday) 55%, var(--selected));
 }
+/* A family deleted during an earlier half-term: kept, but not in its total. */
+.row.is-removed .who,
+.row.is-removed .tot {
+  color: var(--muted);
+}
 .row.is-invalid .who::after {
   content: " · lesson day needs setting";
   font-weight: 400;
   font-size: var(--fs-xs);
   color: var(--danger);
+}
+
+/* The half-term total: always in view at the foot of the register. */
+.row--total {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  min-height: 50px;
+  border-top: 1px solid var(--rule-strong);
+  border-bottom: 0;
+  background: var(--totals);
+  font-variant-numeric: tabular-nums;
+}
+.row--total .fam {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  font-weight: 700;
+  color: var(--heading);
+}
+.c-sum {
+  grid-column: span 4;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  padding-right: 14px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.c-sum b {
+  font-size: var(--fs-s);
+  color: var(--ink);
+}
+.c-sum .is-due b {
+  color: var(--warning);
 }
 
 /* Draft All: status column. */
@@ -587,6 +707,9 @@
   line-height: 1.35;
   color: var(--muted);
 }
+.acts-why--wide {
+  max-width: 460px;
+}
 .legend {
   margin-left: auto;
   display: flex;
@@ -627,11 +750,21 @@
   mask: var(--mk) center / var(--mk-size) var(--mk-size) no-repeat;
 }
 .mark[aria-pressed="false"]::before,
+.mark.is-off::before,
 .legend-off,
 .fe-mk.is-off::before {
   background-color: var(--mark-off);
   -webkit-mask-image: var(--mk-off);
   mask-image: var(--mk-off);
+}
+/* A bank holiday: not charged while that option is on, in the holiday colours. */
+.mark[data-reason="bank-holiday"]::before,
+.row.is-selected .mark[data-reason="bank-holiday"]::before,
+.legend-off.legend-bh {
+  background-color: var(--holiday-ink);
+}
+.wk:has(> .mark[data-reason="bank-holiday"]) {
+  background: var(--holiday);
 }
 
 /* Empty register (first run). */
@@ -687,17 +820,41 @@
   font-size: var(--fs-m);
 }
 
-/* Compact register: fold the day into the family line, drop "Per lesson". */
-@container reg (max-width: 880px) {
+/* Narrower windows fold the register in steps, so nine weeks (the most the
+   usual dates give) never need to scroll sideways, from the minimum window
+   width (1040 px) up. Room each step needs (the container, scrollbar
+   included): full 1004 px; without Per lesson 872; without Day too 776;
+   narrow 696.
+   Folded cells keep their (now 0 px) tracks: display:none would take them
+   out of the grid and shift every later cell one column left. */
+@container reg (max-width: 1040px) {
+  /* Drop "Per lesson" (the pupil's page shows it) and narrow the weeks. */
   .sheet {
-    --day: 0px;
     --per: 0px;
     --wk: 36px;
+    --paid: 52px;
+    --thanks: 60px;
   }
-  /* Keep these cells in their (now 0 px) tracks: display:none would take
-     them out of the grid and shift every later cell one column left. */
-  .sheet .c-day,
   .sheet .c-per {
+    visibility: hidden;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+  }
+  .step {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .step-d {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+/* Then fold the lesson day into the family line ("Oliver · Piano · Mon"). */
+@container reg (max-width: 871px) {
+  .sheet {
+    --day: 0px;
+  }
+  .sheet .c-day {
     visibility: hidden;
     overflow: hidden;
     padding: 0;
@@ -709,19 +866,14 @@
   .what {
     white-space: normal;
   }
-  .step {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .step-d {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
 }
-@container reg (max-width: 640px) {
+@container reg (max-width: 775px) {
   .sheet {
     --wk: 32px;
     --tot: 92px;
     --fam: minmax(130px, 1fr);
+    --paid: 44px;
+    --thanks: 56px;
   }
   .fam {
     padding-left: 14px;
@@ -954,6 +1106,46 @@
   padding: 14px 20px;
   border-bottom: 1px solid var(--rule-strong);
   color: var(--ink);
+}
+/* How an earlier half-term's record was made. */
+.past-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--totals);
+  color: var(--ink);
+  font-size: var(--fs-s);
+  line-height: 1.45;
+}
+.past-note.is-worked-out {
+  background: var(--warning-bg);
+}
+.past-note .lucide {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--muted);
+}
+.past-note.is-worked-out .lucide {
+  color: var(--warning);
+}
+.past-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 24px;
+  color: var(--muted);
+  text-align: center;
+}
+.past-empty .lucide {
+  width: 28px;
+  height: 28px;
 }
 .holiday-note .lucide,
 .st-holiday .lucide {

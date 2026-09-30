@@ -51,7 +51,9 @@
         "app/src/stores/app-store.ts",
         "app/src/types/**",
         "app/src/lib/schema/**",
-        "app/src/lib/appearance.ts"
+        "app/src/lib/appearance.ts",
+        "app/src/lib/half-terms.ts",
+        "app/src/lib/half-terms.test.ts"
       ]
     },
     "docs/billing.md": {
@@ -61,7 +63,10 @@
         "app/src/utils/billing.characterization.test.ts",
         "app/src/utils/__snapshots__/**",
         "app/src/utils/untick-lessons.test.ts",
-        "app/src/utils/billing-decisions.test.ts"
+        "app/src/utils/billing-decisions.test.ts",
+        "app/src/utils/bank-holidays.ts",
+        "app/src/utils/bank-holidays.test.ts",
+        "app/src/utils/charging-options.test.ts"
       ]
     },
     "docs/gmail.md": {

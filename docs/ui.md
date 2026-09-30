@@ -18,7 +18,7 @@ primitives for dialogs, selects, switches and toasts
 | Update checks (`useUpdates`) and the update dialog | `app/src/features/updates/` |
 | Navigation and shared actions (`useAppActions`), and the unsaved-changes check (`useLeaveGuard`) | `app/src/features/app-context.tsx` |
 | Title bar | `app/src/components/title-bar.tsx` |
-| Register (main screen) | `app/src/features/register/` |
+| Register (main screen) | `app/src/features/register/`: the register (`register-view.tsx`), an earlier half-term (`earlier-half-term.tsx`), the parts both use (`register-parts.tsx`) and where lessons are drawn (`weeks.ts`) |
 | Settings | `app/src/features/settings/` |
 | Adding or editing a family | `app/src/features/family/` |
 | What's new, "Choose how it looks" and the guided tour: the dialogs (`whats-new-dialog.tsx`, `appearance-picker.tsx`, `tour.tsx`), the order of the steps (`onboarding-flow.ts`) and their state (`use-onboarding.ts`) | `app/src/features/onboarding/` |
@@ -28,7 +28,7 @@ primitives for dialogs, selects, switches and toasts
 | Feedback form | `app/src/components/feedback-form.tsx` |
 | Crash screen | `app/src/components/error-boundary.tsx` |
 | Styles | `app/src/styles/`: `fonts.css`, `tokens.css`, `base.css`, `app.css` (loaded at start-up); each screen loaded on demand has its own: `features/settings/settings.css`, `features/family/family-editor.css`, `features/onboarding/tour.css`, `features/onboarding/appearance-picker.css` |
-| Display helpers | `app/src/lib/format.ts` (money, lesson counts), `app/src/lib/term-display.ts` (half-term names, ranges and comparisons) |
+| Display helpers | `app/src/lib/format.ts` (money, half-term totals with a thousands comma, instruments, lesson counts), `app/src/lib/term-display.ts` (half-term names, ranges and comparisons) |
 
 The screens are `register`, `settings` and `edit` (a family, or `null` for a new one). Settings, the editor, the
 feedback form and the onboarding pieces load on first use. The first three
@@ -79,9 +79,18 @@ The main screen (`register-view.tsx`) has three parts.
 
 **Header band.**
 - The heading "Register · <half-term>", the dates and the number of weeks.
-- A strip of the school year's six half-terms, with the current one filled.
-  The heading, the strip and the next half-term (outside term time) use the
-  term dates edited in Settings, if any ([Term dates](#term-dates)).
+  With "In the holidays, show the next half-term" on, outside term time the
+  register is the next half-term's, and the dates start "Starts Tuesday 3
+  November · …".
+- **The half-term buttons** (`HalfTermNav` in `register-parts.tsx`): the
+  school year's six half-terms, with arrows to change the school year (from
+  the first year with a record to this one). The current half-term has a
+  dot, and the one on screen is filled. A half-term that has started opens
+  it ([Earlier half-terms](#earlier-half-terms)); later ones are disabled.
+  The heading, the buttons and the next half-term use the term dates edited
+  in Settings, if any ([Term dates](#term-dates)).
+- No totals: the half-term's total, paid and outstanding are only in the
+  total row at the foot of the grid, so nothing is said twice.
 - Gmail status, and **Draft all N in Gmail**. The status is the live one
   from Rust: "Checking Gmail…" until it answers (Draft all waits too), then
   the connected address, or Connect Gmail. When the button is disabled, a
@@ -89,9 +98,18 @@ The main screen (`register-view.tsx`) has three parts.
   ticked lesson.
 
 **The register grid.**
-- One row per family: the recipient, then pupils and instrument. The
-  lesson day has its own column, or is folded into the family line in
-  narrow windows.
+- One row per family: the recipient, then pupils and instrument ("drum" is
+  shown as **Drums**; the email still says "drum"). The lesson day has its
+  own column, headed "Day", set right against the margin rule as the label
+  for its row of marks; it is folded into the family line in narrow
+  windows.
+- **Alignment:** names left, tick boxes and lesson marks centred, the day
+  and every figure right.
+- **Paid** and **Thanks** (a thank-you sent; the heading's tooltip says
+  "Thanks sent"): a tick box each, between the family and
+  the Day column. They are saved in the half-term's record
+  ([data model](data-model.md#half-term-records)), one per family per
+  half-term, and never change an invoice.
 - One column per calendar week, from the week the half-term starts to the
   week of the last lesson charged (`weeks.ts`). A week wholly after the
   half-term ends is hatched, except where a lesson is drawn: today's rule can
@@ -101,21 +119,29 @@ The main screen (`register-view.tsx`) has three parts.
 - **Marks are buttons.** Each lesson charged has a mark in its week, dated in
   its tooltip. Clicking a mark unticks the lesson (dashed circle, not
   charged); clicking again ticks it
-  ([billing](billing.md#unticked-lessons-v110)).
+  ([billing](billing.md#unticked-lessons-v110)). With "Don't charge lessons
+  on bank holidays" on, a bank-holiday lesson starts unticked, in the
+  holiday colour on a holiday wash, "bank holiday, not charged"; clicking it
+  charges it again ([billing](billing.md#charging-options-v112)).
 - Then Lessons ("7 of 8" when some are unticked), Per lesson and Total.
   Figures come from `generateInvoice`, so they always match the email.
 - A red double margin rule runs between the family and the weeks.
 - With Gmail not connected, **Connect Gmail** is the strong button in the
   band and Draft all steps back.
+- **Half-term total**, the last row, always in view at the foot of the
+  grid: "3 of 6 paid", Paid, Outstanding (amber while anything is), the
+  lessons and the total. Families with nothing to invoice aren't counted in
+  "of 6".
 - Below the grid: Add a family, Edit, Delete… (with confirmation), and a
-  legend.
+  legend of what's on the register (bank holidays and the hatched weeks
+  only when there are any).
 - **Locked while saving to Gmail:** while drafts are being saved, the marks
   and Add, Edit and Delete are disabled, with "Families and lessons can't be
   changed while saving to Gmail."
 
 **The pupil's page** (`pupil-page.tsx`), beside the grid.
 - The selected family's lessons × cost = total, and which lessons aren't
-  charged.
+  charged ("Mon 3 May (bank holiday)").
 - The subject with **Copy subject**, and the full email.
 - **Copy email text** and **Save as Gmail draft**, each disabled with a
   reason when it can't be used (for Save as Gmail draft, "Checking the Gmail
@@ -141,13 +167,31 @@ The main screen (`register-view.tsx`) has three parts.
   offers **Connect Gmail**, and Draft the remaining and every **Try again**
   are disabled until it is connected ("Connect Gmail first").
 
+**Earlier half-terms** (`earlier-half-term.tsx`). Choosing a half-term that
+has ended opens its record, read-only:
+- the band shows the half-term, its dates, the half-term buttons and
+  **Back to this half-term** (or **Back to the
+  register** in the holidays);
+- the grid is the same as the register's, drawn from the record: every
+  family and lesson as charged then, with the figures saved at the time;
+- **Paid** and **Thanks** can still be ticked; nothing else can
+  change ("A finished half-term: its lessons and totals stay as they were.");
+- a family deleted during the half-term is listed last, greyed, "deleted
+  during the half-term, not in the total";
+- a note says when the record was worked out rather than saved at the time
+  (half-terms before v1.1.2), in amber, and which charging options were on;
+- a half-term with no record says nothing was recorded.
+
 **Other states.**
 - **No families:** the three steps of how the app works, with **Add your
   first family** and **Connect Gmail**.
 - **Outside term time:** a note, the date the next half-term starts, and no
   marks or totals. Draft buttons are disabled with the reason.
 - **Narrow windows** (container queries on the register): the Day and Per
-  lesson columns fold away, and the weeks narrow.
+  lesson columns fold away, and then the weeks and the tick columns narrow,
+  so the register never needs to scroll sideways from the minimum window
+  width up (with the usual dates' nine weeks at most). While Draft all's
+  status column shows, it may.
 
 ## Connecting Gmail
 
@@ -178,8 +222,13 @@ have their own Save buttons. The sections:
     saved;
   - with their own wording saved and nothing unsaved, **Use the standard
     wording** removes it, after a confirmation.
-- **Term dates:** the half-term dates for this school year and the next,
-  which can be changed ([Term dates](#term-dates) below).
+- **Term dates:** the half-term dates for the current school year, which
+  can be changed ([Term dates](#term-dates) below).
+- **How lessons are charged** (`charging-group.tsx`): three switches, each
+  with what it does, all off to begin with: only charge lessons inside the
+  half-term, don't charge lessons on bank holidays, and in the holidays show
+  the next half-term ([billing](billing.md#charging-options-v112)). Each
+  applies straight away.
 - **Your data:** export, import, automatic backups and restore
   ([backup](backup.md)).
 - **Performance:** Low memory mode. "Currently on/off" is what the running
@@ -202,19 +251,19 @@ near the end still brings it to the top.
 
 ### Term dates
 
-Settings → Term dates (`terms-group.tsx`) shows the six half-terms and lets
-the teacher change their first and last days, for this school year and the
-next. The rules are in [billing](billing.md#term-dates), and the decision in
-the [proposal](proposals/2026-09-editable-term-dates.md).
+Settings → Term dates (`terms-group.tsx`) shows the six half-terms of the
+current school year and lets the teacher change their first and last days.
+From 1 August it shows the school year starting that autumn
+(`termDatesYear`), so the new dates can be filled in over the summer. The
+rules are in [billing](billing.md#term-dates), and the decisions in the
+[term dates proposal](proposals/2026-09-editable-term-dates.md) and the
+[v1.1.2 proposal](proposals/2026-09-v1.1.2-feedback.md) (item 6).
 
-- **Lead:** "The app counts each family's lessons between these dates. If
-  your school's dates are different, change them here: the register and the
-  emails follow straight away." Outside term time, a note says so and gives
-  the date the next half-term starts.
-- **Which year:** a switch between this school year and the next, such as
-  "2026/27 (this year)" and "2027/28 (next year)". While there are unsaved
-  changes, the other year is disabled, with the tip "Save or undo your
-  changes first".
+- **Lead:** "The half-terms of the **2026/27** school year. They start as
+  the app's best guess, so check them against your school's calendar and
+  change any that are different: the register and the emails follow
+  straight away. On 1 August this moves on to the next school year." Outside
+  term time, a note says so and gives the date the next half-term starts.
 - **The table:** one row per half-term, with **First day** and **Last day**
   date boxes and the Now tag on the current one. The boxes start from the
   dates in use: the edited ones, or else the usual ones.
@@ -222,20 +271,18 @@ the [proposal](proposals/2026-09-editable-term-dates.md).
   `termDatesProblem` (`settings-logic.ts`) finds shows under the table, such
   as "Autumn, 2nd half starts before Autumn, 1st half has ended.", and
   **Save dates** stays disabled until it's fixed.
-- **Buttons:**
-  - **Save dates**;
-  - **Undo changes**, while anything is unsaved;
-  - **Reset to the usual dates**, when that year has been edited and nothing
-    is unsaved. It asks first: "Use the usual dates?", with **Keep my
-    dates** and **Use the usual dates**.
-- **After saving:** "Saved. The register and invoices now use these dates.",
-  or after a reset "The usual dates are back for this school year."
-  `withTermDates` stores only the years that differ from the usual dates, so
-  a year saved with the usual dates is removed from `settings.termDates`
-  ([data model](data-model.md)).
-- **Everywhere else:** the register's heading, term strip and next
+- **Buttons:** **Save dates**, and **Undo changes** while anything is
+  unsaved. There is no "Reset to the usual dates" (removed in v1.1.2):
+  half-term dates change every year, so there are no usual ones.
+- **After saving:** "Saved. The register and invoices now use these dates."
+  `withTermDates` stores only the years that differ from the app's own
+  dates, so a year saved with those is removed from `settings.termDates`
+  ([data model](data-model.md)). Dates saved for other years (such as next
+  year's, which v1.1.0 and v1.1.1 could edit) keep being used.
+- **Everywhere else:** the register's heading, half-term buttons and next
   half-term, the `{{termInfo}}` example in Email wording, and every invoice
-  use the saved dates. The store works out the current half-term again as
+  use the saved dates. Half-terms that have ended keep the dates in their
+  records. The store works out the current half-term again as
   soon as they change.
 - **Unsaved dates** are guarded like unsaved wording
   ([Unsaved changes](#unsaved-changes)).
@@ -425,7 +472,11 @@ no frame, it draws its own bar with a Close button.
 
 - **Size:** 1280×800 by default, reduced at start-up to fit the screen's free
   area (`fit_to_screen` in `app/src-tauri/src/lib.rs`). The minimum is
-  960×600.
+  1040×600 (960×600 before v1.1.2): the narrowest the register can be
+  without scrolling sideways, with nine weeks and the Paid and Thanks
+  columns next to the pupil's page. Between the minimum and a full-size
+  window, the register folds its Day and Per lesson columns and narrows the
+  weeks (container queries in `app/src/styles/app.css`).
 - **Behaviour:** resizable, maximisable and snappable, with no Windows frame.
 - **Configuration:** `app/src-tauri/tauri.conf.json`. The window is created
   in Rust (see [architecture](architecture.md)).

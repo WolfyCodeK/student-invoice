@@ -20,6 +20,11 @@ logic plus these approved changes in v1.1.0:
 In v1.1.1 the standard email wording became generic; only the wording
 changed, not the figures ([proposal](proposals/2026-09-generic-standard-wording.md)).
 
+v1.1.2 adds three charging options, all off unless the user turns them on,
+and term dates for the current school year only
+([proposal](proposals/2026-09-v1.1.2-feedback.md)). With every option off,
+invoices are exactly as in v1.1.1.
+
 Known problems are listed at the end; they are not fixed until a proposal is
 approved.
 
@@ -27,12 +32,15 @@ approved.
 
 | What | Where |
 |---|---|
-| Term dates and "which term is it?" | `app/src/utils/terms.ts` (`getTermsForAcademicYear`, `calculateTermData`, both taking the edited dates from `settings.termDates`) |
+| Term dates and "which term is it?" | `app/src/utils/terms.ts` (`getTermsForAcademicYear`, `calculateTermData`, both taking the edited dates from `settings.termDates`; `termDataOf` for one half-term; `currentTermData`, which adds the "next half-term in the holidays" option) |
 | Editing term dates | Settings → Term dates (`app/src/features/settings/terms-group.tsx`; checks in `termDatesProblem`, saving in `withTermDates`, `app/src/features/settings/settings-logic.ts`) |
-| Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`lessonDates`, `generateInvoice`) |
-| Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts`, and `updateTemplate` there, which drops unticks when the lesson day changes; tests in `app/src/utils/untick-lessons.test.ts` and `app/src/stores/app-store.test.ts` |
-| When the current term is computed | at start-up (with the saved term dates), whenever the term dates change, and again just after midnight and whenever the window comes back into view (`refreshCurrentTerm` in `app/src/stores/app-store.ts`) |
-| Which invoice a screen or draft uses | `invoiceFor(template, term, wording)` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term with the email wording settings (the custom body and Your name), or none outside term time or for an invalid lesson day |
+| Lesson dates, totals, subject and body text | `app/src/utils/invoice-generator.ts` (`lessonDates`, `lessonCharges`, `generateInvoice`, each taking the charging options as `ChargeOptions`) |
+| The charging options | `settings.charging`, set in Settings → How lessons are charged (`app/src/features/settings/charging-group.tsx`); `chargeOptions()` in `app/src/lib/half-terms.ts` passes on the two that change lessons; tests in `app/src/utils/charging-options.test.ts` |
+| Bank holidays | `app/src/utils/bank-holidays.ts` (`bankHolidays(year)`, `isBankHoliday(date)`), checked against GOV.UK's lists in `app/src/utils/bank-holidays.test.ts` |
+| Unticking a lesson | `toggleLesson` in `app/src/stores/app-store.ts` (also ticking a bank holiday back on), and `updateTemplate` there, which drops unticks when the lesson day changes; tests in `app/src/utils/untick-lessons.test.ts` and `app/src/stores/app-store.test.ts` |
+| When the current term is computed | at start-up (with the saved term dates and options), whenever the term dates or options change, and again just after midnight and whenever the window comes back into view (`refreshCurrentTerm` in `app/src/stores/app-store.ts`) |
+| Which invoice a screen or draft uses | `invoiceFor(template, term, wording)` in `app/src/stores/app-store.ts`: `generateInvoice` for the current term with the email wording settings (the custom body and Your name) and the charging options, or none outside term time or for an invalid lesson day |
+| What each half-term charged | the half-term records (`settings.halfTerms`, [data model](data-model.md#half-term-records)), whose figures come from `generateInvoice` and `lessonCharges` and are never worked out again once the half-term has ended |
 | Whether an email can go out yet | `needsYourName()` in `app/src/stores/app-store.ts`: true while the wording uses `{{yourName}}` and no name is set ([UI](ui.md#your-name)) |
 | Locked-in expected output | `app/src/utils/billing.characterization.test.ts` and its snapshots in `app/src/utils/__snapshots__/` (figures and dates read through a neutral test line, `{{weeksCount}} {{lessonCountText}}, {{dateRange}}`, so they don't depend on the wording); the v1.1.0 decisions in `app/src/utils/billing-decisions.test.ts` |
 
@@ -54,15 +62,18 @@ are the usual dates, used for every year unless they were edited:
 (00:00) local time. Outside every term, no invoice is generated.
 
 **Edited dates (v1.1.0).** Settings → Term dates can change the first and
-last day of each half-term for this school year and the next
-([proposal](proposals/2026-09-editable-term-dates.md)). They are stored as
+last day of each half-term of the current school year
+([proposal](proposals/2026-09-editable-term-dates.md)); from 1 August that is
+the school year starting that autumn (v1.1.2, which also dropped the next
+year's dates and "Reset to the usual dates"). They are stored as
 `settings.termDates` (only the years that differ from the usual dates) and
 used exactly where the usual dates would be; every rule on this page is
 unchanged. Before saving, every date must be filled in, each half-term must
 end on or after its first day, the six must be in order without
 overlapping, and all must fall between 1 August of the school year and 31
 August of the next. A stored year that can't be read (damaged data) falls
-back to the usual dates.
+back to the usual dates. Dates saved for other years (by v1.1.0 or v1.1.1,
+which could edit next year's) keep being used.
 
 ## Lesson count and total
 
@@ -106,10 +117,53 @@ Approved in [untick lessons](proposals/2026-09-untick-lessons.md).
 - With nothing unticked, the output is byte-identical to v1.0.1, and the
   characterization snapshots prove it.
 
+## Charging options (v1.1.2)
+
+Approved in the [v1.1.2 proposal](proposals/2026-09-v1.1.2-feedback.md),
+items 8 to 10. Each is stored in `settings.charging` and is **off when
+absent**; with all of them off, every invoice is byte-identical to v1.1.1
+(`charging-options.test.ts` compares every weekday and half-term of four
+school years, and the characterization snapshots are unchanged).
+
+1. **Only charge lessons inside the half-term** (`insideHalfTermOnly`). The
+   lessons are every date from the half-term's first day to its last day,
+   inclusive, that falls on the lesson day, instead of `weeksCount` weeks
+   from the first lesson. Unticking still works on top. With the usual
+   dates this changes only Monday families in 2026/27 (for example 8 → 7
+   lessons in the 1st half of autumn), and in 2027/28 Tuesday families from
+   September to Easter and Wednesday families in the summer.
+2. **Don't charge lessons on bank holidays** (`skipBankHolidays`). A lesson
+   on an England and Wales bank holiday isn't charged, as if unticked, with
+   the reason "bank-holiday". Clicking it on the register charges it again,
+   remembered on the family as `chargedBankHolidays` (a list of dates); a
+   lesson that is both unticked and a bank holiday is charged again by one
+   click, which clears the untick and adds it to that list. Bank holidays
+   are worked out by `bank-holidays.ts`, with no internet:
+   - New Year's Day, Good Friday, Easter Monday, the first and last Mondays
+     of May, the last Monday of August, Christmas Day and Boxing Day;
+   - substitute weekdays when these fall at a weekend;
+   - the one-off changes of 2011, 2012, 2020, 2022 and 2023 (a new one needs
+     an app update).
+3. **In the holidays, show the next half-term** (`nextHalfTermInHolidays`).
+   Outside term time, `currentTermData` returns the next half-term to start
+   instead of none, so its invoices can be copied and drafted. In term time
+   it changes nothing.
+
+The date line is unchanged: it runs from the first to the last lesson
+charged, so a bank holiday at either end moves that end in, as unticking
+does. `lessonCharges` gives each lesson date with whether it is charged and
+why not (`unticked` or `bank-holiday`); `generateInvoice` counts the charged
+ones. A half-term too short to hold the lesson day has no lessons and
+nothing to invoice (the date range is then the half-term's own dates, and
+never sent).
+
 ## Invoice text
 
 - **Subject:** `Invoice for <Instrument capitalised> Lessons <half> half <season> term <start year>`,
-  e.g. `Invoice for Bass guitar Lessons 1st half autumn term 2026`.
+  e.g. `Invoice for Bass guitar Lessons 1st half autumn term 2026`. The
+  instrument is written as stored: the screens say "Drums" (v1.1.2), but the
+  stored value and the email stay "drum" ("Invoice for Drum Lessons",
+  "Finn's drum lessons").
 - **Names** have spaces at either end removed (when a family is saved, and
   again when the email is written, so older families are fixed too).
 - **Body (standard wording, v1.1.1):** the same text as
@@ -157,13 +211,16 @@ above. The rest will be settled with the main user for a v1.1.x release. The ana
 in the [bug audit](audits/2026-09-bug-audit.md):
 
 - **B1:** the count is not the number of actual lesson days, and the quoted
-  range can run past the end of term.
+  range can run past the end of term. Since v1.1.2 the "only charge lessons
+  inside the half-term" option avoids it; the default is unchanged.
 - **B2:** the last day of term counts as "outside term" after midnight.
 - **B3:** fixed in v1.1.0: the dates can be edited per school year.
 - **B14:** prices are rounded to the penny before multiplying (v1.1.0);
   totals are still floating point, shown to 2 decimals.
-- **B23:** bank holidays are billed.
-- **B26:** there are no invoices between half-terms.
+- **B23:** bank holidays are billed, unless the v1.1.2 "don't charge lessons
+  on bank holidays" option is on.
+- **B26:** there are no invoices between half-terms, unless the v1.1.2 "in
+  the holidays, show the next half-term" option is on.
 - **B27:** fixed in v1.1.0: the family editor refuses more than 2 decimals,
   as v1.0.1's did (`costProblem` in `app/src/features/family/family-form.ts`),
   and a price that arrives with more (imported data) is rounded to the penny.

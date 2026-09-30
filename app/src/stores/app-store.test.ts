@@ -644,3 +644,104 @@ describe('the Gmail status', () => {
     expect(useAppStore.getState().gmail).toMatchObject({ connected: true, email: 'teacher@example.com' })
   })
 })
+
+describe('v1.1.2: charging options (docs/proposals/2026-09-v1.1.2-feedback.md)', () => {
+  it('only charges lessons inside the half-term with that option', async () => {
+    const store = await loadStore()
+    store.useAppStore.getState().setCurrentTemplate('a1') // Monday, £20
+    expect(selectedInvoice(store)).toMatchObject({ lessonCount: 8, totalCost: 160 })
+    store.useAppStore.getState().updateSettings({ charging: { insideHalfTermOnly: true } })
+    expect(selectedInvoice(store)).toMatchObject({ lessonCount: 7, totalCost: 140 })
+  })
+
+  it("doesn't charge a bank holiday with that option, and remembers one ticked back on", async () => {
+    vi.setSystemTime(new Date(2027, 4, 1, 12)) // 1st half summer 2027: Monday 3 May is a bank holiday
+    const store = await loadStore()
+    const { useAppStore } = store
+    useAppStore.getState().setCurrentTemplate('a1')
+    expect(selectedInvoice(store)?.lessonCount).toBe(6)
+    useAppStore.getState().updateSettings({ charging: { skipBankHolidays: true } })
+    expect(selectedInvoice(store)?.lessonCount).toBe(5)
+    useAppStore.getState().toggleLesson('a1', '2027-05-03')
+    expect(selectedInvoice(store)?.lessonCount).toBe(6)
+    expect(stored().state.templates[0]).toMatchObject({ skippedLessonDates: [], chargedBankHolidays: ['2027-05-03'] })
+    useAppStore.getState().toggleLesson('a1', '2027-05-03')
+    expect(selectedInvoice(store)?.lessonCount).toBe(5)
+    expect(stored().state.templates[0]).toMatchObject({ skippedLessonDates: [], chargedBankHolidays: [] })
+    // An ordinary lesson is still unticked as before.
+    useAppStore.getState().toggleLesson('a1', '2027-05-10')
+    expect(stored().state.templates[0]).toMatchObject({ skippedLessonDates: ['2027-05-10'] })
+  })
+
+  it('in the holidays, with that option, shows the next half-term ready to invoice', async () => {
+    vi.setSystemTime(new Date(2026, 9, 28, 12)) // half-term holiday
+    const store = await loadStore()
+    expect(store.useAppStore.getState().currentTerm).toBeNull()
+    store.useAppStore.getState().updateSettings({ charging: { nextHalfTermInHolidays: true } })
+    expect(store.useAppStore.getState().currentTerm?.term.startDate).toEqual(new Date(2026, 10, 3))
+    expect(selectedInvoice(store)?.subject).toBe('Invoice for Drum Lessons 2nd half autumn term 2026')
+  })
+})
+
+describe('v1.1.2: every half-term kept (docs/proposals/2026-09-v1.1.2-feedback.md)', () => {
+  it('works out the half-terms since the first family on the first start, and saves the current one as it changes', async () => {
+    const { useAppStore } = await loadStore() // families added 6 Oct 2025; today 10 Sep 2026
+    const records = useAppStore.getState().settings.halfTerms!
+    expect(Object.keys(records).sort()).toEqual(['2025-0', '2025-1', '2025-2', '2025-3', '2025-4', '2025-5', '2026-0'])
+    expect(records['2025-0']).toMatchObject({ workedOut: true, ended: true })
+    expect(records['2026-0'].families.map((f) => f.id)).toEqual(['a1', 'b2'])
+    useAppStore.getState().toggleLesson('a1', '2026-09-21')
+    expect(stored().state.settings.halfTerms['2026-0'].families[0]).toMatchObject({ lessonCount: 7, total: 140 })
+  })
+
+  it('keeps Paid and Thanks sent as the family changes, and keeps a deleted family', async () => {
+    const { useAppStore } = await loadStore()
+    useAppStore.getState().setHalfTermTick('2026-0', 'a1', 'paid', true)
+    useAppStore.getState().setHalfTermTick('2025-5', 'b2', 'thanked', true)
+    useAppStore.getState().updateTemplate('a1', { cost: 25 })
+    useAppStore.getState().deleteTemplate('b2')
+    const records = stored().state.settings.halfTerms
+    expect(records['2026-0'].families[0]).toMatchObject({ id: 'a1', cost: 25, total: 200, paid: true })
+    expect(records['2026-0'].families[1]).toMatchObject({ id: 'b2', removedAt: expect.any(String) })
+    expect(records['2025-5'].families[1]).toMatchObject({ id: 'b2', thanked: true, cost: 12.5 })
+  })
+
+  it('is in every backup, and backed up daily even with no families left', async () => {
+    const { useAppStore, ensureDailyBackup } = await loadStore()
+    useAppStore.getState().deleteTemplate('a1')
+    useAppStore.getState().deleteTemplate('b2')
+    await ensureDailyBackup()
+    const backup = JSON.parse(backend.createAutoBackup.mock.calls[0][1])
+    expect(Object.keys(backup.data.store.settings.halfTerms)).toContain('2025-0')
+    const { parseBackup } = await import('../lib/backup-parse')
+    expect(parseBackup(backend.createAutoBackup.mock.calls[0][1]).ok).toBe(true)
+  })
+
+  it('import and restore keep both copies of the records, the newest of each', async () => {
+    const { useAppStore } = await loadStore()
+    useAppStore.getState().setHalfTermTick('2026-0', 'a1', 'paid', true)
+    const theirs = {
+      start: '2024-09-02', end: '2024-10-25', half: '1st', season: 'autumn', families: [], ended: true, savedAt: '2024-10-26T09:00:00.000Z',
+    }
+    const olderCurrent = { start: '2026-09-01', end: '2026-10-25', half: '1st', season: 'autumn', families: [], savedAt: '2026-09-01T09:00:00.000Z' }
+    const file = {
+      app: 'student-invoice' as const, kind: 'backup' as const, formatVersion: 1, appVersion: '1.1.2', exportedAt: '2026-09-26T12:00:00.000Z',
+      data: { store: { templates: [], currentTemplateId: null, settings: { halfTerms: { '2024-0': theirs, '2026-0': olderCurrent } } } },
+    }
+    await useAppStore.getState().replaceAllData(file, 'pre-restore')
+    const records = useAppStore.getState().settings.halfTerms!
+    expect(records['2024-0']).toEqual(theirs)
+    expect(records['2025-3']).toBeDefined()
+    expect(records['2026-0'].families.find((f) => f.id === 'a1')).toMatchObject({ paid: true, removedAt: expect.any(String) })
+  })
+
+  it('makes a half-term final once it has ended', async () => {
+    const { useAppStore } = await loadStore()
+    vi.setSystemTime(new Date(2026, 9, 28, 9)) // half-term holiday
+    useAppStore.getState().refreshCurrentTerm()
+    useAppStore.getState().updateTemplate('a1', { cost: 50 })
+    const final = useAppStore.getState().settings.halfTerms!['2026-0']
+    expect(final.ended).toBe(true)
+    expect(final.families[0]).toMatchObject({ cost: 20, total: 160 })
+  })
+})

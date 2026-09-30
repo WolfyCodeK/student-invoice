@@ -33,9 +33,10 @@ The feedback form calls api.emailjs.com directly from the webview.
 - `features/app-context.tsx` gives every screen navigation and shared
   actions, including the check that asks before unsaved changes are
   discarded (`useLeaveGuard`). `lib/appearance.ts` handles the colour
-  scheme, corners and light or dark (and the reduced-motion check). `lib/format.ts` formats money and
-  lesson counts for display, and `lib/term-display.ts` names and compares
-  half-terms for the screens.
+  scheme, corners and light or dark (and the reduced-motion check). `lib/format.ts` formats money,
+  instruments ("Drums") and lesson counts for display, and `lib/term-display.ts` names and compares
+  half-terms for the screens. `lib/half-terms.ts` keeps the half-term
+  records ([data model](data-model.md#half-term-records)).
 - `stores/app-store.ts`: the single zustand store. It holds templates, settings,
   the current term, the live Gmail status, Draft all's results
   (`draftResults`, not persisted, so they survive leaving the register), and
@@ -43,14 +44,18 @@ The feedback form calls api.emailjs.com directly from the webview.
   It persists part of itself to localStorage through its own storage, which
   sets unreadable data aside instead of overwriting it. See
   [data model](data-model.md). Invoices are never stored: `invoiceFor()`
-  builds a family's invoice from its template, the current term and the
-  email wording settings (the custom body and Your name) whenever a screen
-  or a draft needs it (the register memoises them per render).
+  builds a family's invoice from its template, the current term, the
+  email wording settings (the custom body and Your name) and the charging
+  options whenever a screen or a draft needs it (the register memoises them
+  per render). What each half-term charged is recorded, though, in
+  `settings.halfTerms`, kept up to date by `syncHalfTerms` (a store
+  subscription), with the Paid and Thanks ticks set by
+  `setHalfTermTick`.
   `needsYourName()` says when the wording needs a name that isn't set yet;
   the drafting actions then refuse with `YOUR_NAME_NEEDED`
   ([UI](ui.md#your-name)).
-- `utils/terms.ts` and `utils/invoice-generator.ts`: pure, tested billing logic.
-  See [billing](billing.md).
+- `utils/terms.ts`, `utils/invoice-generator.ts` and `utils/bank-holidays.ts`:
+  pure, tested billing logic. See [billing](billing.md).
 - `types/index.ts`: shared domain types.
 - **Loaded on first use:** Settings, the family editor, the feedback form,
   What's new, "Choose how it looks" and the tour are code-split
@@ -65,7 +70,8 @@ The feedback form calls api.emailjs.com directly from the webview.
 **Start-up side effects:**
 - **When the store module loads** (`app/src/stores/app-store.ts`): it loads
   the stored state (copying it aside first if it can't be read), sets the
-  current term from today's date and any edited term dates, and asks Rust for
+  current term from today's date, any edited term dates and the charging
+  options, brings the half-term records up to date (`syncHalfTerms`), and asks Rust for
   the Gmail status (following a sign-in that a reload left pending, see
   [Gmail](gmail.md#status-and-disconnect)). It also sets one timer to just
   after midnight and listens for the window coming back into view, to work

@@ -130,6 +130,14 @@ describe("instrumentOptions", () => {
     expect(options.find((o) => o.value === "bass guitar")?.label).toBe("Bass guitar");
   });
 
+  it('shows "drum" as Drums, while the value (and so the email) stays "drum"', () => {
+    expect(instrumentOptions("").find((o) => o.value === "drum")?.label).toBe("Drums");
+    const drums = { id: "d", recipient: "Jo", students: "Finn", instrument: "drum", day: "Thursday", cost: 24, createdAt: new Date(), updatedAt: new Date() };
+    const invoice = generateInvoice(drums, calculateTermData(new Date(2026, 8, 10))!, undefined, "N");
+    expect(invoice.subject).toBe("Invoice for Drum Lessons 1st half autumn term 2026");
+    expect(invoice.body).toContain("Finn's drum lessons");
+  });
+
   it("keeps a saved instrument that isn't on the list", () => {
     const options = instrumentOptions("violin");
     expect(options).toHaveLength(INSTRUMENTS.length + 1);

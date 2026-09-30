@@ -15,6 +15,17 @@ generated from the files here.
 to a 16-unit viewBox for the in-app title bar. Update it by hand if
 `icon-small.svg` changes (divide every coordinate by 64).
 
+## Centred on the tile (v1.1.2)
+
+The paper (both sheets and their lines) used to sit left of the tile's
+middle, with the tick reaching out to the right: at 32 px, the running app's
+taskbar icon, 4 px of blue on the left and 8 on the right of the paper. In
+v1.1.2 the paper moved right, 64 units in `icon-small.svg` (one grid step, so
+still whole pixels at 16 and 32 px), 32 in `icon.svg` and 1 unit in
+`app-icon.svg`. The tick stayed where it was, so the artwork keeps its size
+and now has the same margin on both sides at every small size (3 and 3 px at
+16 px, 6 and 6 at 32 px), with the paper in the middle.
+
 ## Palette
 
 | Part | Colour |

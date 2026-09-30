@@ -1,4 +1,4 @@
-import { TermData, TermDateOverrides } from '../types'
+import { ChargingOptions, Term, TermData, TermDateOverrides } from '../types'
 
 // Pure term-date logic, moved verbatim from stores/app-store.ts so it can be
 // unit-tested without the store's side effects. Money-affecting: see the
@@ -51,18 +51,33 @@ export const calculateTermData = (date: Date, overrides?: TermDateOverrides): Te
   ]
 
   for (const term of allTerms) {
-    if (date >= term.startDate && date <= term.endDate) {
-      // Whole calendar days, so a clock change inside (edited) dates can't add
-      // a lesson; for the usual dates this is exactly the v1.0.1 count
-      // (bug audit B24; docs/proposals/2026-09-editable-term-dates.md).
-      const days = Math.round((term.endDate.getTime() - term.startDate.getTime()) / (1000 * 60 * 60 * 24))
-      const weeksCount = Math.ceil(days / 7)
-      return {
-        term,
-        weeksCount
-      }
-    }
+    if (date >= term.startDate && date <= term.endDate) return termDataOf(term)
   }
 
   return null
+}
+
+/** A half-term with the number of weeks it charges for (v1.0.1 rule). */
+export function termDataOf(term: Term): TermData {
+  // Whole calendar days, so a clock change inside (edited) dates can't add
+  // a lesson; for the usual dates this is exactly the v1.0.1 count
+  // (bug audit B24; docs/proposals/2026-09-editable-term-dates.md).
+  const days = Math.round((term.endDate.getTime() - term.startDate.getTime()) / (1000 * 60 * 60 * 24))
+  return { term, weeksCount: Math.ceil(days / 7) }
+}
+
+/**
+ * The half-term to invoice on `date`: the one it falls in, or outside term
+ * time null, or with the "next half-term in the holidays" option the next one
+ * to start (docs/proposals/2026-09-v1.1.2-feedback.md, item 10).
+ */
+export function currentTermData(date: Date, overrides?: TermDateOverrides, charging?: ChargingOptions): TermData | null {
+  const inTerm = calculateTermData(date, overrides)
+  if (inTerm || !charging?.nextHalfTermInHolidays) return inTerm
+  const year = date.getFullYear()
+  const next = [year - 1, year, year + 1]
+    .flatMap((y) => getTermsForAcademicYear(y, overrides))
+    .filter((t) => t.startDate > date)
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0]
+  return next ? termDataOf(next) : null
 }

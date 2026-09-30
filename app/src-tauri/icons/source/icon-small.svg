@@ -12,6 +12,10 @@
   <!-- Tile -->
   <rect width="1024" height="1024" rx="225" fill="url(#tile)"/>
 
+  <!-- The paper, moved one grid step (64) right in v1.1.2 so it sits in the middle
+       of the tile; the tick stays put, inside the same margins -->
+  <g transform="translate(64 0)">
+
   <!-- Back sheet: plain, a little deeper than the master so it separates from the front sheet -->
   <rect x="128" y="128" width="512" height="640" rx="32" fill="#C4D6F1"/>
 
@@ -20,6 +24,8 @@
   <g fill="#1D3F8A">
     <rect x="320" y="320" width="320" height="64"/>
     <rect x="320" y="448" width="192" height="64"/>
+  </g>
+
   </g>
 
   <!-- Tick: centreline (416,640) > (512,736) > (800,448), 128 wide -->

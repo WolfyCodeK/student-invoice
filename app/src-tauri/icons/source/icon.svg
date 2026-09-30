@@ -30,6 +30,10 @@
   <!-- Tile (22% corner radius); transparent outside the corners -->
   <rect width="1024" height="1024" rx="225" fill="url(#tile)"/>
 
+  <!-- The paper, moved 32 right in v1.1.2 so it sits in the middle of the tile;
+       the tick stays put, inside the same margins -->
+  <g transform="translate(32 0)">
+
   <!-- Back sheet, offset up and to the left -->
   <rect x="208" y="192" width="416" height="528" rx="32" fill="url(#back)"/>
   <!-- Sheet geometry and rows sit on a 16-unit grid: whole pixels at 64 and 256 px -->
@@ -46,6 +50,8 @@
     <rect x="400" y="368" width="256" height="32" rx="16"/>
     <rect x="400" y="448" width="256" height="32" rx="16"/>
     <rect x="400" y="528" width="176" height="32" rx="16"/>
+  </g>
+
   </g>
 
   <!-- Tick: centreline (480,640) > (568,728) > (792,504), 80 wide;

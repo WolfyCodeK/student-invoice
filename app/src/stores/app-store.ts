@@ -1,8 +1,10 @@
 import { create } from 'zustand'
 import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware'
-import type { InvoiceTemplate, AppSettings, TermData } from '../types'
-import { generateInvoice, getDefaultTemplateString, lessonDateKey, lessonDates, type InvoiceData } from '../utils/invoice-generator'
-import { calculateTermData } from '../utils/terms'
+import type { InvoiceTemplate, AppSettings, ChargingOptions, TermData } from '../types'
+import { generateInvoice, getDefaultTemplateString, lessonCharges, type InvoiceData } from '../utils/invoice-generator'
+import { currentTermData } from '../utils/terms'
+import { isBankHoliday } from '../utils/bank-holidays'
+import { chargeOptions, mergeRecords, syncRecords, withTick, type Tick } from '../lib/half-terms'
 import { backend, getAppVersion, isBackendError, errorMessage, type BackendError, type BackupReason, type GmailStatus } from '../lib/backend'
 import { buildBackup, suggestedBackupName } from '../lib/backup'
 import type { BackupFile } from '../lib/schema'
@@ -46,6 +48,8 @@ interface AppState {
   setCurrentTemplate: (id: string | null) => void
   /** Untick a lesson that didn't happen, or tick it again (docs/billing.md). */
   toggleLesson: (templateId: string, date: string) => void
+  /** Sets a family's Paid or Thanks sent tick in a half-term's record (keyed as lib/half-terms.ts). */
+  setHalfTermTick: (key: string, familyId: string, tick: Tick, on: boolean) => void
 
   // Appearance (docs/ui.md)
   setAppearance: (update: Partial<Appearance>) => void
@@ -56,7 +60,8 @@ interface AppState {
   updateSettings: (updates: Partial<AppSettings>) => void
 
   /**
-   * The half-term today is in; null outside term time. Worked out at start-up
+   * The half-term today is in; null outside term time (or, with the "next
+   * half-term in the holidays" option, the next one). Worked out at start-up
    * and again whenever the date may have moved on (refreshCurrentTerm).
    */
   currentTerm: TermData | null
@@ -107,8 +112,8 @@ const defaultSettings: AppSettings = {
   customEmailBodyTemplate: undefined
 }
 
-/** The settings an email's wording comes from. */
-export type EmailWording = Pick<AppSettings, 'customEmailBodyTemplate' | 'yourName'>
+/** The settings an email's wording (and, through the charging options, its figures) comes from. */
+export type EmailWording = Pick<AppSettings, 'customEmailBodyTemplate' | 'yourName' | 'charging'>
 
 /**
  * A family's invoice this half-term, exactly as the email says it (the
@@ -117,7 +122,7 @@ export type EmailWording = Pick<AppSettings, 'customEmailBodyTemplate' | 'yourNa
  */
 export function invoiceFor(template: InvoiceTemplate, term: TermData | null, wording: EmailWording): InvoiceData | null {
   return term && isWeekday(template.day)
-    ? generateInvoice(template, term, wording.customEmailBodyTemplate, wording.yourName?.trim() ?? '')
+    ? generateInvoice(template, term, wording.customEmailBodyTemplate, wording.yourName?.trim() ?? '', chargeOptions(wording.charging))
     : null
 }
 
@@ -131,10 +136,15 @@ export function needsYourName(wording: EmailWording): boolean {
   return (wording.customEmailBodyTemplate || getDefaultTemplateString()).includes('{{yourName}}')
 }
 
-/** This half-term's lesson dates ("yyyy-MM-dd") for a template; none outside term time or without a weekday. */
-function lessonKeys(template: Pick<InvoiceTemplate, 'day'>, term: TermData | null): Set<string> {
-  if (!term || !isWeekday(template.day)) return new Set()
-  return new Set(lessonDates(template, term).map(lessonDateKey))
+/** This half-term's lessons for a template; none outside term time or without a weekday. */
+function lessonsOf(template: InvoiceTemplate, term: TermData | null, charging: ChargingOptions | undefined) {
+  if (!term || !isWeekday(template.day)) return []
+  return lessonCharges(template, term, chargeOptions(charging))
+}
+
+/** Keeps only the dates in `keep`: undefined when there were none to begin with. */
+function onlyDates(dates: string[] | undefined, keep: Set<string>): string[] | undefined {
+  return dates && dates.filter((d) => keep.has(d))
 }
 
 /** Why a family can't be drafted as it is now (as its Draft all outcome), or its invoice. */
@@ -171,7 +181,7 @@ export async function migrateStoredData(): Promise<void> {
   const revision = settings.dataRevision ?? 0
   if (revision >= CURRENT_DATA_REVISION) return
   // A fresh install has nothing worth backing up.
-  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate || settings.yourName || settings.termDates)
+  const hasUserData = templates.length > 0 || Boolean(settings.customEmailBodyTemplate || settings.yourName || settings.termDates || settings.halfTerms)
   // Nothing is changed unless the backup succeeded; it is retried next start.
   if (hasUserData) await useAppStore.getState().backupNow('pre-migration')
   // Revision 1 was clearing the Google credentials, now done above on every start.
@@ -180,7 +190,9 @@ export async function migrateStoredData(): Promise<void> {
 
 /** Takes the daily automatic backup if there isn't one from today yet. */
 export async function ensureDailyBackup(): Promise<void> {
-  if (useAppStore.getState().templates.length === 0) return
+  // Half-term records are backed up even when every family has been deleted.
+  const { templates, settings } = useAppStore.getState()
+  if (templates.length === 0 && !settings.halfTerms) return
   const today = new Date().toISOString().slice(0, 10)
   const backups = await backend.listBackups()
   if (!backups.some((b) => b.reason === 'daily' && b.createdAt.startsWith(today))) {
@@ -254,6 +266,9 @@ const safeStorage: PersistStorage<StoredState> = {
   },
   removeItem: (name) => localStorage.removeItem(name),
 }
+
+/** The half-term to invoice today, from the term dates and options in `settings`. */
+const todaysTerm = (settings: Pick<AppSettings, 'termDates' | 'charging'>) => currentTermData(new Date(), settings.termDates, settings.charging)
 
 /** Stores the status Rust reported (`gmailConnected` is kept in step for v1.0.1). */
 const setGmail = (gmail: GmailStatus) => useAppStore.setState({ gmail, gmailConnected: gmail.connected })
@@ -424,13 +439,21 @@ export const useAppStore = create<AppState>()(
         // The user chose to replace everything, including stored data that
         // couldn't be read (and couldn't be copied) at start-up.
         storageWritable = true
+        const imported = store.settings as Partial<AppSettings>
         set({
           templates,
           currentTemplateId: templates.some((t) => t.id === store.currentTemplateId) ? store.currentTemplateId : (templates[0]?.id ?? null),
-          settings: { ...defaultSettings, ...(store.settings as Partial<AppSettings>), gmailClientId: '', gmailClientSecret: '' },
+          settings: {
+            ...defaultSettings,
+            ...imported,
+            gmailClientId: '',
+            gmailClientSecret: '',
+            // Half-term records are never lost: both copies' are kept, the newest of each.
+            halfTerms: mergeRecords(get().settings.halfTerms, imported.halfTerms),
+          },
         })
-        // Imported term dates change which half-term it is.
-        set({ currentTerm: calculateTermData(new Date(), get().settings.termDates) })
+        // Imported term dates and options change which half-term it is.
+        set({ currentTerm: todaysTerm(get().settings) })
         if (theme) saveMode(theme)
         // The caller reloads the app, but the old colours shouldn't show meanwhile.
         applyAppearance(appearanceFrom(get().settings))
@@ -458,17 +481,19 @@ export const useAppStore = create<AppState>()(
       },
 
       updateTemplate: (id, updates) => {
-        const term = get().currentTerm
+        const { currentTerm: term, settings } = get()
         set((state) => ({
           templates: state.templates.map((template) => {
             if (template.id !== id) return template
             const updated = { ...template, ...updates, updatedAt: new Date() }
-            // Unticks belong to one lesson day: with a new day they no longer
-            // match any lesson and are dropped (docs/proposals/2026-09-untick-lessons.md),
-            // so changing the day back later doesn't bring them back.
-            if (updates.day !== undefined && updates.day !== template.day && updated.skippedLessonDates) {
-              const lessons = lessonKeys(updated, term)
-              updated.skippedLessonDates = updated.skippedLessonDates.filter((d) => lessons.has(d))
+            // Unticks (and bank holidays ticked back on) belong to one lesson
+            // day: with a new day they no longer match any lesson and are
+            // dropped (docs/proposals/2026-09-untick-lessons.md), so changing
+            // the day back later doesn't bring them back.
+            if (updates.day !== undefined && updates.day !== template.day) {
+              const lessons = new Set(lessonsOf(updated, term, settings.charging).map((l) => l.key))
+              if (updated.skippedLessonDates) updated.skippedLessonDates = onlyDates(updated.skippedLessonDates, lessons)
+              if (updated.chargedBankHolidays) updated.chargedBankHolidays = onlyDates(updated.chargedBankHolidays, lessons)
             }
             return updated
           })
@@ -494,17 +519,37 @@ export const useAppStore = create<AppState>()(
       },
 
       toggleLesson: (templateId, date) => {
-        const { currentTerm, templates } = get()
+        const { currentTerm, templates, settings } = get()
         const template = templates.find((t) => t.id === templateId)
         if (!template) return
+        const lessons = lessonsOf(template, currentTerm, settings.charging)
+        const lesson = lessons.find((l) => l.key === date)
+        if (!lesson) return
         // Only this half-term's lesson dates are kept, so unticks from past
         // half-terms (or an old lesson day) are dropped here.
-        const lessons = lessonKeys(template, currentTerm)
-        if (!lessons.has(date)) return
-        const skipped = new Set((template.skippedLessonDates ?? []).filter((d) => lessons.has(d)))
-        if (skipped.has(date)) skipped.delete(date)
-        else skipped.add(date)
-        get().updateTemplate(templateId, { skippedLessonDates: [...skipped].sort() })
+        const keys = new Set(lessons.map((l) => l.key))
+        const skipped = new Set(onlyDates(template.skippedLessonDates, keys))
+        const bankHolidays = new Set(onlyDates(template.chargedBankHolidays, keys))
+        // A bank holiday isn't charged unless ticked back on, and that choice
+        // is remembered (docs/proposals/2026-09-v1.1.2-feedback.md, item 9).
+        const bankHoliday = settings.charging?.skipBankHolidays === true && isBankHoliday(date)
+        if (lesson.charged) {
+          if (bankHoliday) bankHolidays.delete(date)
+          else skipped.add(date)
+        } else {
+          skipped.delete(date)
+          if (bankHoliday) bankHolidays.add(date)
+        }
+        const updates: Partial<InvoiceTemplate> = { skippedLessonDates: [...skipped].sort() }
+        if (template.chargedBankHolidays || bankHolidays.size > 0) updates.chargedBankHolidays = [...bankHolidays].sort()
+        get().updateTemplate(templateId, updates)
+      },
+
+      setHalfTermTick: (key, familyId, tick, on) => {
+        const { settings } = get()
+        const record = settings.halfTerms?.[key]
+        if (!record?.families.some((f) => f.id === familyId)) return
+        set({ settings: { ...settings, halfTerms: withTick(settings.halfTerms, key, record, familyId, tick, on) } })
       },
 
       // Appearance: applied where it changes, here and in replaceAllData
@@ -530,15 +575,15 @@ export const useAppStore = create<AppState>()(
 
       updateSettings: (updates) => {
         set((state) => ({ settings: { ...state.settings, ...updates } }))
-        // Edited term dates move the current half-term and its lessons.
-        if ('termDates' in updates) set({ currentTerm: calculateTermData(new Date(), get().settings.termDates) })
+        // Edited term dates (or the holidays option) move the current half-term and its lessons.
+        if ('termDates' in updates || 'charging' in updates) set({ currentTerm: todaysTerm(get().settings) })
       },
 
       // Terms
-      currentTerm: calculateTermData(new Date()),
+      currentTerm: todaysTerm({}),
       refreshCurrentTerm: () => {
         const { currentTerm, settings } = get()
-        const today = calculateTermData(new Date(), settings.termDates)
+        const today = todaysTerm(settings)
         const same =
           today === currentTerm ||
           (!!today && !!currentTerm &&
@@ -563,7 +608,7 @@ export const useAppStore = create<AppState>()(
         const stored = (persisted ?? {}) as Partial<AppState>
         const settings = { ...current.settings, ...(stored.settings ?? {}) }
         // The half-term follows any term dates edited in Settings.
-        return { ...current, ...stored, settings, currentTerm: calculateTermData(new Date(), settings.termDates) }
+        return { ...current, ...stored, settings, currentTerm: todaysTerm(settings) }
       },
       // Loading is synchronous (localStorage), so this runs before anything
       // else can write. Only then may writes happen; if loading failed
@@ -611,6 +656,27 @@ async function followPendingSignIn(): Promise<void> {
 
 // Ask Rust for the Gmail status as the app starts.
 void useAppStore.getState().refreshGmailStatus()
+
+/**
+ * Keeps the half-term records up to date (lib/half-terms.ts): the current
+ * half-term is saved whenever its families, lessons, dates or options change,
+ * and half-terms that have ended are made final.
+ */
+function syncHalfTerms(): void {
+  const { settings, templates, currentTerm } = useAppStore.getState()
+  const halfTerms = syncRecords(settings.halfTerms, { currentTerm, templates, charging: settings.charging, termDates: settings.termDates })
+  if (halfTerms !== settings.halfTerms) useAppStore.setState({ settings: { ...settings, halfTerms } })
+}
+useAppStore.subscribe((state, prev) => {
+  if (
+    state.templates !== prev.templates ||
+    state.currentTerm !== prev.currentTerm ||
+    state.settings.charging !== prev.settings.charging ||
+    state.settings.termDates !== prev.settings.termDates
+  )
+    syncHalfTerms()
+})
+syncHalfTerms()
 
 // A new half-term can start while the app stays open, or while the PC sleeps
 // through it (docs/proposals/2026-09-rules-review-decisions.md). Check again

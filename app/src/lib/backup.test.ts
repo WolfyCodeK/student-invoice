@@ -132,6 +132,49 @@ describe('rejects hostile or broken files', () => {
   })
 })
 
+describe('v1.1.2 settings and half-term records', () => {
+  const record = {
+    start: '2026-09-01', end: '2026-10-25', half: '1st', season: 'autumn', ended: true, savedAt: '2026-10-26T09:00:00.000Z',
+    charging: { skipBankHolidays: true },
+    families: [{
+      id: 't1', recipient: 'Sarah', students: 'Oliver', instrument: 'piano', day: 'Monday', cost: 25,
+      lessons: [{ date: '2026-09-07', charged: true }, { date: '2026-09-14', charged: false, reason: 'unticked' }],
+      lessonCount: 1, total: 25, paid: true,
+    }],
+  }
+  const withRecords = (over: Record<string, unknown> = {}) => {
+    const f = JSON.parse(buildBackup({ ...source, settings: { ...settings, charging: { insideHalfTermOnly: true } } }, '1.1.2'))
+    f.data.store.settings.halfTerms = { '2026-0': { ...record, ...over } }
+    f.data.store.templates[0].chargedBankHolidays = ['2027-05-03']
+    return f
+  }
+
+  it('round-trip, with the options and bank holidays ticked back on', () => {
+    const r = parseBackup(JSON.stringify(withRecords()))
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.backup.data.store.settings).toMatchObject({ charging: { insideHalfTermOnly: true }, halfTerms: { '2026-0': record } })
+    expect(r.backup.data.store.templates[0].chargedBankHolidays).toEqual(['2027-05-03'])
+  })
+
+  it('keep fields and reasons from a newer version', () => {
+    const f = withRecords({ note: 'newer field' })
+    f.data.store.settings.halfTerms['2026-0'].families[0].lessons[1].reason = 'snow day'
+    expect(parseBackup(JSON.stringify(f)).ok).toBe(true)
+  })
+
+  it('reject a record with a bad key, dates or figures', () => {
+    const badKey = withRecords()
+    badKey.data.store.settings.halfTerms = { '2026-6': record }
+    expect(parseBackup(JSON.stringify(badKey)).ok).toBe(false)
+    expect(parseBackup(JSON.stringify(withRecords({ start: '1 Sep 2026' }))).ok).toBe(false)
+    expect(parseBackup(JSON.stringify(withRecords({ savedAt: 'yesterday' }))).ok).toBe(false)
+    const negative = withRecords()
+    negative.data.store.settings.halfTerms['2026-0'].families[0].total = -25
+    expect(parseBackup(JSON.stringify(negative)).ok).toBe(false)
+  })
+})
+
 describe('suggestedBackupName', () => {
   it('uses the local date', () => {
     expect(suggestedBackupName(new Date(2026, 8, 6, 23, 30))).toBe('Student Invoice backup 2026-09-06.json')

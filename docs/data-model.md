@@ -40,6 +40,7 @@ interface InvoiceTemplate {        // one per student / family
   day: string                      // weekday name, "Monday".."Sunday"
   students: string                 // student name(s)
   skippedLessonDates?: string[]    // v1.1.0: unticked lessons, "yyyy-MM-dd" (docs/billing.md)
+  chargedBankHolidays?: string[]   // v1.1.2: bank-holiday lessons ticked back on, "yyyy-MM-dd"
   createdAt: Date                  // stored as ISO string; not revived to Date on load
   updatedAt: Date                  // stored as ISO string; not revived to Date on load
 }
@@ -63,6 +64,14 @@ interface AppSettings {
     [schoolYearStart: string]:      //   "2026" for 2026/27; only years that differ from the usual dates
       { start: string; end: string }[]  // six half-terms in order, 'yyyy-MM-dd'
   }
+  charging?: {                      // v1.1.2: charging options, each off when absent (docs/billing.md)
+    insideHalfTermOnly?: boolean
+    skipBankHolidays?: boolean
+    nextHalfTermInHolidays?: boolean
+  }
+  halfTerms?: {                     // v1.1.2: the half-term records (below)
+    [key: string]: HalfTermRecord   //   "2026-0": school year 2026/27, half-term 0 (1st half autumn) to 5
+  }
 }
 ```
 
@@ -74,6 +83,72 @@ v1.1.0 never shows it: the UI uses the live status from Rust
 
 Draft all's results (`draftResults`) live in the store but are never
 persisted: they last until the user closes them or the app closes.
+
+## Half-term records
+
+v1.1.2 keeps a permanent record of every half-term in `settings.halfTerms`
+([proposal](proposals/2026-09-v1.1.2-feedback.md), item 5), so years later
+the user can see every lesson that was invoiced. The logic is in
+`app/src/lib/half-terms.ts`, tested in `app/src/lib/half-terms.test.ts` and
+`app/src/stores/app-store.test.ts`.
+
+```ts
+interface HalfTermRecord {
+  start: string; end: string        // the half-term's first and last day, 'yyyy-MM-dd'
+  half: string; season: string      // '1st' | '2nd', 'autumn' | 'spring' | 'summer'
+  families: HalfTermFamily[]
+  charging?: { insideHalfTermOnly?: true; skipBankHolidays?: true }  // options in use, when any
+  ended?: boolean                   // the half-term has ended: final
+  workedOut?: boolean               // not saved at the time: worked out later
+  savedAt: string                   // ISO time; the newest copy wins a merge
+}
+interface HalfTermFamily {
+  id: string                        // the family's id (it may since have been deleted)
+  recipient: string; students: string; instrument: string; day: string
+  cost: number                      // rounded to the penny, as the invoice used it
+  lessons: { date: string; charged: boolean; reason?: 'unticked' | 'bank-holiday' }[]
+  lessonCount: number; total: number   // the invoice's own figures
+  paid?: true; thanked?: true       // the register's Paid and Thanks ticks
+  removedAt?: string                // deleted while the half-term was current (ISO time)
+}
+```
+
+- **Saved while current.** `syncHalfTerms` in the store runs whenever the
+  families, the current half-term, the charging options or the term dates
+  change, and once at start-up. It rebuilds the current half-term's record
+  from the register (`liveRecord`), keeping the Paid and Thanks
+  ticks, and writes it only when something in it changed. Nothing is
+  recorded until there is a family.
+- **Final once ended.** A record whose last day has passed, and which isn't
+  the current half-term, gets `ended: true` and is never rebuilt: a later
+  change of price, family, option or term dates leaves it as it was. Only
+  its ticks can change (`setHalfTermTick`).
+- **Families deleted meanwhile** stay in the current record with
+  `removedAt`, so nothing recorded is lost; they aren't counted in its
+  totals.
+- **Worked out when never saved.** Half-terms that ended without a record
+  (before v1.1.2, or when the app wasn't opened during one) are worked out
+  once, from the school year of the earliest family's `createdAt` (never
+  before 2025/26, when the app was first released): the families added by
+  then, at the prices and with the charging options of the moment
+  (`workedOutRecord`), marked `workedOut`. On the first start of v1.1.2 the
+  options are all off, so earlier half-terms get the v1.1.1 figures, with no
+  unticks (older versions didn't keep past unticks).
+- **Never deleted.** Nothing removes a record: not deleting a family, not
+  changing a price, option or term dates, not clearing the wording.
+- **Always backed up.** Records are part of `settings`, so they are in every
+  automatic backup and every export, and the daily backup runs while any
+  record exists even with no families left.
+- **Merged on import and restore.** `replaceAllData` replaces the families
+  and settings as before, except `halfTerms`, which are merged
+  (`mergeRecords`): every half-term in either copy is kept, and where both
+  have one, the one with the later `savedAt` wins. Restoring an older backup
+  can't lose newer history.
+- **Size.** Five years of weekly lessons for twenty families is a few hundred
+  kilobytes, well inside localStorage and the 5 MB import limit.
+- **Older versions** keep the field: v1.1.0 and v1.1.1 merge settings and
+  keep unknown fields, and v1.0.1 keeps `settings` whole (rule 3 below). They
+  don't add to it.
 
 ## Loading and upgrading stored data
 
@@ -121,6 +196,9 @@ persisted: they last until the user closes them or the app closes.
   use Gmail there.
 - **Revision 1:** it used to be the clearing above (done only once); it now
   only records itself.
+- **v1.1.2** needs no upgrade: its new fields are optional and off when
+  absent. The half-term records are started by `syncHalfTerms`, not by a
+  migration (see [Half-term records](#half-term-records)).
 - **Your name:** no upgrade sets `yourName`, so data from v1.0.1 has none
   until the user types it ([UI](ui.md#your-name)). v1.0.1 ignores the field
   and signs the standard wording with its own hard-coded name. **Known
@@ -175,6 +253,12 @@ versions must survive. It is shown here as JSON Schema:
             "type": "string"
           },
           "skippedLessonDates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "chargedBankHolidays": {
             "type": "array",
             "items": {
               "type": "string"

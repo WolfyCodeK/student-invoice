@@ -9,7 +9,8 @@ import { Check, Plus, Trash2 } from "lucide-react";
 import type { InvoiceTemplate } from "../../types";
 import { useAppStore } from "../../stores/app-store";
 import { toast } from "../../hooks/use-toast";
-import { capitalise, lessonsWord, money } from "../../lib/format";
+import { instrumentLabel, lessonsWord, money } from "../../lib/format";
+import { chargeOptions } from "../../lib/half-terms";
 import { MAX_LENGTH, WEEKDAYS } from "../../lib/schema/constants";
 import { useAppActions, useLeaveGuard } from "../app-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
@@ -23,6 +24,7 @@ import {
   toFields,
   type FamilyFormValues,
   type FamilyPreview,
+  type PreviewLesson,
 } from "./family-form";
 import "./family-editor.css";
 
@@ -43,6 +45,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
   const updateTemplate = useAppStore((s) => s.updateTemplate);
   const setCurrentTemplate = useAppStore((s) => s.setCurrentTemplate);
   const currentTerm = useAppStore((s) => s.currentTerm);
+  const charging = useAppStore((s) => s.settings.charging);
 
   const uid = useId();
   const ids = {
@@ -73,7 +76,7 @@ function FamilyForm({ template }: { template: InvoiceTemplate | null }) {
 
   const [recipient, students, instrument, day, cost] = useWatch({ control, name: ["recipient", "students", "instrument", "day", "cost"] });
   const values = useMemo(() => ({ recipient, students, instrument, day, cost }), [recipient, students, instrument, day, cost]);
-  const preview = useMemo(() => previewFor(values, currentTerm, template), [values, currentTerm, template]);
+  const preview = useMemo(() => previewFor(values, currentTerm, template, chargeOptions(charging)), [values, currentTerm, template, charging]);
   // Back, Settings and Help ask before throwing away what's been typed.
   const leaveAnyway = useLeaveGuard(hasChanges(values, initial));
   /** Leaves on purpose (saved, cancelled or deleted), without asking. */
@@ -329,9 +332,11 @@ function InvoicePreview({ preview, values }: { preview: FamilyPreview; values: F
 
 function ReadyPreview({ preview, values }: { preview: Extract<FamilyPreview, { kind: "ready" }>; values: FamilyFormValues }) {
   const { lessons, lessonCount, cost, totalCost, subject } = preview;
-  const unticked = lessons.filter((l) => !l.charged).length;
+  const unticked = lessons.filter((l) => l.reason === "unticked").length;
+  const bankHolidays = lessons.filter((l) => l.reason === "bank-holiday").length;
+  const why = (l: PreviewLesson) => (l.charged ? "" : l.reason === "bank-holiday" ? " (bank holiday)" : " (unticked)");
   const marksLabel = `${lessons.length} ${lessonsWord(lessons.length)} this half-term: ${lessons
-    .map((l) => `${format(l.date, "d MMMM")}${l.charged ? "" : " (unticked)"}`)
+    .map((l) => `${format(l.date, "d MMMM")}${why(l)}`)
     .join(", ")}`;
 
   return (
@@ -339,7 +344,7 @@ function ReadyPreview({ preview, values }: { preview: Extract<FamilyPreview, { k
       <div className="mini-id">
         <strong>{values.recipient}</strong>
         <span>
-          {values.students} · {capitalise(values.instrument)} on {values.day}s
+          {values.students} · {instrumentLabel(values.instrument)} on {values.day}s
         </span>
       </div>
       <div className="fe-weeks" role="img" aria-label={marksLabel} style={{ "--n": lessons.length } as CSSProperties}>
@@ -347,7 +352,7 @@ function ReadyPreview({ preview, values }: { preview: Extract<FamilyPreview, { k
           <div
             key={l.key}
             className={`fe-wk${l.afterTerm ? " is-after" : ""}`}
-            title={`${format(l.date, "EEEE d MMMM")}${l.charged ? "" : ": unticked, not charged"}${l.afterTerm ? " (after the half-term ends; still charged)" : ""}`}
+            title={`${format(l.date, "EEEE d MMMM")}${l.charged ? "" : l.reason === "bank-holiday" ? ": bank holiday, not charged" : ": unticked, not charged"}${l.afterTerm ? " (after the half-term ends; still charged)" : ""}`}
           >
             <span className="wk-h">
               <b>{format(l.date, "d")}</b>
@@ -359,15 +364,19 @@ function ReadyPreview({ preview, values }: { preview: Extract<FamilyPreview, { k
       </div>
       <div className="mini-sum">
         {lessonCount === 0 ? (
-          <p>Every lesson is unticked, so there's nothing to invoice this half-term.</p>
+          <p>No lesson is charged, so there's nothing to invoice this half-term.</p>
         ) : (
           <>
             <div className="sum">
               {lessonCount} {lessonsWord(lessonCount)} × {money(cost)} = <b>{money(totalCost)}</b>
             </div>
-            {unticked > 0 && (
+            {unticked + bankHolidays > 0 && (
               <div className="sum-note">
-                Not counting {unticked} unticked {lessonsWord(unticked)}.
+                Not counting{" "}
+                {[unticked > 0 && `${unticked} unticked ${lessonsWord(unticked)}`, bankHolidays > 0 && `${bankHolidays} on a bank holiday`]
+                  .filter(Boolean)
+                  .join(" and ")}
+                .
               </div>
             )}
             <p className="fe-subj">

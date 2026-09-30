@@ -5,8 +5,8 @@
 import * as z from "zod";
 import type { InvoiceTemplate, TermData } from "../../types";
 import { isWeekday } from "../../lib/schema/constants";
-import { capitalise } from "../../lib/format";
-import { generateInvoice, lessonDateKey, lessonDates } from "../../utils/invoice-generator";
+import { capitalise, instrumentLabel } from "../../lib/format";
+import { generateInvoice, lessonCharges, type ChargeOptions, type LessonCharge } from "../../utils/invoice-generator";
 
 /** The instruments offered, stored lowercase exactly as v1.0.1 stored them. */
 export const INSTRUMENTS = ["piano", "drum", "guitar", "vocal", "music", "singing", "bass guitar", "classical guitar"] as const;
@@ -112,7 +112,7 @@ export interface InstrumentOption {
  * (e.g. an imported "violin"), so editing never loses it.
  */
 export function instrumentOptions(saved: string): InstrumentOption[] {
-  const options: InstrumentOption[] = INSTRUMENTS.map((value) => ({ value, label: capitalise(value) }));
+  const options: InstrumentOption[] = INSTRUMENTS.map((value) => ({ value, label: instrumentLabel(value) }));
   if (saved !== "" && !options.some((o) => o.value === saved)) {
     const label = capitalise(saved);
     const clash = options.some((o) => o.label === label);
@@ -128,6 +128,8 @@ export interface PreviewLesson {
   charged: boolean;
   /** Falls after the half-term's last day (billing issue B1; shown as the register shows it). */
   afterTerm: boolean;
+  /** Why it isn't charged. */
+  reason?: LessonCharge["reason"];
 }
 
 export type FamilyPreview =
@@ -146,21 +148,23 @@ export type FamilyPreview =
 /**
  * This half-term's invoice for the family as it would be saved: the saved
  * template (unticked lessons and all) with the form's five fields on top,
- * exactly what `updateTemplate` would store.
+ * exactly what `updateTemplate` would store, charged with the charging options.
  */
-export function previewFor(values: FamilyFormValues, term: TermData | null, saved: InvoiceTemplate | null): FamilyPreview {
+export function previewFor(values: FamilyFormValues, term: TermData | null, saved: InvoiceTemplate | null, options: ChargeOptions = {}): FamilyPreview {
   if (!term) return { kind: "no-term" };
   const parsed = familySchema.safeParse(values);
   if (!parsed.success) return { kind: "incomplete" };
 
   const base: InvoiceTemplate = saved ?? { ...toFields(EMPTY), id: "new", createdAt: new Date(0), updatedAt: new Date(0) };
   const draft: InvoiceTemplate = { ...base, ...toFields(parsed.data) };
-  const invoice = generateInvoice(draft, term);
-  const skipped = new Set(draft.skippedLessonDates ?? []);
-  const lessons = lessonDates(draft, term).map((date) => {
-    const key = lessonDateKey(date);
-    return { date, key, charged: !skipped.has(key), afterTerm: date > term.term.endDate };
-  });
+  const invoice = generateInvoice(draft, term, undefined, "", options);
+  const lessons = lessonCharges(draft, term, options).map(({ date, key, charged, reason }) => ({
+    date,
+    key,
+    charged,
+    afterTerm: date > term.term.endDate,
+    ...(reason ? { reason } : {}),
+  }));
   return {
     kind: "ready",
     lessons,

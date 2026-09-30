@@ -2,7 +2,7 @@
 // sections on the left and one scrolling page of groups. Everything applies
 // straight away, except the email wording and the term dates, which have their own Save buttons.
 import { useEffect, useRef, useState, type ComponentType, type MouseEvent } from "react";
-import { ArrowLeft, CalendarDays, Database, FileText, Gauge, Info, Mail, Palette, type LucideProps } from "lucide-react";
+import { ArrowLeft, CalendarDays, Database, FileText, Gauge, Info, Mail, Palette, PoundSterling, type LucideProps } from "lucide-react";
 import { useAppActions } from "../app-context";
 import { prefersReducedMotion } from "../../lib/appearance";
 import { activeSectionIndex } from "./settings-logic";
@@ -10,12 +10,13 @@ import { AppearanceGroup } from "./appearance-group";
 import { GmailGroup } from "./gmail-group";
 import { WordingGroup } from "./wording-group";
 import { TermsGroup } from "./terms-group";
+import { ChargingGroup } from "./charging-group";
 import { DataGroup } from "./data-group";
 import { PerformanceGroup } from "./performance-group";
 import { AboutGroup } from "./about-group";
 import "./settings.css";
 
-type SettingsSection = "appearance" | "gmail" | "wording" | "terms" | "data" | "performance" | "about";
+type SettingsSection = "appearance" | "gmail" | "wording" | "terms" | "charging" | "data" | "performance" | "about";
 
 interface Section {
   id: SettingsSection;
@@ -29,6 +30,7 @@ const SECTIONS: Section[] = [
   { id: "gmail", label: "Gmail", Icon: Mail, Body: GmailGroup },
   { id: "wording", label: "Email wording", Icon: FileText, Body: WordingGroup },
   { id: "terms", label: "Term dates", Icon: CalendarDays, Body: TermsGroup },
+  { id: "charging", label: "How lessons are charged", Icon: PoundSterling, Body: ChargingGroup },
   { id: "data", label: "Your data", Icon: Database, Body: DataGroup },
   { id: "performance", label: "Performance", Icon: Gauge, Body: PerformanceGroup },
   { id: "about", label: "About & help", Icon: Info, Body: AboutGroup },

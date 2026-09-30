@@ -22,7 +22,7 @@ Gmail as drafts for you to check and send.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/register-dark.png">
-  <img src="docs/images/register-light.png" alt="The register: six families in rows, a column for each week of the half-term with a mark for each lesson, the lesson count and total at the end of each row, and the selected family's invoice email on the right.">
+  <img src="docs/images/register-light.png" alt="The register: six families in rows with Paid and Thanks tick boxes, a column for each week of the half-term with a mark for each lesson, the lesson count and total at the end of each row, the half-term total at the bottom, and the selected family's invoice email on the right.">
 </picture>
 
 <sub>The families in the screenshots are made up.</sub>
@@ -30,11 +30,18 @@ Gmail as drafts for you to check and send.
 ## What it does
 
 - **One register per half-term.** Every family is a row, every lesson is a
-  dated mark, and the total is at the end of the row. The app knows the usual
-  UK school half-terms, so there are no dates to type. If your school's
-  differ, change them once in Settings.
+  dated mark, and the total is at the end of the row, with the half-term's
+  total at the bottom. The app starts with its best guess at the UK school
+  half-terms; check them against your school's calendar in Settings.
 - **Untick a lesson that didn't happen.** Click its mark, and the lesson count,
   total and dates in the email all follow.
+- **Paid and thanked.** Tick who has paid and who you've thanked, and see
+  what's still outstanding.
+- **Every half-term kept.** Open any earlier half-term to see every lesson
+  you invoiced, years later.
+- **Charge your way.** Optional settings to charge only lessons inside the
+  half-term, skip bank holidays, or invoice the next half-term during the
+  holidays.
 - **Invoice emails written for you.** Each family's email is ready to copy, or
   to save as a Gmail draft. **Draft all** does the whole half-term at once and
   shows each family's progress. Nothing is ever sent without you.

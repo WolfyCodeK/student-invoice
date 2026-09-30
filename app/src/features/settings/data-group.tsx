@@ -188,8 +188,8 @@ export function DataGroup() {
         <DialogContent>
           <DialogTitle>Replace all your data?</DialogTitle>
           <DialogDescription>
-            Your current families and settings will be replaced with {pending?.label}. A backup of what you have now is saved first, so you can
-            undo this from Automatic backups.
+            Your current families and settings will be replaced with {pending?.label}. Earlier half-terms are kept: those in the file are added
+            to yours. A backup of what you have now is saved first, so you can undo this from Automatic backups.
           </DialogDescription>
           {summary && (
             <dl className="st-summary">

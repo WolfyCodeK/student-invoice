@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { format } from 'date-fns'
 import { calculateTermData } from '../../utils/terms'
 import type { InvoiceTemplate } from '../../types'
-import { registerLessons, registerWeeks } from './weeks'
+import { markTitle, recordLessons, recordWeeks, registerLessons, registerWeeks } from './weeks'
+import { liveRecord } from '../../lib/half-terms'
 
 const autumn1 = calculateTermData(new Date(2026, 8, 26))! // 1 Sep – 25 Oct 2026
 const t = (day: string, skippedLessonDates?: string[]): InvoiceTemplate => ({
@@ -29,5 +30,23 @@ describe('register weeks', () => {
     expect(monday.map((l) => l.week)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
     expect(monday.filter((l) => !l.ticked).map((l) => l.key)).toEqual(['2026-09-21'])
     expect(registerLessons(t('Tuesday'), autumn1).map((l) => l.week)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+  })
+})
+
+describe('a saved half-term', () => {
+  it('is drawn exactly as the register drew it', () => {
+    const families = [t('Monday', ['2026-09-21']), t('Tuesday')]
+    const record = liveRecord(autumn1, families, undefined, undefined, new Date(2026, 8, 26))
+    expect(recordWeeks(record)).toEqual(registerWeeks(autumn1, families))
+    expect(recordLessons(record.families[0], record)).toEqual(registerLessons(families[0], autumn1))
+  })
+
+  it('shows lessons left out as bank holidays, and only the weeks it had', () => {
+    const summer1 = calculateTermData(new Date(2027, 4, 1))! // 13 Apr – 23 May 2027
+    const record = liveRecord(summer1, [t('Monday')], { insideHalfTermOnly: true, skipBankHolidays: true }, undefined, new Date(2027, 4, 1))
+    const lessons = recordLessons(record.families[0], record)
+    expect(lessons.find((l) => l.key === '2027-05-03')).toMatchObject({ ticked: false, reason: 'bank-holiday' })
+    expect(markTitle(lessons.find((l) => l.key === '2027-05-03')!)).toBe('Mon 3 May: bank holiday, not charged')
+    expect(recordWeeks(record).some((w) => w.afterTerm)).toBe(false)
   })
 })

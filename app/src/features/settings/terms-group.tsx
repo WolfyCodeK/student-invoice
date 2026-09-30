@@ -1,14 +1,15 @@
-// Settings → Term dates: this school year's and next year's six half-terms,
-// editable (docs/proposals/2026-09-editable-term-dates.md). The dates replace
-// the usual ones wherever the app uses them; the calculation rules don't change.
+// Settings → Term dates: the current school year's six half-terms, editable
+// (docs/proposals/2026-09-editable-term-dates.md). From 1 August it is the
+// school year starting that autumn (docs/proposals/2026-09-v1.1.2-feedback.md,
+// item 6). The dates replace the app's own wherever the app uses them; the
+// calculation rules don't change. Dates saved for other years keep working.
 import { useState } from "react";
 import { format } from "date-fns";
 import { CalendarOff, CircleCheck } from "lucide-react";
 import { useAppStore } from "../../stores/app-store";
 import { useLeaveGuard } from "../app-context";
-import { academicYearStart, isSameTerm, nextTermAfter, schoolYearLabel } from "../../lib/term-display";
+import { isSameTerm, nextTermAfter, schoolYearLabel, termDatesYear } from "../../lib/term-display";
 import { getTermsForAcademicYear } from "../../utils/terms";
-import { Dialog, DialogActions, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog";
 import { halfTermName, sameTermDates, termDatesProblem, termDateTexts, withTermDates } from "./settings-logic";
 import type { TermDates } from "../../types";
 
@@ -17,15 +18,13 @@ export function TermsGroup() {
   const termDates = useAppStore((s) => s.settings.termDates);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const now = new Date();
-  const thisYear = academicYearStart(now, termDates);
-  const next = currentTerm ? null : nextTermAfter(now, termDates);
+  const year = termDatesYear(now);
+  const inTerm = currentTerm !== null && currentTerm.term.startDate <= now;
+  const next = inTerm ? null : nextTermAfter(now, termDates);
 
-  const [year, setYear] = useState(thisYear);
   const saved = termDateTexts(year, termDates);
-  const edited = Boolean(termDates?.[String(year)]);
   const [draft, setDraft] = useState<TermDates[]>(saved);
   const [message, setMessage] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
 
   // Start again from what's saved when the year or the saved dates change.
   const [basis, setBasis] = useState({ year, key: JSON.stringify(saved) });
@@ -49,20 +48,14 @@ export function TermsGroup() {
     setMessage("Saved. The register and invoices now use these dates.");
   };
 
-  const resetToUsual = () => {
-    updateSettings({ termDates: withTermDates(termDates, year, termDateTexts(year)) });
-    setConfirmReset(false);
-    setMessage("The usual dates are back for this school year.");
-  };
-
-  const years = [thisYear, thisYear + 1];
   return (
     <>
       <p className="st-lead">
-        The app counts each family's lessons between these dates. If your school's dates are different, change them here: the register and
-        the emails follow straight away.
+        The half-terms of the <strong>{schoolYearLabel(year)}</strong> school year. They start as the app's best guess, so check them against
+        your school's calendar and change any that are different: the register and the emails follow straight away. On 1 August this moves on
+        to the next school year.
       </p>
-      {!currentTerm && (
+      {!inTerm && (
         <p className="st-holiday">
           <CalendarOff aria-hidden="true" />
           <span>
@@ -71,26 +64,6 @@ export function TermsGroup() {
           </span>
         </p>
       )}
-      <div className="sctl">
-        <div className="seg" role="radiogroup" aria-label="School year">
-          {years.map((y) => (
-            <button
-              key={y}
-              type="button"
-              role="radio"
-              aria-checked={year === y}
-              disabled={changed && year !== y}
-              data-tip={changed && year !== y ? "Save or undo your changes first" : undefined}
-              onClick={() => {
-                setYear(y);
-                setMessage(null);
-              }}
-            >
-              {schoolYearLabel(y)} {y === thisYear ? "(this year)" : "(next year)"}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="st-terms" role="table" aria-label={`Half-term dates, ${schoolYearLabel(year)} school year`}>
         <div className="trow st-terms-head" role="row">
           <span role="columnheader">
@@ -161,11 +134,6 @@ export function TermsGroup() {
             Undo changes
           </button>
         )}
-        {edited && !changed && (
-          <button type="button" className="btn btn--secondary" onClick={() => setConfirmReset(true)}>
-            Reset to the usual dates
-          </button>
-        )}
         <p className="st-save-state" role="status">
           {changed ? (
             <span className="st-unsaved">Not saved yet</span>
@@ -179,25 +147,6 @@ export function TermsGroup() {
           )}
         </p>
       </div>
-
-      <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
-        <DialogContent>
-          <DialogTitle>Use the usual dates?</DialogTitle>
-          <DialogDescription>
-            The {schoolYearLabel(year)} school year goes back to the usual half-term dates. The register and invoices change straight away.
-          </DialogDescription>
-          <DialogActions>
-            <DialogClose asChild>
-              <button type="button" className="btn btn--secondary">
-                Keep my dates
-              </button>
-            </DialogClose>
-            <button type="button" className="btn btn--primary" onClick={resetToUsual}>
-              Use the usual dates
-            </button>
-          </DialogActions>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

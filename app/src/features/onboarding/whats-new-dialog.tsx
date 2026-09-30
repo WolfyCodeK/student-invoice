@@ -1,7 +1,19 @@
 // "What's new", shown once after an update (docs/ui.md). A short letter from
 // the app: its name and version, then one line per change.
 import { useId } from "react";
-import { CalendarDays, CalendarX, ClipboardPaste, HardDriveDownload, LayoutList, Mail, MailCheck, type LucideIcon } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarX,
+  ClipboardPaste,
+  HardDriveDownload,
+  History,
+  LayoutList,
+  ListChecks,
+  Mail,
+  MailCheck,
+  PoundSterling,
+  type LucideIcon,
+} from "lucide-react";
 import { Dialog, DialogActions, DialogContent, DialogTitle } from "../../components/ui/dialog";
 import appIcon from "../../assets/app-icon.svg";
 import type { NewsIcon, WhatsNewEntry } from "./whats-new";
@@ -17,6 +29,9 @@ const ICONS: Record<NewsIcon, LucideIcon> = {
   "mail-check": MailCheck,
   mail: Mail,
   "clipboard-paste": ClipboardPaste,
+  "list-checks": ListChecks,
+  history: History,
+  "pound-sterling": PoundSterling,
 };
 
 export interface WhatsNewDialogProps {

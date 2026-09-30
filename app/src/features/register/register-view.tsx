@@ -1,32 +1,34 @@
 // The main screen: the register for the current half-term (docs/ui.md
 // "Register"). One row per family, one column per week, one mark per lesson;
-// clicking a mark unticks a lesson that didn't happen (docs/billing.md).
+// clicking a mark unticks a lesson that didn't happen (docs/billing.md). The
+// half-term buttons open earlier half-terms' records (earlier-half-term.tsx).
 import { memo, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useShallow } from "zustand/react/shallow";
 import { CalendarOff, CircleCheck, Loader2, Mail, MailCheck, MailPlus, Mails, MailX, Pencil, RotateCcw, Trash2, UserPlus } from "lucide-react";
 import { invoiceFor, useAppStore, type DraftOutcome } from "../../stores/app-store";
-import { getTermsForAcademicYear } from "../../utils/terms";
 import type { InvoiceData } from "../../utils/invoice-generator";
 import { errorMessage } from "../../lib/backend";
-import { capitalise, money } from "../../lib/format";
+import { capitalise, instrumentLabel, money } from "../../lib/format";
 import { isWeekday } from "../../lib/schema/constants";
-import { academicYearStart, isSameTerm, nextTermAfter, schoolYearLabel, termRange } from "../../lib/term-display";
+import { chargeOptions, halfTermKey, halfTermTotals, schoolYearOf } from "../../lib/half-terms";
+import { academicYearStart, nextTermAfter, termRange } from "../../lib/term-display";
 import { toast } from "../../hooks/use-toast";
 import { useAppActions } from "../app-context";
 import { useConnectGmail } from "../gmail/use-connect-gmail";
 import { DeleteFamilyDialog } from "../family/delete-family-dialog";
 import { registerLessons, registerWeeks, type RegisterLesson } from "./weeks";
 import { PupilPage } from "./pupil-page";
+import { EarlierHalfTerm } from "./earlier-half-term";
+import { FillRow, HalfTermNav, HeadRow, LessonMarks, Legend, TickCell, TotalRow } from "./register-parts";
 import { useYourNameGate } from "../your-name/use-your-name";
 import type { InvoiceTemplate } from "../../types";
-
-const SEASON_SHORT: Record<string, string> = { autumn: "Aut", spring: "Spr", summer: "Sum" };
 
 export const RegisterView = memo(function RegisterView() {
   const { navigate } = useAppActions();
   const {
-    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody, yourName, termDates,
+    templates, currentTemplateId, setCurrentTemplate, currentTerm, toggleLesson, customBody, yourName, termDates, charging,
+    halfTerms, setHalfTermTick,
     gmail, gmailConnecting, drafting, outcomes, createAllInvoiceDrafts, draftTemplate, closeDraftResults,
   } = useAppStore(
     useShallow((s) => ({
@@ -38,6 +40,9 @@ export const RegisterView = memo(function RegisterView() {
       customBody: s.settings.customEmailBodyTemplate,
       yourName: s.settings.yourName,
       termDates: s.settings.termDates,
+      charging: s.settings.charging,
+      halfTerms: s.settings.halfTerms,
+      setHalfTermTick: s.setHalfTermTick,
       gmail: s.gmail,
       gmailConnecting: s.gmailConnecting,
       drafting: s.drafting,
@@ -54,7 +59,11 @@ export const RegisterView = memo(function RegisterView() {
   const gmailConnected = gmail?.connected ?? false;
 
   const [deleting, setDeleting] = useState<InvoiceTemplate | null>(null);
-  const [changed, setChanged] = useState<string | null>(null);
+  const [changed, setChanged] = useState<{ id: string; key: string } | null>(null);
+  /** An earlier half-term on screen (its record key), or null for the register's own. */
+  const [viewing, setViewing] = useState<string | null>(null);
+  /** The school year the half-term buttons show, when moved with the arrows. */
+  const [shownYear, setShownYear] = useState<number | null>(null);
 
   // Always have a family selected when there is one.
   useEffect(() => {
@@ -62,9 +71,11 @@ export const RegisterView = memo(function RegisterView() {
   }, [templates, currentTemplateId, setCurrentTemplate]);
 
   const now = new Date();
-  const yearStart = academicYearStart(now, termDates);
-  const yearLabel = schoolYearLabel(yearStart);
-  const weeks = useMemo(() => (currentTerm ? registerWeeks(currentTerm, templates.filter((t) => isWeekday(t.day))) : []), [currentTerm, templates]);
+  const options = useMemo(() => chargeOptions(charging), [charging]);
+  const weeks = useMemo(
+    () => (currentTerm ? registerWeeks(currentTerm, templates.filter((t) => isWeekday(t.day)), options) : []),
+    [currentTerm, templates, options],
+  );
   const current = templates.find((t) => t.id === currentTemplateId) ?? null;
   const nextTerm = nextTermAfter(now, termDates);
 
@@ -72,17 +83,50 @@ export const RegisterView = memo(function RegisterView() {
   const invoices = useMemo(() => {
     const map = new Map<string, InvoiceData>();
     for (const t of templates) {
-      const invoice = invoiceFor(t, currentTerm, { customEmailBodyTemplate: customBody, yourName });
+      const invoice = invoiceFor(t, currentTerm, { customEmailBodyTemplate: customBody, yourName, charging });
       if (invoice) map.set(t.id, invoice);
     }
     return map;
-  }, [templates, currentTerm, customBody, yourName]);
+  }, [templates, currentTerm, customBody, yourName, charging]);
   const lessonsById = useMemo(() => {
     const map = new Map<string, RegisterLesson[]>();
-    if (currentTerm) for (const t of templates) if (isWeekday(t.day)) map.set(t.id, registerLessons(t, currentTerm));
+    if (currentTerm) for (const t of templates) if (isWeekday(t.day)) map.set(t.id, registerLessons(t, currentTerm, options));
     return map;
-  }, [templates, currentTerm]);
+  }, [templates, currentTerm, options]);
   const chargeable = [...invoices.values()].filter((inv) => inv.lessonCount > 0).length;
+
+  // This half-term's record holds the Paid and Thanks sent ticks (lib/half-terms.ts).
+  const currentKey = currentTerm ? halfTermKey(currentTerm.term) : null;
+  const record = currentKey ? halfTerms?.[currentKey] : undefined;
+  const ticks = new Map((record?.families ?? []).map((f) => [f.id, f]));
+  const totals = halfTermTotals(
+    templates.map((t) => ({ lessonCount: invoices.get(t.id)?.lessonCount ?? 0, total: invoices.get(t.id)?.totalCost ?? 0, paid: ticks.get(t.id)?.paid })),
+  );
+  const setTick = (id: string, tick: "paid" | "thanked") =>
+    currentKey && ticks.has(id) ? (on: boolean) => setHalfTermTick(currentKey, id, tick, on) : undefined;
+
+  // The half-term buttons: from the first school year with a record, to this one.
+  const thisYear = academicYearStart(now, termDates);
+  const liveYear = currentTerm ? schoolYearOf(currentTerm.term) : thisYear;
+  const recordYears = Object.keys(halfTerms ?? {}).map((key) => Number(key.slice(0, 4)));
+  const open = (key: string | null) => {
+    setViewing(key === currentKey ? null : key);
+    setShownYear(null);
+  };
+  const earlier = viewing !== null && viewing !== currentKey ? viewing : null;
+  const nav = (
+    <HalfTermNav
+      year={shownYear ?? (earlier ? Number(earlier.slice(0, 4)) : liveYear)}
+      minYear={Math.min(liveYear, thisYear, ...recordYears)}
+      maxYear={Math.max(liveYear, thisYear)}
+      onYear={setShownYear}
+      currentKey={currentKey}
+      openKey={earlier ?? currentKey}
+      onOpen={open}
+      termDates={termDates}
+      today={now}
+    />
+  );
   const draftWhy = !currentTerm
     ? "It's outside term time."
     : templates.length === 0
@@ -121,7 +165,7 @@ export const RegisterView = memo(function RegisterView() {
   const onToggle = (t: InvoiceTemplate, key: string) => {
     select(t.id);
     toggleLesson(t.id, key);
-    setChanged(`${t.id}:${key}`);
+    setChanged({ id: t.id, key });
   };
 
   const results = outcomes !== null;
@@ -136,6 +180,13 @@ export const RegisterView = memo(function RegisterView() {
   // While drafts are being saved, nothing that changes an invoice can be used.
   const lockedWhy = drafting ? "Families and lessons can't be changed while saving to Gmail." : undefined;
 
+  if (earlier) {
+    return <EarlierHalfTerm recordKey={earlier} nav={nav} onBack={() => open(null)} backLabel={currentTerm ? "Back to this half-term" : "Back to the register"} />;
+  }
+
+  // In the holidays, with that option on, the register is the next half-term's.
+  const startsLater = currentTerm !== null && currentTerm.term.startDate > now;
+
   return (
     <>
       <header className="band">
@@ -148,28 +199,12 @@ export const RegisterView = memo(function RegisterView() {
           <div className="band-meta">
             <span>
               {currentTerm
-                ? `${termRange(currentTerm.term.startDate, currentTerm.term.endDate)} · ${currentTerm.weeksCount} weeks`
+                ? `${startsLater ? `Starts ${format(currentTerm.term.startDate, "EEEE d MMMM")} · ` : ""}${termRange(currentTerm.term.startDate, currentTerm.term.endDate)} · ${currentTerm.weeksCount} weeks`
                 : nextTerm
                   ? `The next half-term starts on ${format(nextTerm.startDate, "EEEE d MMMM")}.`
                   : "It's outside term time."}
             </span>
-            <div className="terms" role="list" aria-label={`Half-terms in the ${yearLabel} school year`}>
-              <span className="terms-yr">{yearLabel}</span>
-              {getTermsForAcademicYear(yearStart, termDates).map((t) => {
-                const isNow = isSameTerm(currentTerm?.term, t);
-                return (
-                  <span
-                    key={`${t.season}-${t.half}`}
-                    role="listitem"
-                    className={`term${isNow ? " is-now" : ""}`}
-                    title={`${t.half} half ${capitalise(t.season)} term: ${termRange(t.startDate, t.endDate)}`}
-                    aria-current={isNow ? "true" : undefined}
-                  >
-                    {SEASON_SHORT[t.season]} {t.half === "1st" ? 1 : 2}
-                  </span>
-                );
-              })}
-            </div>
+            {nav}
           </div>
         </div>
 
@@ -267,22 +302,7 @@ export const RegisterView = memo(function RegisterView() {
               aria-label="Families and lessons this half-term"
               data-tour="register"
             >
-              <div className="row row--head" role="row">
-                <div className="c fam th" role="columnheader">Family</div>
-                <div className="c th c-day" role="columnheader">Day</div>
-                <div className="c weeks" role="columnheader" aria-label="Weeks">
-                  {weeks.map((w) => (
-                    <span key={w.monday.getTime()} className={`wk wk-h${w.afterTerm ? " is-holiday" : ""}`} title={w.afterTerm ? `Week of ${format(w.monday, "d MMMM")}: after the half-term ends. A lesson here is still charged.` : `Week of ${format(w.monday, "d MMMM")}`}>
-                      <b>{format(w.monday, "d")}</b>
-                      <span>{format(w.monday, "MMM")}</span>
-                    </span>
-                  ))}
-                </div>
-                <div className="c th tcell tb1" role="columnheader">Lessons</div>
-                <div className="c th tcell c-per" role="columnheader">Per lesson</div>
-                <div className="c th tcell end" role="columnheader">Total</div>
-                {results && <div className="c th status" role="columnheader">Gmail draft</div>}
-              </div>
+              <HeadRow weeks={weeks} results={results} />
 
               {templates.map((t) => {
                 const valid = isWeekday(t.day);
@@ -290,7 +310,7 @@ export const RegisterView = memo(function RegisterView() {
                 const inv = invoices.get(t.id);
                 const selected = t.id === currentTemplateId;
                 const outcome = outcomes?.[t.id];
-                const byWeek = new Map(lessons.map((l) => [l.week, l]));
+                const tick = ticks.get(t.id);
                 return (
                   <div
                     key={t.id}
@@ -307,40 +327,28 @@ export const RegisterView = memo(function RegisterView() {
                   >
                     <div className="c" role="cell" style={{ padding: 0 }}>
                       {/* Selects the family through the row's click handler. */}
-                      <button type="button" className="fam fam-btn c" aria-label={`${t.recipient}: ${t.students}, ${t.instrument}`}>
+                      <button type="button" className="fam fam-btn c" aria-label={`${t.recipient}: ${t.students}, ${instrumentLabel(t.instrument)}`}>
                         <span className="who">{t.recipient}</span>
                         <span className="what">
-                          {t.students} · {capitalise(t.instrument)}
+                          {t.students} · {instrumentLabel(t.instrument)}
                           <span className="day-inline"> · {t.day.slice(0, 3)}</span>
                         </span>
                       </button>
                     </div>
+                    <TickCell tick="paid" on={!!tick?.paid} who={t.recipient} onChange={setTick(t.id, "paid")} />
+                    <TickCell tick="thanked" on={!!tick?.thanked} who={t.recipient} onChange={setTick(t.id, "thanked")} />
                     <div className="c c-day" role="cell">
                       {t.day}
                     </div>
-                    <div className="c weeks" role="cell" data-tour={selected ? "marks" : undefined}>
-                      {weeks.map((w, wi) => {
-                        const l = byWeek.get(wi);
-                        if (!l) return <span key={wi} className={`wk${w.afterTerm ? " is-holiday" : ""}`} />;
-                        const label = format(l.date, "EEEE d MMMM");
-                        return (
-                          <span key={wi} className="wk">
-                            <button
-                              type="button"
-                              className={`mark${changed === `${t.id}:${l.key}` ? " is-changed" : ""}`}
-                              aria-pressed={l.ticked}
-                              disabled={drafting}
-                              title={`${format(l.date, "EEE d MMM")}: ${l.ticked ? "lesson" : "no lesson (not charged)"}${lockedWhy ? `. ${lockedWhy}` : ""}`}
-                              aria-label={l.ticked ? `${label}: lesson. Untick if it didn't happen.` : `${label}: unticked, not charged. Tick to charge it again.`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggle(t, l.key);
-                              }}
-                            />
-                          </span>
-                        );
-                      })}
-                    </div>
+                    <LessonMarks
+                      weeks={weeks}
+                      lessons={lessons}
+                      onToggle={(l) => onToggle(t, l.key)}
+                      disabled={drafting}
+                      lockedWhy={lockedWhy}
+                      changedKey={changed?.id === t.id ? changed.key : null}
+                      tour={selected ? "marks" : undefined}
+                    />
                     <div className="c tcell tb1" role="cell">
                       {inv ? (
                         <>
@@ -363,19 +371,8 @@ export const RegisterView = memo(function RegisterView() {
                   </div>
                 );
               })}
-              <div className="row row--fill" aria-hidden="true">
-                <div className="c" />
-                <div className="c c-day" />
-                <div className="c weeks">
-                  {weeks.map((w, wi) => (
-                    <span key={wi} className={`wk${w.afterTerm ? " is-holiday" : ""}`} />
-                  ))}
-                </div>
-                <div className="c tcell tb1" />
-                <div className="c tcell c-per" />
-                <div className="c tcell end" />
-                {results && <div className="c status" />}
-              </div>
+              <FillRow weeks={weeks} results={results} />
+              {currentTerm && <TotalRow totals={totals} results={results} />}
             </div>
           )}
 
@@ -417,19 +414,7 @@ export const RegisterView = memo(function RegisterView() {
                   {lockedWhy}
                 </p>
               )}
-              <p className="legend">
-                <span>
-                  <i className="legend-mk" aria-hidden="true" /> Lesson
-                </span>
-                <span>
-                  <i className="legend-off" aria-hidden="true" /> Unticked (not charged)
-                </span>
-                {weeks.some((w) => w.afterTerm) && (
-                  <span>
-                    <i className="legend-hol" aria-hidden="true" /> After the half-term ends (a lesson there is still charged)
-                  </span>
-                )}
-              </p>
+              <Legend weeks={weeks} lessons={[...lessonsById.values()].flat()} />
             </div>
           )}
         </section>

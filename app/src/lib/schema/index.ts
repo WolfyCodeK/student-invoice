@@ -21,6 +21,7 @@ const storedTemplateSchema = z.looseObject({
   day: z.string(),
   students: z.string(),
   skippedLessonDates: z.array(z.string()).optional(),
+  chargedBankHolidays: z.array(z.string()).optional(),
   createdAt: z.unknown().optional(),
   updatedAt: z.unknown().optional(),
 })
@@ -54,8 +55,50 @@ const backupTemplateSchema = z.looseObject({
   day: z.enum(WEEKDAYS),
   students: text(MAX_LENGTH.students),
   skippedLessonDates: z.array(z.iso.date()).max(500).optional(),
+  chargedBankHolidays: z.array(z.iso.date()).max(500).optional(),
   createdAt: z.string().max(40).optional(),
   updatedAt: z.string().max(40).optional(),
+})
+
+/** The charging options (docs/billing.md). */
+const chargingSchema = z.looseObject({
+  insideHalfTermOnly: z.boolean().optional(),
+  skipBankHolidays: z.boolean().optional(),
+  nextHalfTermInHolidays: z.boolean().optional(),
+})
+
+/**
+ * One half-term's record (docs/data-model.md "Half-term records"). Unknown
+ * fields from a newer version are kept, and the reason for a lesson not being
+ * charged is a string, so a newer reason can still be imported.
+ */
+const halfTermRecordSchema = z.looseObject({
+  start: z.iso.date(),
+  end: z.iso.date(),
+  half: text(20),
+  season: text(20),
+  families: z
+    .array(
+      z.looseObject({
+        id: text(100).min(1),
+        recipient: text(MAX_LENGTH.recipient),
+        students: text(MAX_LENGTH.students),
+        instrument: text(MAX_LENGTH.instrument),
+        day: text(20),
+        cost: z.number().finite().min(0),
+        lessons: z.array(z.looseObject({ date: z.iso.date(), charged: z.boolean(), reason: text(40).optional() })).max(60),
+        lessonCount: z.number().int().min(0).max(60),
+        total: z.number().finite().min(0),
+        paid: z.boolean().optional(),
+        thanked: z.boolean().optional(),
+        removedAt: z.iso.datetime().optional(),
+      }),
+    )
+    .max(2000),
+  charging: chargingSchema.optional(),
+  ended: z.boolean().optional(),
+  workedOut: z.boolean().optional(),
+  savedAt: z.iso.datetime(),
 })
 
 /** Settings inside an imported file. Google credentials are never included. */
@@ -71,6 +114,10 @@ const backupSettingsSchema = z.looseObject({
   termDates: z
     .record(z.string().regex(/^\d{4}$/), z.array(z.strictObject({ start: z.iso.date(), end: z.iso.date() })).length(6))
     .optional(),
+  // v1.1.2: the charging options.
+  charging: chargingSchema.optional(),
+  // Half-term records: "2026-0" (school-year start, half-term 0 to 5) → the record.
+  halfTerms: z.record(z.string().regex(/^\d{4}-[0-5]$/), halfTermRecordSchema).optional(),
 })
 
 /** The export file (`Student Invoice backup YYYY-MM-DD.json`). */

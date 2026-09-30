@@ -17,7 +17,7 @@
         "title": "Student Invoice",
         "width": 1280,
         "height": 800,
-        "minWidth": 960,
+        "minWidth": 1040,
         "minHeight": 600,
         "resizable": true,
         "maximizable": true,
