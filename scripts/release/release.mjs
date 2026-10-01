@@ -164,8 +164,20 @@ if (cmd === 'publish') {
   console.log(`\n✔ Released ${tag}. Installed apps will now be offered ${version}, from dev.wolfyk.com and from GitHub.`)
 }
 
-/** The GitHub feed (v1.0.1 to v1.1.1 read only this) offers this release, and its installer downloads. */
+/**
+ * The GitHub feed (v1.0.1 to v1.1.1 read only this) offers this release, and
+ * its installer downloads. Once the repository is private nobody can read it
+ * anonymously (copies from v1.1.2 use dev.wolfyk.com), so the release is then
+ * checked through the signed-in `gh` instead: published, with all its assets.
+ */
 async function verifyGithubFeed() {
+  if (capture('gh', ['repo', 'view', REPO, '--json', 'visibility', '--jq', '.visibility']) !== 'PUBLIC') {
+    const release = JSON.parse(capture('gh', ['release', 'view', tag, '--repo', REPO, '--json', 'isDraft,assets']))
+    if (release.isDraft) die(`GitHub release ${tag} is still a draft`)
+    const names = release.assets.map((a) => a.name)
+    for (const f of ASSETS) if (!names.includes(f)) die(`GitHub release ${tag} is missing ${f}`)
+    return
+  }
   const live = await (await fetch(GITHUB_UPDATER_FEED, { redirect: 'follow' })).json()
   if (live.version !== version) die(`GitHub latest.json reports ${live.version}, expected ${version}`)
   const err = v101CompatError(live.version, live.notes)

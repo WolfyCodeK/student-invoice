@@ -115,9 +115,13 @@ later:
 2. Make the repository private. From then on those copies update from
    dev.wolfyk.com only; GitHub's feed stops answering, which the updater
    treats as a fallback that failed.
-3. A later version can drop the GitHub fallback from
-   `plugins.updater.endpoints` and the release can stop publishing there.
-   The dev.wolfyk.com feed stays forever.
+3. Releases keep going to GitHub as well, privately: the tag, the release
+   notes, the installer and its signature stay there as the owner's record
+   of every release. While the repository isn't public, `publish` and
+   `mirror` check the GitHub release through the signed-in `gh` (published,
+   all assets attached) instead of reading its feed anonymously.
+4. A later version can drop the GitHub fallback from
+   `plugins.updater.endpoints`. The dev.wolfyk.com feed stays forever.
 
 ## Upgrade test (before publishing)
 
