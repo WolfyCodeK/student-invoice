@@ -11,6 +11,9 @@ in the update prompt. It must stay plain: letters, digits, spaces and
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-01
+<!-- latest-json-summary: Student Invoice 1.1.2: paid and thanks ticks, every half-term kept, and new charging options -->
+
 ### Added
 - **Paid and Thanks:** two tick boxes for each family on the register,
   beside the lesson day, for who has paid and who you've sent a thank-you.
@@ -38,7 +41,6 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   next on 1 August. The dates start as the app's best guess, so check them
   against your school's calendar. "Reset to the usual dates" has gone,
   because half-term dates change every year.
-
 - The window can't be made quite as narrow as before (1040 pixels instead
   of 960), so the register never has to scroll sideways, and it folds its
   columns sooner as the window narrows.
