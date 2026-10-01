@@ -9,6 +9,7 @@ Open issues and their fixes are tracked in the
 | Secret | Where it lives | Used by |
 |---|---|---|
 | Updater signing private key (`myapp.key`, minisign ID `8A406F2CA93B6BCC`) | `%USERPROFILE%\.secrets\student-invoice\` plus the owner's password manager | Release builds, to sign the MSI |
+| Release upload key (`devsite-upload`, ed25519) | `%USERPROFILE%\.secrets\student-invoice\` | `release.mjs publish` and `mirror`, to upload to dev.wolfyk.com. On the server it can only use SFTP inside the releases folder and can't delete or link anything ([release](release.md#devwolfykcom)) |
 | The signing key's password | The owner's password manager only. It is typed at a hidden prompt when signing, and never stored on disk | Unlocking `myapp.key` ([release](release.md#the-signing-key-password)) |
 | Google OAuth Desktop client (`google-oauth-client.json`, Google's download format) | same folder plus the password manager | Compiled into builds by `app/src-tauri/build.rs`, which writes it to a generated file in the git-ignored `target` folder and never prints it (see [Gmail](gmail.md)) |
 | Gemini API key (design tooling only) | same folder | The icon-generation script (planned) |
@@ -106,7 +107,8 @@ private key.
   request, and replies only with fixed, HTML-escaped pages, so nothing a
   caller sends can be reflected as markup ([Gmail](gmail.md)).
 - `gmail.googleapis.com`: create drafts.
-- `github.com`: update checks and downloads (minisign-verified).
+- `dev.wolfyk.com`, then `github.com` if that can't be reached: update
+  checks and downloads (minisign-verified).
 - `api.emailjs.com`: feedback form. The service, template and public key
   IDs are public by design. The template's **To Email** is fixed to the
   owner's address (set and checked with a test send on 2026-09-28), so the IDs can't be used to send mail

@@ -1,0 +1,3 @@
+# The droplet host key for dev.wolfyk.com, pinned so release uploads (devsite.mjs)
+# only ever talk to that server. Checked against /etc/ssh/ssh_host_ed25519_key.pub on it.
+dev.wolfyk.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICYBlUr6HkJvSJcCQqVLlWnnH70L+gh9r/dXB+IMXhSP

@@ -1,9 +1,11 @@
 # Releasing a new version
 
 Releases are built on the owner's Windows PC with
-`scripts/release/release.mjs` and published as GitHub releases. Installed
-apps find them through `latest.json`, a release asset (see
-[compatibility](compatibility.md)).
+`scripts/release/release.mjs` and published in two places: on
+[dev.wolfyk.com](#devwolfykcom), which installed copies from v1.1.2 ask
+first, and as GitHub releases, which older copies know. Installed apps find
+them through `latest.json` (see [compatibility](compatibility.md)).
+
 
 ## One-time setup
 
@@ -13,6 +15,7 @@ The secrets folder `%USERPROFILE%\.secrets\student-invoice\` must contain:
 |---|---|---|
 | `myapp.key` | Updater signing private key (minisign ID `8A406F2CA93B6BCC`) | Bitwarden |
 | `google-oauth-client.json` | Google OAuth Desktop client, as downloaded from Google Cloud. Embedded into the build; the release refuses to build without it | Bitwarden |
+| `devsite-upload` (+ `.pub`) | The key that uploads releases to dev.wolfyk.com. Created with `node scripts/release/devsite.mjs setup-key`, which prints the public half to install on the server | Not needed: if lost, create a new one and replace the public half on the server |
 
 The signing key's **password is not stored in a file**. It lives only in
 Bitwarden, in the same item as `myapp.key`, and the scripts ask for it (see
@@ -58,11 +61,63 @@ You also need the GitHub CLI signed in (`gh auth login`) with push rights.
    Pre-releases are never offered to installed apps. Run the upgrade test
    below against it.
 4. **Publish:** `node scripts/release/release.mjs publish x.y.z`
+   - Uploads the MSI and its `.sig` to dev.wolfyk.com and checks that the
+     site serves exactly those files. Nothing is offered yet, and if this
+     fails nothing has been published anywhere.
    - Tags and pushes.
    - Creates a **draft** release with the changelog section as notes.
    - Checks all three assets are attached, then publishes it as *latest*.
-   - Fetches the live `latest.json` and MSI URL to confirm what installed apps
+   - Offers it on dev.wolfyk.com: uploads that feed's `latest.json` under
+     another name and renames it into place, so no copy reads half a file.
+   - Fetches both live feeds and the MSI URLs to confirm what installed apps
      will see.
+
+## dev.wolfyk.com
+
+The owner's site is the permanent home of the installers and the update
+feed ([decision 0004](decisions/0004-self-hosted-update-feed.md)). It runs on
+the owner's droplet as its own project (`/root/devsite`, with its own
+README); this repository only uploads to it.
+
+**The URLs never change** (the `updater-endpoint` invariant):
+
+| What | URL |
+|---|---|
+| Update feed (asked first by every copy from v1.1.2) | `https://dev.wolfyk.com/releases/student-invoice/latest.json` |
+| A version's installer | `https://dev.wolfyk.com/releases/student-invoice/v<x.y.z>/Student.Invoice_<x.y.z>_x64_en-US.msi` |
+| Its signature | the same, with `.sig` |
+| The app's page (the site; its look can change) | `https://dev.wolfyk.com/student-invoice` |
+
+On the server, `/releases/` is served from its own folder
+(`/srv/devsite/releases/`), apart from the site's pages, so the site can be
+restyled or replaced without touching it. The feed is served with
+`Cache-Control: no-cache`, the versioned files as immutable. The site's
+download button reads the feed, so it always offers the current installer.
+
+**Uploads** (`scripts/release/devsite.mjs`) use SFTP as the `devsite-upload`
+account with the key from the secrets folder, and only to the host key
+pinned in `scripts/release/devsite-known-hosts`. On the server that key can
+only run SFTP, starting in the releases folder, and can't delete or link
+anything. Updates stay minisign-signed, so a tampered installer there would
+be refused by every installed copy.
+
+**Putting an existing release on the site:**
+`node scripts/release/release.mjs mirror x.y.z` uploads the prepared
+artifacts of a version GitHub already offers (for example v1.1.1, released
+before the site existed) and offers it there. It refuses a version older
+than the one the site offers.
+
+**Making the repository private.** Copies on v1.0.1 to v1.1.1 only know the
+GitHub feed, so only once the users that matter have updated to v1.1.2 or
+later:
+
+1. Check their version (Settings → About & help).
+2. Make the repository private. From then on those copies update from
+   dev.wolfyk.com only; GitHub's feed stops answering, which the updater
+   treats as a fallback that failed.
+3. A later version can drop the GitHub fallback from
+   `plugins.updater.endpoints` and the release can stop publishing there.
+   The dev.wolfyk.com feed stays forever.
 
 ## Upgrade test (before publishing)
 

@@ -48,6 +48,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
+        "https://dev.wolfyk.com/releases/student-invoice/latest.json",
         "https://github.com/WolfyCodeK/student-invoice/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhBNDA2RjJDQTkzQjZCQ0MKUldUTWF6dXBMRzlBaXFLNUdXRGJMWHl0Q2NWczFhcVFGbk41SndqeXczVzhEQjJSdDJSYUdTaDQK",

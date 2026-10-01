@@ -10,9 +10,14 @@
 //       (not "latest", so installed apps don't see it) for update testing.
 //
 //   node scripts/release/release.mjs publish <version>
-//       Push main + tag v<version>, create the GitHub release as a draft with
-//       the CHANGELOG section as notes, verify assets, publish it as latest,
-//       then verify what installed apps will download.
+//       Upload the installer to dev.wolfyk.com, push main + tag v<version>,
+//       create the GitHub release as a draft with the CHANGELOG section as
+//       notes, verify assets, publish it as latest, offer it on dev.wolfyk.com,
+//       then verify what installed apps will download from both feeds.
+//
+//   node scripts/release/release.mjs mirror <version>
+//       Put an already published release on dev.wolfyk.com as well (the
+//       version GitHub offers now; never an older one than the site offers).
 import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { repoRoot } from '../lib/repo.mjs'
@@ -20,13 +25,14 @@ import {
   REPO, VERSION_FILES, assetUrl, buildEnv, bumpVersion, capture, changelogSection, checkMsiSignature, collectSignedMsi, compareSemver, die, findSignedMsi,
   isSemver, msiName, run, step, v101CompatError,
 } from './lib.mjs'
-import { UPDATER_ENDPOINT } from '../invariants.config.mjs'
+import { GITHUB_UPDATER_FEED } from '../invariants.config.mjs'
+import { offer, offeredVersion, uploadInstaller, verifyFeed, verifyInstaller, writeDevsiteLatest } from './devsite.mjs'
 import { INSTALLER_BUDGET_MIB } from '../perf/budgets.mjs'
 
 const root = repoRoot()
 const [cmd, version, rcNumber] = process.argv.slice(2)
-if (!['prepare', 'rc', 'publish'].includes(cmd) || !version || !isSemver(version)) {
-  die('usage: release.mjs prepare <x.y.z> | rc <x.y.z> <n> | publish <x.y.z>')
+if (!['prepare', 'rc', 'publish', 'mirror'].includes(cmd) || !version || !isSemver(version)) {
+  die('usage: release.mjs prepare <x.y.z> | rc <x.y.z> <n> | publish <x.y.z> | mirror <x.y.z>')
 }
 const tag = `v${version}`
 const outDir = join(root, 'release-artifacts', tag)
@@ -88,6 +94,7 @@ if (cmd === 'prepare') {
   const { summary, minimumSupportedVersion } = changelogFor(version)
   if (minimumSupportedVersion) console.log(`Versions below ${minimumSupportedVersion} will show this update as important.`)
   collectSignedMsi(msi, outDir, { version, notes: summary, url: assetUrl(tag, MSI), minimumSupportedVersion })
+  writeDevsiteLatest(outDir, version)
 
   step('Commit the version bump (not pushed)')
   run('git', ['add', ...VERSION_FILES, 'docs'], { cwd: root })
@@ -126,6 +133,13 @@ if (cmd === 'publish') {
   requireArtifacts()
   const { body } = changelogFor(version)
   if (capture('git', ['log', '-1', '--format=%s'], { cwd: root }) !== `Release ${tag}`) die(`HEAD is not the "Release ${tag}" commit`)
+  // Both feeds must offer every release (docs/compatibility.md, updater-endpoint).
+  // The installer goes up first; the site offers it only after GitHub does.
+  step('Upload the installer to dev.wolfyk.com (not offered yet)')
+  writeDevsiteLatest(outDir, version)
+  uploadInstaller(outDir, version)
+  await verifyInstaller(outDir, version)
+
   step('Tag and push')
   run('git', ['tag', '-a', tag, '-m', `Student Invoice ${version}`], { cwd: root })
   run('git', ['push', 'origin', 'main', tag], { cwd: root })
@@ -141,12 +155,38 @@ if (cmd === 'publish') {
   step('Publish as latest')
   run('gh', ['release', 'edit', tag, '--repo', REPO, '--draft=false', '--latest'])
 
+  step('Offer it on dev.wolfyk.com')
+  offer(outDir)
+
   step('Verify what installed apps will see')
-  const live = await (await fetch(UPDATER_ENDPOINT, { redirect: 'follow' })).json()
-  if (live.version !== version) die(`live latest.json reports ${live.version}, expected ${version}`)
+  await verifyGithubFeed()
+  await verifyFeed(outDir, version)
+  console.log(`\n✔ Released ${tag}. Installed apps will now be offered ${version}, from dev.wolfyk.com and from GitHub.`)
+}
+
+/** The GitHub feed (v1.0.1 to v1.1.1 read only this) offers this release, and its installer downloads. */
+async function verifyGithubFeed() {
+  const live = await (await fetch(GITHUB_UPDATER_FEED, { redirect: 'follow' })).json()
+  if (live.version !== version) die(`GitHub latest.json reports ${live.version}, expected ${version}`)
   const err = v101CompatError(live.version, live.notes)
-  if (err) die(`live latest.json: ${err}`)
+  if (err) die(`GitHub latest.json: ${err}`)
   const head = await fetch(live.platforms['windows-x86_64'].url, { method: 'HEAD', redirect: 'follow' })
-  if (!head.ok) die(`MSI URL returned HTTP ${head.status}`)
-  console.log(`\n✔ Released ${tag}. Installed apps will now be offered ${version}.`)
+  if (!head.ok) die(`GitHub MSI URL returned HTTP ${head.status}`)
+}
+
+// ---------------------------------------------------------------------------
+if (cmd === 'mirror') {
+  requireArtifacts()
+  step('Check what the feeds offer now')
+  await verifyGithubFeed()
+  const offered = await offeredVersion()
+  if (offered && compareSemver(offered, version) > 0) die(`dev.wolfyk.com already offers ${offered}, newer than ${version}`)
+  step(`Upload ${tag} to dev.wolfyk.com`)
+  writeDevsiteLatest(outDir, version)
+  uploadInstaller(outDir, version)
+  await verifyInstaller(outDir, version)
+  step('Offer it on dev.wolfyk.com')
+  offer(outDir)
+  await verifyFeed(outDir, version)
+  console.log(`\n✔ dev.wolfyk.com now offers ${version}. Installed copies from v1.1.2 on update from there.`)
 }

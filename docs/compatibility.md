@@ -27,7 +27,7 @@ file.
 | `publisher` | `bundle.publisher` | `isaac` | MSI Manufacturer and the `HKCU\Software\isaac\Student Invoice` registry path. |
 | `upgrade-code` | `bundle.windows.wix.upgradeCode` | `236f3e14-f18d-5eff-88a5-407aa14b96c8` | Must equal the code in every shipped MSI (verified against v1.0.1) or the installer adds a second copy instead of upgrading. |
 | `binary-name` | Cargo package `name` in `app/src-tauri/Cargo.toml`, and no `mainBinaryName` | `student-invoice-tauri` | Sets the installed exe name; changing it breaks users' pinned shortcuts. |
-| `updater-endpoint` | `plugins.updater.endpoints` | exactly the GitHub `releases/latest/download/latest.json` URL | Baked into every installed copy; the only place they look for updates. |
+| `updater-endpoint` | `plugins.updater.endpoints` | `https://dev.wolfyk.com/releases/student-invoice/latest.json` first; after it, only the GitHub `releases/latest/download/latest.json` URL, if at all | Baked into every installed copy. From v1.1.2 the dev.wolfyk.com feed is asked first, so it can never move; v1.0.1 to v1.1.1 know only the GitHub URL, so both feeds must offer every release until the repository is made private. |
 | `updater-pubkey` | `plugins.updater.pubkey` | minisign key `8A406F2CA93B6BCC` | Installed copies only accept updates signed by this key. The private key lives outside the repo (see docs/release.md). |
 | `install-mode` | `plugins.updater.windows.installMode` and `bundle.targets` | `passive`; targets exactly `["msi"]` | v1.0.1's updater installs the MSI from latest.json's `windows-x86_64` entry. An NSIS installer would create a second, per-user install. |
 | `global-tauri` | `app.withGlobalTauri` in the shipped config | absent or `false` | Only the dev-only config overlay may enable it (for the Tauri MCP bridge). Shipping it widens the attack surface. |
@@ -40,8 +40,8 @@ file.
 
 ## The `latest.json` notes rule
 
-The live `latest.json` (a release asset) is read by **every** installed
-version. v1.0.1 splices its `notes` field unescaped into a JSON string and
+The live `latest.json` (a release asset, and its copy on dev.wolfyk.com) is
+read by **every** installed version. v1.0.1 splices its `notes` field unescaped into a JSON string and
 parses it, so notes containing a quote, backslash, newline or other control
 character would make update checks fail for every v1.0.1 user, permanently.
 The release script therefore restricts `notes` to one short plain line.
@@ -50,8 +50,14 @@ the GitHub release description instead, which the app never parses.
 
 ## Things that would break older installs (don't)
 
-- Making the GitHub repository or its releases private: installed copies
-  download `latest.json` and the MSI anonymously.
+- Making the GitHub repository or its releases private while any copy is
+  still on v1.0.1 to v1.1.1: those only know the GitHub feed, and download
+  `latest.json` and the MSI anonymously. From v1.1.2 copies ask
+  dev.wolfyk.com first ([decision 0004](decisions/0004-self-hosted-update-feed.md)).
+- Moving or removing anything under `https://dev.wolfyk.com/releases/`: the
+  feed and version URLs are baked into every copy from v1.1.2. The site's
+  pages can change freely; that path can't
+  ([release](release.md#devwolfykcom)).
 - Deleting the **latest** release's assets, or the EmailJS service/template
   used by v1.0.1's feedback form. Installed copies, v1.0.1 included, only
   ever download the latest release's `latest.json` and MSI, so older

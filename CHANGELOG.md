@@ -31,6 +31,8 @@ in the update prompt. It must stay plain: letters, digits, spaces and
   show the next half-term, ready to invoice.
 
 ### Changed
+- **Updates now come from dev.wolfyk.com,** where the installer can also be
+  downloaded. GitHub stays as a fallback for now.
 - The app says **Drums** instead of Drum. Emails still say "drum lessons".
 - **Term dates** shows one school year: the current one, moving on to the
   next on 1 August. The dates start as the app's best guess, so check them

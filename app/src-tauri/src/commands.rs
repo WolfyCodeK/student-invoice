@@ -86,7 +86,7 @@ pub async fn gmail_clear_custom_client(auth: State<'_, GoogleAuth>) -> AppResult
     auth.set_client_override(None).await
 }
 
-/// Checks GitHub for a newer version (disabled in development builds).
+/// Checks for a newer version: dev.wolfyk.com, then GitHub (disabled in development builds).
 #[tauri::command]
 pub async fn check_for_updates(
     app: AppHandle,

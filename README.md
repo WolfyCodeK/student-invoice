@@ -16,7 +16,7 @@ Gmail as drafts for you to check and send.
 ![Windows 10 and 11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-1d3f8a)
 ![Licence: all rights reserved](https://img.shields.io/badge/licence-all%20rights%20reserved-53607a)
 
-**[Download the latest version](https://github.com/WolfyCodeK/student-invoice/releases/latest)**
+**[Download the latest version](https://dev.wolfyk.com/student-invoice)**
 
 </div>
 
@@ -60,7 +60,7 @@ Gmail as drafts for you to check and send.
 ## Getting started
 
 1. Download the installer (`Student.Invoice_x.y.z_x64_en-US.msi`) from the
-   [latest release](https://github.com/WolfyCodeK/student-invoice/releases/latest)
+   [Student Invoice page](https://dev.wolfyk.com/student-invoice)
    and run it.
 2. Windows may say it "protected your PC", because the installer isn't signed
    with a paid certificate. Choose **More info**, then **Run anyway**.
@@ -85,9 +85,10 @@ if it's missing.
   The sign-in token is kept in
   Windows Credential Manager and never leaves your PC except to talk to
   Google.
-- The app contacts three services: Google (sign-in and drafts), GitHub
-  (update checks and downloads, with signed updates) and EmailJS (only when
-  you send feedback from the app).
+- The app contacts three services: Google (sign-in and drafts),
+  dev.wolfyk.com (update checks and downloads, with signed updates; GitHub
+  if that can't be reached) and EmailJS (only when you send feedback from
+  the app).
 
 ## Updates and versions
 

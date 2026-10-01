@@ -3,7 +3,7 @@
 // Usage: node scripts/check-invariants.mjs
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { INVARIANTS, UPDATER_ENDPOINT, UPDATER_PUBKEY } from './invariants.config.mjs'
+import { GITHUB_UPDATER_FEED, INVARIANTS, UPDATER_FEED, UPDATER_PUBKEY } from './invariants.config.mjs'
 import { gitLines, readRepoFile, repoRoot } from './lib/repo.mjs'
 import { secretFileKinds } from './lib/secret-files.mjs'
 
@@ -43,7 +43,8 @@ const checks = {
   },
   'updater-endpoint': () => {
     const e = conf.plugins?.updater?.endpoints
-    return Array.isArray(e) && e.length === 1 && e[0] === UPDATER_ENDPOINT ? null : `endpoints are ${JSON.stringify(e)}`
+    const ok = Array.isArray(e) && e[0] === UPDATER_FEED && (e.length === 1 || (e.length === 2 && e[1] === GITHUB_UPDATER_FEED))
+    return ok ? null : `endpoints are ${JSON.stringify(e)}`
   },
   'updater-pubkey': () => (conf.plugins?.updater?.pubkey === UPDATER_PUBKEY ? null : 'updater pubkey changed'),
   'install-mode': () => {

@@ -16,7 +16,7 @@ can't: the Google OAuth loopback server, Gmail API calls, and the updater.
 ┌──────── Rust (app/src-tauri/src) ─────────┐      ┌──────────── Internet ────────────┐
 │ commands.rs → google/ (sign-in, drafts)    │ ───▶ │ accounts.google.com (OAuth)      │
 │             → updates.rs                   │ ───▶ │ gmail.googleapis.com (drafts)    │
-│ google/store.rs → Windows Credential Mgr   │ ───▶ │ github.com releases (updates)    │
+│ google/store.rs → Windows Credential Mgr   │ ───▶ │ dev.wolfyk.com (updates; GitHub │
 │ plugins: opener, dialog (Rust-side),       │      └──────────────────────────────────┘
 │          updater, single-instance          │
 └────────────────────────────────────────────┘
@@ -134,7 +134,7 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 
 | Command | Arguments | Returns | Purpose | Defined at |
 |---|---|---|---|---|
-| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks GitHub for a newer version (disabled in development builds). | `src/commands.rs:90` |
+| `check_for_updates` | — | `AppResult<UpdateInfo>` | Checks for a newer version: dev.wolfyk.com, then GitHub (disabled in development builds). | `src/commands.rs:90` |
 | `create_auto_backup` | `reason: BackupReason`<br>`content: String` | `AppResult<BackupInfo>` | Saves an automatic backup in the app's backups folder. | `src/commands.rs:121` |
 | `export_backup` | `content: String`<br>`suggested_name: String` | `AppResult<Option<String>>` | Asks where to save and writes an export of all data; returns the file name, or null if cancelled. | `src/commands.rs:105` |
 | `get_preferences` | — | `PreferencesStatus` | Device preferences: the saved low memory mode choice, and the one this window started with. | `src/commands.rs:149` |
@@ -192,8 +192,10 @@ Only commands granted an `allow-<command>` permission in `app/src-tauri/capabili
 
 These live in `app/src-tauri/src/updates.rs`.
 
-1. **On start-up** the UI calls `check_for_updates`. This asks GitHub for
-   `latest.json`, with a 60-second timeout, and remembers the update it found.
+1. **On start-up** the UI calls `check_for_updates`. This asks the
+   dev.wolfyk.com feed for `latest.json` (from v1.1.2), and GitHub's only if
+   that can't be reached ([decision 0004](decisions/0004-self-hosted-update-feed.md)),
+   with a 60-second timeout, and remembers the update it found.
    If a newer version exists, the Updates button in the title bar gets a
    dot, and once What's new and the tour are out of the way a notice in the
    bottom corner says so, once ([UI](ui.md#toasts)). Nothing opens by itself

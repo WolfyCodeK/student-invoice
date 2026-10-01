@@ -9,7 +9,18 @@
 export const UPDATER_PUBKEY =
   'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhBNDA2RjJDQTkzQjZCQ0MKUldUTWF6dXBMRzlBaXFLNUdXRGJMWHl0Q2NWczFhcVFGbk41SndqeXczVzhEQjJSdDJSYUdTaDQK'
 
-export const UPDATER_ENDPOINT =
+/**
+ * The permanent update feed on the owner's own site (docs/release.md
+ * "dev.wolfyk.com"). Every version from v1.1.2 asks it first, so it must never
+ * move, whatever the site looks like.
+ */
+export const UPDATER_FEED = 'https://dev.wolfyk.com/releases/student-invoice/latest.json'
+
+/**
+ * The GitHub feed: the only one v1.0.1 to v1.1.1 know. Kept after
+ * UPDATER_FEED as a fallback while the GitHub repository is public.
+ */
+export const GITHUB_UPDATER_FEED =
   'https://github.com/WolfyCodeK/student-invoice/releases/latest/download/latest.json'
 
 /**
@@ -73,8 +84,8 @@ export const INVARIANTS = [
   {
     id: 'updater-endpoint',
     what: '`plugins.updater.endpoints`',
-    expected: 'exactly the GitHub `releases/latest/download/latest.json` URL',
-    why: 'Baked into every installed copy; the only place they look for updates.',
+    expected: '`https://dev.wolfyk.com/releases/student-invoice/latest.json` first; after it, only the GitHub `releases/latest/download/latest.json` URL, if at all',
+    why: 'Baked into every installed copy. From v1.1.2 the dev.wolfyk.com feed is asked first, so it can never move; v1.0.1 to v1.1.1 know only the GitHub URL, so both feeds must offer every release until the repository is made private.',
   },
   {
     id: 'updater-pubkey',
